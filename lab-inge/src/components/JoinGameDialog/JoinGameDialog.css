@@ -1,0 +1,21 @@
+/* JoinGameDialog.css */
+.my-button {
+  background: linear-gradient(to right, #CA8747, #A56A30);
+  color: #FEFCFB;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 0.5rem; /* o quitá esto si ya usás rounded-lg de Tailwind */
+  cursor: pointer;
+  font-size: 16px;
+  transition: filter 0.2s ease;
+}
+.my-button:hover { filter: brightness(1.05); }
+
+
+.my-form {
+    background: #7A6655;
+    padding: 20px;
+    border-radius: 0.5rem;
+    color: #FEFCFB;
+    
+}
