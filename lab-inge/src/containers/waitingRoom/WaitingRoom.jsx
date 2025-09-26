@@ -1,4 +1,4 @@
-import background from "/src/assets/waiting_room_bg.png"
+import background from "/src/assets/waitingRoom/waiting_room_bg.png"
 import { useEffect, useState } from "react";
 import { createWSService } from "../../services/WSService";
 import { createHttpService } from "../../services/HTTPService";
