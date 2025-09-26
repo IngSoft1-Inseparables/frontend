@@ -49,12 +49,12 @@ import { __mockHttp as mockHttp } from "../../services/HTTPService";
 describe("WaitingRoom component", () => {
   // Props estándar usadas en la mayoría de tests
   const defaultProps = {
-    matchId: "test-match-123",
+    gameId: "test-game-123",
     myPlayerId: "player-456"
   };
 
   // Datos de partida por defecto que retorna el mock HTTP
-  const defaultMatchData = {
+  const defaultGameData = {
     hostId: "player-456",      // El jugador actual es host
     minPlayers: 2,             // Mínimo 2 jugadores
     maxPlayers: 6,             // Máximo 6 jugadores  
@@ -65,7 +65,7 @@ describe("WaitingRoom component", () => {
     // Reset mocks antes de cada test para evitar interferencias
     mockWS.__reset();
     vi.clearAllMocks();
-    mockHttp.getPartida.mockResolvedValue(defaultMatchData);
+    mockHttp.getPartida.mockResolvedValue(defaultGameData);
   });
 
   it("renderiza el título del juego", () => {
@@ -105,14 +105,14 @@ describe("WaitingRoom component", () => {
   it("no muestra el botón si no es host", async () => {
     // TEST: Verifica que el botón solo aparece para el host
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       hostId: "another-player"  // Otro jugador es el host
     });
 
     render(<WaitingRoom {...defaultProps} />);
     
     await waitFor(() => {
-      expect(mockHttp.getPartida).toHaveBeenCalledWith("test-match-123");
+      expect(mockHttp.getPartida).toHaveBeenCalledWith("test-game-123");
     });
 
     // Botón NO debe aparecer para jugadores no-host
@@ -131,7 +131,7 @@ describe("WaitingRoom component", () => {
   it("deshabilita el botón cuando no hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón está deshabilitado con pocos jugadores
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       playersCount: 1,    // Solo 1 jugador
       minPlayers: 2       // Mínimo 2 requeridos
     });
@@ -146,7 +146,7 @@ describe("WaitingRoom component", () => {
   it("habilita el botón cuando hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón se habilita con suficientes jugadores
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       playersCount: 3,    // 3 jugadores
       minPlayers: 2       // Más que el mínimo requerido
     });
@@ -165,7 +165,7 @@ describe("WaitingRoom component", () => {
     // TEST: Verifica que se puede hacer click en el botón habilitado
     const user = userEvent.setup();
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       playersCount: 3,
       minPlayers: 2
     });
@@ -209,7 +209,7 @@ describe("WaitingRoom component", () => {
     
     await waitFor(() => {
       expect(mockHttp.getPartida).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith("Failed obtaining match:", expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith("Failed obtaining game:", expect.any(Error));
     });
 
     consoleSpy.mockRestore();
@@ -238,7 +238,7 @@ describe("WaitingRoom component", () => {
   it("muestra el contador con maxPlayers personalizado", async () => {
     // TEST: Verifica soporte para configuración personalizada
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       maxPlayers: 8,    // Diferente del valor por defecto (6)
       playersCount: 5
     });
@@ -253,7 +253,7 @@ describe("WaitingRoom component", () => {
   it("aplica las clases CSS correctas según el estado del botón", async () => {
     // TEST: Verifica que los estilos CSS cambian correctamente
     mockHttp.getPartida.mockResolvedValue({
-      ...defaultMatchData,
+      ...defaultGameData,
       playersCount: 1,    // Insuficientes jugadores
       minPlayers: 2
     });

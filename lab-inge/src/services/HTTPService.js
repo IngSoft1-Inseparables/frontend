@@ -25,9 +25,9 @@ const createHttpService = () => {
         }
     };
 
-    const getMatches = () => request("/matches");
+    const getGames = () => request("/games");
 
-    const getMatch = (id) => request(`/match/${id}`);
+    const getGame = (id) => request(`/game/${id}`);
 
 
     //   const getContacts = async (filters = {}) => {
@@ -61,8 +61,8 @@ const createHttpService = () => {
     //   };
 
     return {
-        getMatch,
-        getMatches
+        getGame,
+        getGames
         // getContacts,
         // getContact,
         // createContact,

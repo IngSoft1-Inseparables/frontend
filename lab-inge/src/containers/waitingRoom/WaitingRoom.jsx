@@ -4,7 +4,7 @@ import { createWSService } from "../../services/WSService";
 import { createHttpService } from "../../services/HTTPService";
 
 
-function WaitingRoom({ matchId, myPlayerId }) {
+function WaitingRoom({ gameId, myPlayerId }) {
 
     const [playersCount, setPlayersCount] = useState(1);
     const [isHost, setHostView] = useState(false);
@@ -14,20 +14,20 @@ function WaitingRoom({ matchId, myPlayerId }) {
     const [wsService] = useState(() => createWSService());
 
     useEffect(() => {
-        const fetchMatchData = async () => {
+        const fetchGameData = async () => {
             try {
-                const matchData = await httpService.getPartida(matchId);
+                const gameData = await httpService.getPartida(gameId);
 
-                setHostView(matchData.hostId == myPlayerId);
-                setMinPlayers(matchData.minPlayers);
-                setMaxPlayers(matchData.maxPlayers);
-                setPlayersCount(matchData.playersCount);
+                setHostView(gameData.hostId == myPlayerId);
+                setMinPlayers(gameData.minPlayers);
+                setMaxPlayers(gameData.maxPlayers);
+                setPlayersCount(gameData.playersCount);
             } catch (error) {
-                console.error("Failed obtaining match:", error);
+                console.error("Failed obtaining game:", error);
             }
         };
 
-        fetchMatchData();
+        fetchGameData();
 
         wsService.connect();
 
