@@ -32,6 +32,7 @@ vi.mock("../../services/WSService", () => {
 vi.mock("../../services/HTTPService", () => {
   const mockHttp = {
     getPartida: vi.fn(),
+    startGame: vi.fn(),  // ✅ Agregar mock de startGame
   };
 
   return {
@@ -40,8 +41,9 @@ vi.mock("../../services/HTTPService", () => {
   };
 });
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import WaitingRoom from "./WaitingRoom";
 import { __mockWS as mockWS } from "../../services/WSService";
 import { __mockHttp as mockHttp } from "../../services/HTTPService";
@@ -61,23 +63,33 @@ describe("WaitingRoom component", () => {
     playersCount: 1            // Actualmente 1 jugador
   };
 
+  // Helper para renderizar con Router context y state
+  const renderWithRouter = (initialState = { gameId: "test-game-123", myPlayerId: "player-456" }) => {
+    return render(
+      <MemoryRouter initialEntries={[{ pathname: "/waiting", state: initialState }]}>
+        <WaitingRoom />
+      </MemoryRouter>
+    );
+  };
+
   beforeEach(() => {
     // Reset mocks antes de cada test para evitar interferencias
     mockWS.__reset();
     vi.clearAllMocks();
     mockHttp.getPartida.mockResolvedValue(defaultGameData);
+    mockHttp.startGame.mockResolvedValue({ success: true }); // ✅ Mock startGame
   });
 
   it("renderiza el título del juego", () => {
     // TEST: Verifica que el componente muestra el título principal
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     const title = screen.getByRole("heading", { name: /El juego comenzará pronto/i });
     expect(title).toBeInTheDocument();
   });
 
   it("muestra el contador de jugadores inicial desde HTTP", async () => {
     // TEST: Verifica que el contador se carga desde la API HTTP
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(screen.getByText("1/6")).toBeInTheDocument();
@@ -86,7 +98,7 @@ describe("WaitingRoom component", () => {
 
   it("actualiza el contador de jugadores cuando recibe mensajes WS", async () => {
     // TEST: Verifica que el contador se actualiza con mensajes WebSocket
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     // Espera carga inicial desde HTTP
     await waitFor(() => {
@@ -109,7 +121,7 @@ describe("WaitingRoom component", () => {
       hostId: "another-player"  // Otro jugador es el host
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(mockHttp.getPartida).toHaveBeenCalledWith("test-game-123");
@@ -121,7 +133,7 @@ describe("WaitingRoom component", () => {
 
   it("muestra el botón de iniciar partida cuando es host", async () => {
     // TEST: Verifica que el botón aparece cuando el jugador es host
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /Iniciar Partida/i })).toBeInTheDocument();
@@ -136,7 +148,7 @@ describe("WaitingRoom component", () => {
       minPlayers: 2       // Mínimo 2 requeridos
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     const button = await screen.findByRole("button", { name: /Iniciar Partida/i });
     expect(button).toBeDisabled();
@@ -151,7 +163,7 @@ describe("WaitingRoom component", () => {
       minPlayers: 2       // Más que el mínimo requerido
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     const button = await screen.findByRole("button", { name: /Iniciar Partida/i });
     await waitFor(() => {
@@ -167,10 +179,11 @@ describe("WaitingRoom component", () => {
     mockHttp.getPartida.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,
-      minPlayers: 2
+      minPlayers: 2,
+      hostId: "player-456"  // Asegurar que el jugador es host
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     const button = await screen.findByRole("button", { name: /Iniciar Partida/i });
     await waitFor(() => {
@@ -178,13 +191,17 @@ describe("WaitingRoom component", () => {
     });
 
     // Simula click del usuario
-    await user.click(button);
-    expect(button).toBeEnabled();
+    await act(async () => {
+      await user.click(button);
+    });
+    
+    // Verificar que startGame fue llamado
+    expect(mockHttp.startGame).toHaveBeenCalledWith("test-game-123", "player-456");
   });
 
   it("conecta y desconecta el WebSocket correctamente", async () => {
     // TEST: Verifica el ciclo de vida completo del WebSocket
-    const { unmount } = render(<WaitingRoom {...defaultProps} />);
+    const { unmount } = renderWithRouter();
     
     // Verifica que se conecta y registra listeners
     await waitFor(() => {
@@ -205,7 +222,7 @@ describe("WaitingRoom component", () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockHttp.getPartida.mockRejectedValue(new Error("Network error"));
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(mockHttp.getPartida).toHaveBeenCalled();
@@ -217,7 +234,7 @@ describe("WaitingRoom component", () => {
 
   it("actualiza el estado cuando WS envía count null o undefined", async () => {
     // TEST: Verifica manejo de datos WebSocket inválidos
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(screen.getByText("1/6")).toBeInTheDocument();
@@ -243,7 +260,7 @@ describe("WaitingRoom component", () => {
       playersCount: 5
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     await waitFor(() => {
       expect(screen.getByText("5/8")).toBeInTheDocument();
@@ -258,7 +275,7 @@ describe("WaitingRoom component", () => {
       minPlayers: 2
     });
 
-    render(<WaitingRoom {...defaultProps} />);
+    renderWithRouter();
     
     const button = await screen.findByRole("button", { name: /Iniciar Partida/i });
     

@@ -27,7 +27,23 @@ const createHttpService = () => {
 
     const getGames = () => request("/games");
 
-    const getGame = (id) => request(`/game/${id}`);
+    const getGame = (gameId) => request(`/game/${gameId}`);
+
+    const startGame = (gameId, playerId) => {
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        if (!playerId) {
+            throw new Error('Player ID is required');
+        }
+        return request(`/game/${gameId}/start`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                inProgress: true,
+                playerId: playerId
+            })
+        });
+    };
 
 
     //   const getContacts = async (filters = {}) => {
@@ -62,7 +78,8 @@ const createHttpService = () => {
 
     return {
         getGame,
-        getGames
+        getGames,
+        startGame
         // getContacts,
         // getContact,
         // createContact,
