@@ -45,6 +45,16 @@ const createHttpService = () => {
         });
     };
 
+    const joinLobby = (partidaId, nombre_usuario, fecha_nacimiento) => request(`/unirse`, {
+        method: 'POST',
+        body: JSON.stringify({
+            partidaId,
+            nombre_usuario,
+            fecha_nacimiento
+        })
+    }
+    );
+
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -79,7 +89,8 @@ const createHttpService = () => {
     return {
         getGame,
         getGames,
-        startGame
+        startGame,
+        joinLobby,
         // getContacts,
         // getContact,
         // createContact,

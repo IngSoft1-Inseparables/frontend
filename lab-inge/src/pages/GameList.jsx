@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import background from '../assets/background.png'
 import JoinGameDialog from '../components/JoinGameDialog/JoinGameDialog.jsx'
+import { createHttpService } from '../services/HTTPService.js'
+import { useNavigate } from "react-router-dom";
+
 
 function GameList() {
   const [open, setOpen] = useState(false)
+  /* const navigate = useNavigate(); */
 
   return (
     <div
@@ -12,7 +16,9 @@ function GameList() {
        onKeyDown={(e) => 
         {
             console.log("apreta la tecla:", e.key);
-            e.key === 'Escape' && setOpen(false)}} // cerrar con Escape
+            e.key === 'Escape' && setOpen(false)
+        }
+       } // cerrar con Escape
     >
       {/* botón para abrir el diálogo */}
       <button
@@ -28,10 +34,32 @@ function GameList() {
           onClose={() => setOpen(false)}
           onSubmit={(payload) => {
             console.log('Unirse:', payload)
-            // llamar al backend (metodo POST.... etc)
-            setOpen(false)  
-          }}
-        />
+            
+            const httpService = createHttpService()
+            httpService.joinLobby(payload.partidaId, payload.nombre_usuario, payload.fecha_nacimiento)
+              .then((data) => {
+                if (data.status_code === 200) {
+                  // redirigir a lobby/waintingRoom
+                  navigate('/waiting', {
+                    state: {
+                        gameId: payload.partidaId,
+                        myPlayerId: payload.nombre_usuario
+                    },
+                    replace: true
+                });
+                }
+                else if (data.status_code === 400) {
+                  alert("La fecha de nacimiento es inválida o la partida está llena ")
+                }
+              })
+              .catch((error) => {
+                console.error('Error al unirse a la partida:', error)
+                alert("Error al unirse a la partida")
+              })
+            }
+          }
+          />
+        
       )}
     </div>
   )
