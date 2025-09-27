@@ -28,14 +28,16 @@ function Home() {
           />
 
           {/* Botones debajo de la imagen */}
-         {/* <div className="flex w-[70%] justify-center sm:w-[65%] md:w-[60%] lg:w-[55%] mt-6 gap-8">
+         { 
+          <div className="flex w-[70%] justify-center sm:w-[65%] md:w-[60%] lg:w-[55%] mt-6 gap-8">
             <button className="bg-pink-500  text-white px-24 py-4 rounded-lg ">
-              agregar boton y solo se agrego donde deberian ir ubicados
+              Crear partida
             </button>
             <button className="bg-pink-500 text-white px-24 py-4 rounded-lg ">
-              agregar boton
+              Unirse a partida
             </button>
-          </div> */}
+          </div> 
+          }
 
         </div>
 
