@@ -46,7 +46,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         if (selectedDate < minDate || selectedDate > maxDate) {
           return `La fecha debe estar entre ${minDate.toLocaleDateString()} y ${maxDate.toLocaleDateString()}`;
         }
-        return ""; // <--- Muy importante
+        return ""; 
       }
       case "avatar":
         return value ? "" : "Seleccioná un avatar";
@@ -270,6 +270,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
               <select
                 type="text"
                 id="minPlayers"
+                data-testid="minPlayers"
                 name="minPlayers"
                 value={formDataGame.minPlayers}
                 onChange={handleChange}
@@ -286,6 +287,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
                 <option value="6">6</option>
               </select>
               <select
+                data-testid="maxPlayers"
                 type="text"
                 id="maxPlayers"
                 name="maxPlayers"
@@ -309,9 +311,15 @@ export default function CreateFormGame({ onSubmit, onClose }) {
             {errors.maxPlayers && (
               <p className="mt-1 text-sm text-red-400">{errors.maxPlayers}</p>
             )}
-            <GenericButton disabled={
+            <GenericButton
+            type="submit"
+              disabled={
                 isSubmitting || Object.keys(errors).some((key) => errors[key])
-              }  type="submit" className="px-4 py-2.5" nameButton='Crear Partida'/>
+              }
+              
+              className="px-4 py-2.5"
+              nameButton="Crear Partida"
+            />
           </form>
         </div>
       </div>
