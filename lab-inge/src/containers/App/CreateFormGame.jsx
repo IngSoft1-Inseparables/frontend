@@ -1,6 +1,7 @@
 import { useState } from "react";
+import GenericButton from "../../components/JoinGameDialog/GenericButton";
 
-export default function CreateFormGame({ onSubmit }) {
+export default function CreateFormGame({ onSubmit, onClose }) {
   // Estado de formulario jugador
 
   const [playerData, setPlayerData] = useState({
@@ -20,32 +21,6 @@ export default function CreateFormGame({ onSubmit }) {
   // Otros estados
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [errorDate, setErrorDate] = useState("");
-
-  // Funciones para abrir/cerrar formulario
-  const handleOpen = () => setIsOpen(true);
-  const handleClose = () => {
-    setIsOpen(false);
-
-  // Reinicia los datos del jugador
-  setPlayerData({
-    name: "",
-    birthday: "",
-    avatar: null,
-  });
-
-  // Reinicia los datos de la partida
-  setFormDataGame({
-    nameGame: "",
-    minPlayers: "",
-    maxPlayers: "",
-  });
-
-  // Limpia errores
-  setErrors({});
-  setSelectedAvatar(null); // si tienes un estado para avatar seleccionado
-};
 
   const avatar = [
     "avatar/avatar1.png",
@@ -119,12 +94,18 @@ export default function CreateFormGame({ onSubmit }) {
     const max = parseInt(formDataGame.maxPlayers);
     if (!isNaN(min) && !isNaN(max) && min > max) {
       newErrors.minPlayers = "El mínimo no puede ser mayor que el máximo";
+    } else if (isNaN(min)) {
+      newErrors.minPlayers = "Completar la cantidad de jugadores";
+    } else if (isNaN(max)) {
+      newErrors.maxPlayers = "Completar la cantidad de jugadores";
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!validateForm()) {
       return;
     }
@@ -144,10 +125,12 @@ export default function CreateFormGame({ onSubmit }) {
         minPlayers: "",
       });
       setErrors({});
-      setIsOpen(false);
+      // setIsOpen(false);
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Failed to create contact. Please check your input and try again.");
+      alert(
+        "Failed to create the game. Please check your input and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -170,85 +153,71 @@ export default function CreateFormGame({ onSubmit }) {
     return `${baseClasses} ${errorClasses}`;
   };
 
-  // Validaciones
-
   return (
     <div>
-      <button
-        className="bg-gradient-to-r from-[#CA8747] to-[#A56A30] 
-         text-[#FEFCFB] 
-         border-none 
-         px-5 py-2.5 
-         rounded-lg 
-         cursor-pointer 
-         text-base 
-         transition-filter duration-200 ease-in-out"
-        onClick={handleOpen}
+      <div
+        className="fixed inset-0 bg-black/50 flex items-center justify-center"
+        onClick={onClose} // cerrar al clickear el fondo
       >
-        Abrir
-      </button>
-
-      {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center"
-          onClick={handleClose} // cerrar al clickear el fondo
+          className="rounded-lg p-12 bg-[#7a6655] w-auto max-w-lg"
+          style={{ backgroundColor: "#7a6655" }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="rounded-lg p-12 bg-[#7a6655] w-auto max-w-lg"
-            style={{ backgroundColor: "#7a6655" }}
-            onClick={(e) => e.stopPropagation()}
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4 w-full sm:max-w-lg md:max-w-xl lg:max-w-4xl mx-auto"
           >
-            <form className="flex flex-col gap-4 w-full sm:max-w-lg md:max-w-xl lg:max-w-4xl mx-auto">
-              <h2 className="text-xl font-bold text-white mb-4">
-                Crear nueva partida
-              </h2>
-              <div>
-                <label className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg">
-                  Nombre de Usuario:
-                  <input
-                    type="text"
-                    id="nameUser"
-                    name="name"
-                    value={playerData.name}
-                    onChange={handleChange}
-                    required
-                    className={getInputClassName("name")}
-                    placeholder="Ingresar nombre de Usuario"
-                  />
-                </label>
-
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-                )}
-              </div>
-              <div>
-                <label className="grid gap-1 block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg">
-                  Fecha de nacimiento:
-                  <input
-                    type="date"
-                    name="birthday"
-                    value={playerData.birthday}
-                    onChange={handleChange}
-                    className={getInputClassName("birthday")}
-                    required
-                  />
-                </label>
-                {errors.birthday && (
-                  <p className="mt-1 text-sm text-red-400">{errors.birthday}</p>
-                )}
-              </div> <label
-                htmlFor="Avatar"
-                className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg"
-              >
-                Seleccion un avatar:
+            <h2 className="text-xl font-bold text-white mb-4">
+              Crear nueva partida
+            </h2>
+            <div>
+              <label className="grid gap-1 block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg">
+                Nombre de Usuario:
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={playerData.name}
+                  onChange={handleChange}
+                  className={getInputClassName("name")}
+                  placeholder="Ingresar nombre de Usuario"
+                  autoComplete="off"
+                />
               </label>
-              <div className="avatar-container flex flex-wrap justify-center gap-4 bg-transparent p-2">
-                {avatar.map((av, index) => (
-                  <img
-                    key={index}
-                    src={av}
-                    alt={`Avatar ${index + 1}`}
-                    className={`
+
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+              )}
+            </div>
+            <div>
+              <label className="grid gap-1 block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg">
+                Fecha de nacimiento:
+                <input
+                  type="date"
+                  name="birthday"
+                  value={playerData.birthday}
+                  onChange={handleChange}
+                  className={getInputClassName("birthday")}
+                />
+              </label>
+              {errors.birthday && (
+                <p className="mt-1 text-sm text-red-400">{errors.birthday}</p>
+              )}
+            </div>{" "}
+            <label
+              htmlFor="Avatar"
+              className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg"
+            >
+              Seleccion un avatar:
+            </label>
+            <div className="avatar-container flex flex-wrap justify-center gap-4 bg-transparent p-2">
+              {avatar.map((av, index) => (
+                <img
+                  key={index}
+                  src={av}
+                  alt={`Avatar ${index + 1}`}
+                  className={`
                                 w-20 h-20 rounded-full border-3 cursor-pointer
                                 transition-transform duration-200 ease-in-out
                                 transform-gpu origin-center
@@ -259,111 +228,93 @@ export default function CreateFormGame({ onSubmit }) {
                                 }
                                 hover:scale-105 hover:border-orange-300
                               `}
-                    onClick={() => {
-                      setSelectedAvatar(av);
-                      setPlayerData((prev) => ({ ...prev, avatar: av }));
-                      setErrors((prev) => ({ ...prev, avatar: "" }));
-                    }}
-                  />
-                ))}
-                {errors.avatar && (
-                  <p className="mt-1 text-sm text-red-400">{errors.avatar}</p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmForm="nameGame"
-                  className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg"
-                >
-                  Nombre de la Partida:
-                  <input
-                    type="text"
-                    id="nameGame"
-                    name="nameGame"
-                    value={formDataGame.nameGame}
-                    onChange={handleChange}
-                    required
-                    className={getInputClassName("nameGame")}
-                    placeholder="Ingresar nombre de la partida"
-                  />
-                </label>
-                {errors.nameGame && (
-                  <p className="mt-1 text-sm text-red-400">{errors.nameGame}</p>
-                )}
-              </div>
+                  onClick={() => {
+                    setSelectedAvatar(av);
+                    setPlayerData((prev) => ({ ...prev, avatar: av }));
+                    setErrors((prev) => ({ ...prev, avatar: "" }));
+                  }}
+                />
+              ))}
+              {errors.avatar && (
+                <p className="mt-1 text-sm text-red-400">{errors.avatar}</p>
+              )}
+            </div>
+            <div>
               <label
-                htmlFor="CantidadJugadores"
+                htmlFor="nameGame"
                 className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg"
               >
-                Cantidad de jugadores:
+                Nombre de la Partida:
+                <input
+                  type="text"
+                  id="nameGame"
+                  name="nameGame"
+                  value={formDataGame.nameGame}
+                  onChange={handleChange}
+                  className={getInputClassName("nameGame")}
+                  placeholder="Ingresar nombre de la partida"
+                  autoComplete="off"
+                />
               </label>
-              <div className="flex flex-row justify-between w-full gap-4">
-                <select
-                  type="text"
-                  id="minPlayers"
-                  name="minPlayers"
-                  value={formDataGame.minPlayers}
-                  onChange={handleChange}
-                  required
-                  className={getInputClassName("minPlayers", "select")}
-                  placeholder="Ingresar minimo de jugadores"
-                >
-                  <option value="" disabled>
-                    Minimo de jugadores
-                  </option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                </select>
-                <select
-                  type="text"
-                  id="maxPlayers"
-                  name="maxPlayers"
-                  value={formDataGame.maxPlayers}
-                  onChange={handleChange}
-                  required
-                  className={getInputClassName("maxPlayers", "select")}
-                >
-                  <option value="" disabled>
-                    Maximo de jugadores
-                  </option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                </select>
-              </div>
-              {errors.minPlayers && (
-                <p className="mt-1 text-sm text-red-400">{errors.minPlayers}</p>
+              {errors.nameGame && (
+                <p className="mt-1 text-sm text-red-400">{errors.nameGame}</p>
               )}
-              {errors.maxPlayers && (
-                <p className="mt-1 text-sm text-red-400">{errors.maxPlayers}</p>
-              )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={
-                  isSubmitting || Object.keys(errors).some((key) => errors[key])
-                }
-                className="bg-gradient-to-r from-[#CA8747] to-[#A56A30] 
-                  text-[#FEFCFB] 
-                  border-none 
-                  px-4 py-2.5 
-                  rounded-lg 
-                  cursor-pointer 
-                  text-base 
-                  transition-filter duration-200 ease-in-out
-                  disabled:cursor-not-allowed transition-colors"
+            </div>
+            <label
+              htmlFor="CantidadJugadores"
+              className="block text-sm font-medium text-white mb-1 text-sm sm:text-base md:text-lg lg:text-lg"
+            >
+              Cantidad de jugadores:
+            </label>
+            <div className="flex flex-row justify-between w-full gap-4">
+              <select
+                type="text"
+                id="minPlayers"
+                name="minPlayers"
+                value={formDataGame.minPlayers}
+                onChange={handleChange}
+                className={getInputClassName("minPlayers", "select")}
+                placeholder="Ingresar minimo de jugadores"
               >
-                Crear partida
-              </button>
-            </form>
-          </div>
+                <option value="" disabled>
+                  Minimo de jugadores
+                </option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+              <select
+                type="text"
+                id="maxPlayers"
+                name="maxPlayers"
+                value={formDataGame.maxPlayers}
+                onChange={handleChange}
+                className={getInputClassName("maxPlayers", "select")}
+              >
+                <option value="" disabled>
+                  Maximo de jugadores
+                </option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+            {errors.minPlayers && (
+              <p className="mt-1 text-sm text-red-400">{errors.minPlayers}</p>
+            )}
+            {errors.maxPlayers && (
+              <p className="mt-1 text-sm text-red-400">{errors.maxPlayers}</p>
+            )}
+            <GenericButton disabled={
+                isSubmitting || Object.keys(errors).some((key) => errors[key])
+              }  type="submit" className="px-4 py-2.5" nameButton='Crear Partida'/>
+          </form>
         </div>
-      )}
+      </div>
     </div>
   );
 }
