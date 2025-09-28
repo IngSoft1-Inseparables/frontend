@@ -1,4 +1,7 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { createHttpService } from '../../services/HTTPService.js'
+
 import './JoinGameDialog.css'
 
 const AVATARS = [
@@ -10,11 +13,11 @@ const AVATARS = [
   { id: 6, src: '/6.png', alt: 'Avatar 6' },
 ]
 
-export default function JoinGameDialog({ onClose, onSubmit }) {
-  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '' , idAvatar: null})
-
+export default function JoinGameDialog({ onClose, partidaId }) {
+  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '' , idAvatar: null })
   const [avatarError, setAvatarError] = useState(false)
   const avatarsRef = useRef(null)
+  const navigate = useNavigate()
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -24,34 +27,60 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
     setForm((f) => ({ ...f, idAvatar: f.idAvatar === id ? null : id }))
   }
 
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.idAvatar) {
       setAvatarError(true)
       return
     }
-    onSubmit?.(form)
+
+    const payload = {
+      partidaId,
+      nombre_usuario: form.nombreUsuario,
+      fecha_nacimiento: form.fechaNacimiento,
+      idAvatar: form.idAvatar,
+    }
+
+    try {
+      console.log('Unirse:', payload)
+      const httpService = createHttpService()
+      const data = await httpService.joinLobby(
+        payload.partidaId,
+        payload.nombre_usuario,
+        payload.fecha_nacimiento
+      )
+
+      if (data.status_code === 200) {
+        navigate('/waiting', {
+          state: {
+            gameId: payload.partidaId,
+            myPlayerId: payload.nombre_usuario,
+          },
+          replace: true,
+        })
+      } else if (data.status_code === 400) {
+        alert("La fecha de nacimiento es inválida o la partida está llena")
+      }
+    } catch (error) {
+      console.error('Error al unirse a la partida:', error)
+      alert("Error al unirse a la partida")
+    }
   }
 
   const today = (() => {
     const d = new Date()
     const pad = (n) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-  return `${yyyy}-${mm}-${dd}`
-})()
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
 
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center"
-      onClick={onClose}                     // cerrar al clickear el fondo
-    
+      onClick={onClose}
     >
       <div
         className="rounded-lg p-6 my-form"
-        onClick={(e) => e.stopPropagation()} // no cerrar al click dentro
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold mb-4">Unirse a una partida</h2>
 
@@ -71,7 +100,7 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
             Fecha de nacimiento
             <input
               type="date"
-              max = {today} // no permitir fechas futuras
+              max={today}
               name="fechaNacimiento"
               value={form.fechaNacimiento}
               onChange={handleChange}
@@ -80,17 +109,16 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
             />
           </label>
 
-           {/*Seleccion de Avatar*/}
+          {/* Selección de Avatar */}
           <div className="grid gap-2">
-
-              <div
+            <div
               ref={avatarsRef}
               tabIndex={-1}
               className={`avatar-grid ${avatarError ? 'avatar-grid--error' : ''}`}
               role="radiogroup"
               aria-label="Selección de avatar"
               aria-invalid={avatarError ? 'true' : 'false'}
-              >
+            >
               {AVATARS.map((a) => {
                 const selected = form.idAvatar === a.id
                 return (
@@ -110,7 +138,6 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
               })}
             </div>
           </div>
-
 
           <div className="flex justify-end gap-2 pt-2">
             <button
