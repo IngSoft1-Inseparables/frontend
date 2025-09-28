@@ -9,7 +9,7 @@ function WaitingRoom() {
 
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     // Obtener gameId y myPlayerId del state de navegación
     const { gameId, myPlayerId } = location.state || {};
 
@@ -22,7 +22,7 @@ function WaitingRoom() {
         }
     }, [gameId, myPlayerId, navigate]);
 
-    
+
     const [playersCount, setPlayersCount] = useState(1);
     const [isHost, setHostView] = useState(false);
     const [minPlayers, setMinPlayers] = useState(2);
@@ -45,7 +45,7 @@ function WaitingRoom() {
     };
 
     const handleCount = (payload) => {
-        if (payload?.count != null) setPlayersCount(payload.count);
+        if (payload?.players_amount != null) setPlayersCount(payload.players_amount);
     };
 
     const handleStartGame = async () => {
@@ -55,9 +55,16 @@ function WaitingRoom() {
         try {
             await httpService.startGame(gameId, myPlayerId);
             console.log('Partida iniciada exitosamente');
-            
-            navigate('/game');
-            
+
+            navigate('/game', {
+                state: {
+                    gameId: gameId,
+                    myPlayerId: myPlayerId,
+                    playersCount: playersCount
+                },
+                replace: true
+            });
+
         } catch (error) {
             console.error('Error al iniciar la partida:', error);
             setIsStartingGame(false);
@@ -70,10 +77,10 @@ function WaitingRoom() {
 
         // Configura WebSocket
         wsService.connect();
-        wsService.on("count", handleCount);
+        wsService.on("players_amount", handleCount);
 
         return () => {
-            wsService.off("count", handleCount);
+            wsService.off("players_amount", handleCount);
             wsService.disconnect();
         };
 
