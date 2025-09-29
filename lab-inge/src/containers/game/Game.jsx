@@ -20,7 +20,7 @@ function Game() {
                 "game_name": "Misterio en la Mansión",
                 "min_players": 2,
                 "max_players": 6,
-                "playersAmount": 3,
+                "playersAmount": 6,
                 "in_progress": false,
                 "available": true,
                 "creator_name": "Detective John",
@@ -31,7 +31,7 @@ function Game() {
                         "id": 1,
                         "name": "Alice",
                         "birth_date": "1998-05-21",
-                        "avatar": "avatar/avatar5.png",
+                        "avatar": "avatar/avatar1.png",
                         "turn": 1,
                         "game_id": 1,
                         "hand": [
@@ -64,7 +64,7 @@ function Game() {
                         "id": 2,
                         "name": "Bob",
                         "birth_date": "2000-11-02",
-                        "avatar": "avatar/avatar3.png",
+                        "avatar": "avatar/avatar2.png",
                         "turn": 2,
                         "game_id": 1,
                         "hand": [
@@ -84,8 +84,32 @@ function Game() {
                         "id": 3,
                         "name": "Charlie",
                         "birth_date": "1995-03-15",
-                        "avatar": "avatar/avatar6.png",
+                        "avatar": "avatar/avatar3.png",
                         "turn": 3,
+                        "game_id": 1,
+                        "hand": []
+                    },                   {
+                        "id": 4,
+                        "name": "Charlie",
+                        "birth_date": "1995-03-15",
+                        "avatar": "avatar/avatar4.png",
+                        "turn": 4,
+                        "game_id": 1,
+                        "hand": []
+                    },                   {
+                        "id": 5,
+                        "name": "Charlie",
+                        "birth_date": "1995-03-15",
+                        "avatar": "avatar/avatar5.png",
+                        "turn": 5,
+                        "game_id": 1,
+                        "hand": []
+                    },                   {
+                        "id": 6,
+                        "name": "Charlie",
+                        "birth_date": "1995-03-15",
+                        "avatar": "avatar/avatar6.png",
+                        "turn": 6,
                         "game_id": 1,
                         "hand": []
                     }
