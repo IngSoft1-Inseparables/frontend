@@ -3,6 +3,7 @@ import WaitingRoom from './containers/waitingRoom/WaitingRoom.jsx';
 import Game from './containers/game/Game.jsx';
 import Lobby from './containers/lobby/Lobby.jsx';
 import GameList from './pages/GameList.jsx';
+import Hand from './pages/Hand.jsx';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/waiting" element={<WaitingRoom />} />
         <Route path="/game" element={<Game />} />
         <Route path="/games" element={<GameList />} />
+        <Route path="/hand" element={<Hand />} />
       </Routes>
     </BrowserRouter>
   );
