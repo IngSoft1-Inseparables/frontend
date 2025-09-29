@@ -32,6 +32,7 @@ function GameList() {
       {open && (
         <JoinGameDialog
           onClose={() => setOpen(false)}
+          partidaId={() => 1}
           />
         
       )}
