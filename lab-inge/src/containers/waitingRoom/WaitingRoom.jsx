@@ -1,48 +1,90 @@
 import background from "/src/assets/waitingRoom/waiting_room_bg.png"
 import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createWSService } from "../../services/WSService";
 import { createHttpService } from "../../services/HTTPService";
 
 
-function WaitingRoom({ gameId, myPlayerId }) {
+function WaitingRoom() {
+
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    // Obtener gameId y myPlayerId del state de navegación
+    const { gameId, myPlayerId } = location.state || {};
+
+    // Validar que tenemos los datos necesarios
+    useEffect(() => {
+        if (!gameId || !myPlayerId) {
+            console.error('Missing gameId or myPlayerId in navigation state');
+            navigate('/lobby', { replace: true });
+            return;
+        }
+    }, [gameId, myPlayerId, navigate]);
+
 
     const [playersCount, setPlayersCount] = useState(1);
     const [isHost, setHostView] = useState(false);
     const [minPlayers, setMinPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(6);
+    const [isStartingGame, setIsStartingGame] = useState(false);
     const [httpService] = useState(() => createHttpService());
     const [wsService] = useState(() => createWSService());
 
+    const fetchGameData = async () => {
+        try {
+            const gameData = await httpService.getPartida(gameId);
+
+            setHostView(gameData.hostId == myPlayerId);
+            setMinPlayers(gameData.minPlayers);
+            setMaxPlayers(gameData.maxPlayers);
+            setPlayersCount(gameData.playersCount);
+        } catch (error) {
+            console.error("Failed obtaining game:", error);
+        }
+    };
+
+    const handleCount = (payload) => {
+        if (payload?.players_amount != null) setPlayersCount(payload.players_amount);
+    };
+
+    const handleStartGame = async () => {
+        if (playersCount < minPlayers) return;
+
+        setIsStartingGame(true);
+        try {
+            await httpService.startGame(gameId, myPlayerId);
+            console.log('Partida iniciada exitosamente');
+
+            navigate('/game', {
+                state: {
+                    gameId: gameId,
+                    myPlayerId: myPlayerId,
+                    playersCount: playersCount
+                },
+                replace: true
+            });
+
+        } catch (error) {
+            console.error('Error al iniciar la partida:', error);
+            setIsStartingGame(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchGameData = async () => {
-            try {
-                const gameData = await httpService.getPartida(gameId);
-
-                setHostView(gameData.hostId == myPlayerId);
-                setMinPlayers(gameData.minPlayers);
-                setMaxPlayers(gameData.maxPlayers);
-                setPlayersCount(gameData.playersCount);
-            } catch (error) {
-                console.error("Failed obtaining game:", error);
-            }
-        };
-
+        // Carga datos iniciales del juego
         fetchGameData();
 
+        // Configura WebSocket
         wsService.connect();
-
-        const handleCount = (payload) => {
-            if (payload?.count != null) setPlayersCount(payload.count);
-        };
-
-        wsService.on("count", handleCount);
+        wsService.on("players_amount", handleCount);
 
         return () => {
-            wsService.off("count", handleCount);
+            wsService.off("players_amount", handleCount);
             wsService.disconnect();
         };
 
-    }, []);
+    });
 
     return (
         <div className="min-h-screen bg-gray-800 w-full bg-cover bg-center flex flex-col relative" style={{ backgroundImage: `url(${background})` }}>
@@ -66,17 +108,28 @@ function WaitingRoom({ gameId, myPlayerId }) {
                             </p>
                         )}
                         <button
-                            disabled={playersCount < minPlayers}
+                            disabled={playersCount < minPlayers || isStartingGame}
+                            onClick={handleStartGame}
                             type="button"
                             aria-label="Iniciar Partida"
                             name="Iniciar Partida"
                             className={
-                                playersCount >= minPlayers
+                                playersCount >= minPlayers && !isStartingGame
                                     ? "w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gradient-to-r from-[#CA8747]/70 to-[#A56A30]/70 text-white rounded-xl lg:rounded-2xl font-bold hover:from-[#CA8747] hover:to-[#A56A30] transition-all duration-300 transform hover:scale-105 active:scale-95"
-                                    : "w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gray-500/50 text-white rounded-xl lg:rounded-2xl font-bold"
+                                    : "w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gray-500/50 text-white rounded-xl lg:rounded-2xl font-bold cursor-not-allowed"
                             }
                         >
-                            Iniciar<br />Partida
+                            {isStartingGame ? (
+                                <>
+                                    Iniciando...<br />
+                                    <span className="text-sm">Por favor espera</span>
+                                </>
+                            ) : (
+                                <>
+                                    Iniciar<br />
+                                    Partida
+                                </>
+                            )}
                         </button>
 
                     </div>

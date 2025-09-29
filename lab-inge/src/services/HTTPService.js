@@ -14,11 +14,21 @@ const createHttpService = () => {
         try {
             const response = await fetch(url, config);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                responseData = { detail: `HTTP error! status: ${response.status}` };
             }
 
-            return await response.json();
+            if (!response.ok) {
+                const error = new Error(responseData.detail || `HTTP error! status: ${response.status}`);
+                error.status = response.status;
+                error.data = responseData;
+                throw error;
+            }
+
+            return responseData;
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
@@ -27,7 +37,23 @@ const createHttpService = () => {
 
     const getGames = () => request("/games");
 
-    const getGame = (id) => request(`/game/${id}`);
+    const getGame = (gameId) => request(`/game/${gameId}`);
+
+    const startGame = (gameId, playerId) => {
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        if (!playerId) {
+            throw new Error('Player ID is required');
+        }
+        return request(`/game/${gameId}/start`, {
+            method: 'PATCH',
+            body: JSON.stringify({
+                inProgress: true,
+                playerId: playerId
+            })
+        });
+    };
 
 
     //   const getContacts = async (filters = {}) => {
@@ -62,7 +88,8 @@ const createHttpService = () => {
 
     return {
         getGame,
-        getGames
+        getGames,
+        startGame
         // getContacts,
         // getContact,
         // createContact,
