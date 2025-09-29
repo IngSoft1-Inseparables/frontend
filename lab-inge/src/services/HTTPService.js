@@ -86,6 +86,7 @@ const createHttpService = () => {
         return request(`/games/${gameId}/turn/${playerId}`);
     };
 
+
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
     //     Object.entries(filters).forEach(([key, value]) => {
@@ -124,6 +125,7 @@ const createHttpService = () => {
         joinGame,
         getPublicTurnData,
         getPrivatePlayerData
+
         // getContacts,
         // getContact,
         // createContact,
