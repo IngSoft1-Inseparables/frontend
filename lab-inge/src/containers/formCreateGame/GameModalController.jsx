@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createHttpService } from "../../service/HTTPService";
-import GenericButton from "../../components/JoinGameDialog/GenericButton";
+import GenericButton from "../../components/GenericButton";
 import CreateFormGame from "./CreateFormGame";
 
 export default function GameModalController() {

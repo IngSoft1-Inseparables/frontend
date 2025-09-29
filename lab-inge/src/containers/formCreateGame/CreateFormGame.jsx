@@ -1,5 +1,5 @@
 import { useState } from "react";
-import GenericButton from "../../components/JoinGameDialog/GenericButton";
+import GenericButton from "../../components/GenericButton";
 
 export default function CreateFormGame({ onSubmit, onClose }) {
   // Estado de formulario jugador
