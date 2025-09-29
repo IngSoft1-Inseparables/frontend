@@ -14,7 +14,6 @@ const createHttpService = () => {
         try {
             const response = await fetch(url, config);
 
-            // Intentar parsear el JSON de la respuesta
             let responseData;
             try {
                 responseData = await response.json();
@@ -23,7 +22,6 @@ const createHttpService = () => {
             }
 
             if (!response.ok) {
-                // Crear un error personalizado con la información del servidor
                 const error = new Error(responseData.detail || `HTTP error! status: ${response.status}`);
                 error.status = response.status;
                 error.data = responseData;
@@ -43,7 +41,7 @@ const createHttpService = () => {
 
     const getGame = (gameId) => request(`/games/${gameId}`);
 
-    const joinGame = (data) => request(`/players/unirse`, {
+    const joinGame = (data) => request(`/players/join`, {
         method: 'POST',
         body: JSON.stringify(data)
     })
@@ -55,14 +53,12 @@ const createHttpService = () => {
         if (!playerId) {
             throw new Error('Player ID is required');
         }
-        return request(`/games/${gameId}/start/`, {
+        return request(`/games/${gameId}/start`, {
             method: 'PATCH'
         });
     };
 
-    const getPublicTurnData = (gameId) => {
-        
-    };
+
     const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/unirse`, {
         method: 'POST',
         body: JSON.stringify({
@@ -73,11 +69,22 @@ const createHttpService = () => {
     }
     );
 
-    const getHand = (gameId, playerId) => {
-    return request(`/games/${gameId}/turn/${playerId}`, {
-        method: 'GET'
-    });
-};
+    const getPublicTurnData = (gameId) => {
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        return request(`/games/${gameId}/turn`);
+    };
+
+    const getPrivatePlayerData = (gameId, playerId) => {
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        if (!playerId) {
+            throw new Error('Player ID is required');
+        }
+        return request(`/games/${gameId}/turn/${playerId}`);
+    };
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -113,9 +120,10 @@ const createHttpService = () => {
         getGame,
         getGames,
         startGame,
-        joinGame,
         joinLobby,
-        getHand,
+        joinGame,
+        getPublicTurnData,
+        getPrivatePlayerData
         // getContacts,
         // getContact,
         // createContact,

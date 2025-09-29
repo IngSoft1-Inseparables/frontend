@@ -1,13 +1,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Game from './containers/game/Game.jsx';
 import WaitingRoom from './containers/waitingRoom/WaitingRoom.jsx';
+import Game from './containers/game/Game.jsx';
 import Lobby from './containers/lobby/Lobby.jsx';
 import GameList from './pages/GameList.jsx';
 import Hand from './pages/Hand.jsx';
 
+
 function App() {
   return (
-    <BrowserRouter>
+   <BrowserRouter>
       <Routes>
         <Route path="/" element={<GameList />} />
         <Route path="/lobby" element={<Lobby />} />

@@ -1,7 +1,7 @@
 .face-card {
-  flex: 0 0 auto;          
-  width: 100px;
-  height: 150px;
+  flex: 0 0 auto;          /* no crecer, no encoger, ancho fijo */
+  width: 120px;
+  height: 180px;
   border: 1px solid #aaa;
   border-radius: 10px;
   background-color: #fff;
