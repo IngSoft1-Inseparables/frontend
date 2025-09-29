@@ -14,7 +14,6 @@ const createHttpService = () => {
         try {
             const response = await fetch(url, config);
 
-            // Intentar parsear el JSON de la respuesta
             let responseData;
             try {
                 responseData = await response.json();
@@ -23,7 +22,6 @@ const createHttpService = () => {
             }
 
             if (!response.ok) {
-                // Crear un error personalizado con la información del servidor
                 const error = new Error(responseData.detail || `HTTP error! status: ${response.status}`);
                 error.status = response.status;
                 error.data = responseData;
@@ -43,7 +41,7 @@ const createHttpService = () => {
 
     const getGame = (gameId) => request(`/games/${gameId}`);
 
-    const joinGame = (data) => request(`/players/unirse`, {
+    const joinGame = (data) => request(`/players/join`, {
         method: 'POST',
         body: JSON.stringify(data)
     })
@@ -75,7 +73,7 @@ const createHttpService = () => {
             throw new Error('Player ID is required');
         }
         return request(`/games/${gameId}/turn/${playerId}`);
-    }
+    };
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();

@@ -9,112 +9,11 @@ function Game() {
 
     const [turnData, setTurnData] = useState(null);
     const [orderedPlayers, setOrderedPlayers] = useState([]);
-    // const [httpService] = createHttpService();
+    const [httpService] = createHttpService();
 
     const fetchTurnData = async () => {
         try {
-            // const turnData = await httpService.getPublicTurnData(gameId);
-
-            const turnData = {
-                "id": 1,
-                "game_name": "Misterio en la Mansión",
-                "min_players": 2,
-                "max_players": 6,
-                "playersAmount": 6,
-                "in_progress": false,
-                "available": true,
-                "creator_name": "Detective John",
-                "creator_id": 101,
-                "turn_owner_id": 102,
-                "players": [
-                    {
-                        "id": 1,
-                        "name": "Alice",
-                        "birth_date": "1998-05-21",
-                        "avatar": "avatar/avatar1.png",
-                        "turn": 1,
-                        "game_id": 1,
-                        "hand": [
-                            {
-                                "card_id": 10,
-                                "type": "personaje",
-                                "is_discard": false,
-                                "card_name": "Coronel Mostaza",
-                                "image_name": "coronel_mostaza.png",
-                                "image_back_name": "back_personaje.png",
-                                "player_id": 1,
-                                "game_id": 1
-                            },
-                            {
-                                "card_id": 11,
-                                "type": "arma",
-                                "is_discard": false,
-                                "card_name": "Candelabro",
-                                "image_name": "candelabro.png",
-                                "image_back_name": "back_arma.png",
-                                "player_id": 1,
-                                "game_id": 1
-                            }
-                        ],
-                        "secrets" : [
-
-                        ]
-                    },
-                    {
-                        "id": 2,
-                        "name": "Bob",
-                        "birth_date": "2000-11-02",
-                        "avatar": "avatar/avatar2.png",
-                        "turn": 2,
-                        "game_id": 1,
-                        "hand": [
-                            {
-                                "card_id": 12,
-                                "type": "habitacion",
-                                "is_discard": false,
-                                "card_name": "Biblioteca",
-                                "image_name": "biblioteca.png",
-                                "image_back_name": "back_habitacion.png",
-                                "player_id": 2,
-                                "game_id": 1
-                            }
-                        ]
-                    },
-                    {
-                        "id": 3,
-                        "name": "Charlie",
-                        "birth_date": "1995-03-15",
-                        "avatar": "avatar/avatar3.png",
-                        "turn": 3,
-                        "game_id": 1,
-                        "hand": []
-                    },                   {
-                        "id": 4,
-                        "name": "Charlie",
-                        "birth_date": "1995-03-15",
-                        "avatar": "avatar/avatar4.png",
-                        "turn": 4,
-                        "game_id": 1,
-                        "hand": []
-                    },                   {
-                        "id": 5,
-                        "name": "Charlie",
-                        "birth_date": "1995-03-15",
-                        "avatar": "avatar/avatar5.png",
-                        "turn": 5,
-                        "game_id": 1,
-                        "hand": []
-                    },                   {
-                        "id": 6,
-                        "name": "Charlie",
-                        "birth_date": "1995-03-15",
-                        "avatar": "avatar/avatar6.png",
-                        "turn": 6,
-                        "game_id": 1,
-                        "hand": []
-                    }
-                ]
-            };
+            const turnData = await httpService.getPublicTurnData(gameId);
 
             setTurnData(turnData);
 
@@ -164,7 +63,7 @@ function Game() {
     );
 
     const Players = () => {
-        const playerCount = turnData.playersAmount;
+        const playerCount = turnData.players_amount;
         switch (playerCount) {
             case 2:
                 return (

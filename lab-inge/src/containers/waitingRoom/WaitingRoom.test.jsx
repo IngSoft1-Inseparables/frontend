@@ -41,7 +41,7 @@ vi.mock("../../services/WSService", () => {
 // Mock del HTTP Service - simula llamadas al backend
 vi.mock("../../services/HTTPService", () => {
   const mockHttp = {
-    getPartida: vi.fn(),
+    getGame: vi.fn(),
     startGame: vi.fn(),  // ✅ Agregar mock de startGame
   };
 
@@ -87,7 +87,7 @@ describe("WaitingRoom component", () => {
     mockWS.__reset();
     vi.clearAllMocks();
     mockNavigate.mockClear(); // ✅ Reset del mock de navigate
-    mockHttp.getPartida.mockResolvedValue(defaultGameData);
+    mockHttp.getGame.mockResolvedValue(defaultGameData);
     mockHttp.startGame.mockResolvedValue({ success: true }); // ✅ Mock startGame
   });
 
@@ -127,7 +127,7 @@ describe("WaitingRoom component", () => {
 
   it("no muestra el botón si no es host", async () => {
     // TEST: Verifica que el botón solo aparece para el host
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       hostId: "another-player"  // Otro jugador es el host
     });
@@ -135,7 +135,7 @@ describe("WaitingRoom component", () => {
     renderWithRouter();
     
     await waitFor(() => {
-      expect(mockHttp.getPartida).toHaveBeenCalledWith("test-game-123");
+      expect(mockHttp.getGame).toHaveBeenCalledWith("test-game-123");
     });
 
     // Botón NO debe aparecer para jugadores no-host
@@ -153,7 +153,7 @@ describe("WaitingRoom component", () => {
 
   it("deshabilita el botón cuando no hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón está deshabilitado con pocos jugadores
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 1,    // Solo 1 jugador
       minPlayers: 2       // Mínimo 2 requeridos
@@ -168,7 +168,7 @@ describe("WaitingRoom component", () => {
 
   it("habilita el botón cuando hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón se habilita con suficientes jugadores
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,    // 3 jugadores
       minPlayers: 2       // Más que el mínimo requerido
@@ -187,7 +187,7 @@ describe("WaitingRoom component", () => {
   it("permite clickear el botón cuando está habilitado", async () => {
     // TEST: Verifica que se puede hacer click en el botón habilitado
     const user = userEvent.setup();
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,
       minPlayers: 2,
@@ -213,7 +213,7 @@ describe("WaitingRoom component", () => {
   it("navega a la pantalla de game al presionar iniciar partida exitosamente", async () => {
     // TEST: Verifica que navega a /game cuando startGame es exitoso
     const user = userEvent.setup();
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,
       minPlayers: 2,
@@ -269,12 +269,12 @@ describe("WaitingRoom component", () => {
   it("maneja errores de HTTP Service gracefully", async () => {
     // TEST: Verifica manejo robusto de errores de red
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockHttp.getPartida.mockRejectedValue(new Error("Network error"));
+    mockHttp.getGame.mockRejectedValue(new Error("Network error"));
 
     renderWithRouter();
     
     await waitFor(() => {
-      expect(mockHttp.getPartida).toHaveBeenCalled();
+      expect(mockHttp.getGame).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("Failed obtaining game:", expect.any(Error));
     });
 
@@ -303,7 +303,7 @@ describe("WaitingRoom component", () => {
 
   it("muestra el contador con maxPlayers personalizado", async () => {
     // TEST: Verifica soporte para configuración personalizada
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       maxPlayers: 8,    // Diferente del valor por defecto (6)
       playersCount: 5
@@ -318,7 +318,7 @@ describe("WaitingRoom component", () => {
 
   it("aplica las clases CSS correctas según el estado del botón", async () => {
     // TEST: Verifica que los estilos CSS cambian correctamente
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 1,    // Insuficientes jugadores
       minPlayers: 2
