@@ -46,7 +46,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         if (selectedDate < minDate || selectedDate > maxDate) {
           return `La fecha debe estar entre ${minDate.toLocaleDateString()} y ${maxDate.toLocaleDateString()}`;
         }
-        return ""; 
+        return "";
       }
       case "avatar":
         return value ? "" : "Seleccioná un avatar";
@@ -107,13 +107,18 @@ export default function CreateFormGame({ onSubmit, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
+      console.log("Errores de validación:", errors);
       return;
     }
 
+    console.log("Enviando datos al backend:", playerData, formDataGame);
     setIsSubmitting(true);
 
     try {
+     
+
       await onSubmit(playerData, formDataGame);
+
       setPlayerData({
         name: "",
         birthday: "",
@@ -312,11 +317,10 @@ export default function CreateFormGame({ onSubmit, onClose }) {
               <p className="mt-1 text-sm text-red-400">{errors.maxPlayers}</p>
             )}
             <GenericButton
-            type="submit"
+              type="submit"
               disabled={
                 isSubmitting || Object.keys(errors).some((key) => errors[key])
               }
-              
               className="px-4 py-2.5"
               nameButton="Crear Partida"
             />

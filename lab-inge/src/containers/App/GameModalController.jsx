@@ -13,8 +13,16 @@ export default function GameModalController() {
 
   const handleSubmitFromChild = async (playerData, formDataGame) => {
     try {
-      
-      const response = await httpService.createGame(playerData, formDataGame);
+      const formData = {
+        game_name: formDataGame.nameGame,
+        min_players: parseInt(formDataGame.minPlayers),
+        max_players: parseInt(formDataGame.maxPlayers),
+        creator_name: playerData.name,
+        birth_date: playerData.birthday,
+        avatar: playerData.avatar, 
+      };
+      console.log("Enviando datos al backend:", formData);
+      const response = await httpService.createGame(formData);
 
       setIsFormOpen(false);
       const { gameId, myPlayerId } = response;
