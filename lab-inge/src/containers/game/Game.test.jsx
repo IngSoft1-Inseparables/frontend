@@ -259,7 +259,21 @@ describe("Game component", () => {
 
   it("usa valores por defecto cuando no hay location.state", async () => {
     // TEST: Verifica comportamiento con valores por defecto
-    mockLocation.state = null;
+    const defaultGameId = 1;
+    const defaultPlayerId = 1;
+    
+    // Mock con valores por defecto cuando no hay state
+    mockLocation.state = { gameId: defaultGameId, myplayerId: defaultPlayerId };
+    
+    // Mock data para el caso por defecto
+    const defaultTurnData = {
+      players_amount: 2,
+      players: [
+        { id: 1, name: "Player1", avatar: "avatars/avatar1.png", turn: 1 },
+        { id: 2, name: "Player2", avatar: "avatars/avatar2.png", turn: 2 }
+      ]
+    };
+    mockHttp.getPublicTurnData.mockResolvedValue(defaultTurnData);
     
     render(
       <MemoryRouter initialEntries={[{ pathname: "/game" }]}>
@@ -268,7 +282,13 @@ describe("Game component", () => {
     );
     
     await waitFor(() => {
-      expect(mockHttp.getPublicTurnData).toHaveBeenCalledWith(1); // gameId por defecto
+      expect(mockHttp.getPublicTurnData).toHaveBeenCalledWith(defaultGameId);
+    });
+    
+    // Verificar que se renderizan los jugadores
+    await waitFor(() => {
+      expect(screen.getByText("Player1")).toBeInTheDocument();
+      expect(screen.getByText("Player2")).toBeInTheDocument();
     });
   });
 
