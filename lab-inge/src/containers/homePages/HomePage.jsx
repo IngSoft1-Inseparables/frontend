@@ -2,7 +2,7 @@ import background from "../../assets/background.png";
 import nameGame from "../../assets/nameGame.png";
 import characters from "../../assets/characters.png";
 import GenericButton from "../../components/GenericButton";
-// import GameModalController from "../GameModalController";
+import GameModalController from "../formCreateGame/GameModalController";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
@@ -62,10 +62,10 @@ function Home() {
               "
               />
 
-              {/* <GameModalController
+              <GameModalController
                 isOpen={open}
                 onClose={() => setOpen(false)} // <- esto cierra el modal
-              /> */}
+              />
 
               <GenericButton
                 functionClick={handleOpenGameList}

@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createHttpService } from "../../service/HTTPService";
-import GenericButton from "../../components/GenericButton";
+import { createHttpService} from "../../service/HTTPService.js"
+import GenericButton from "../../components/GenericButton.jsx";
 import CreateFormGame from "./CreateFormGame";
 
-export default function GameModalController() {
+export default function GameModalController({isOpen, onClose}) {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const handleOpenForm = () => setIsFormOpen(true);
-  const handleCloseForm = () => setIsFormOpen(false);
   const navigate = useNavigate();
   const [httpService] = useState(() => createHttpService());
 
   const handleSubmitFromChild = async (playerData, formDataGame) => {
+    if (!isOpen) return null;
     try {
       const formData = {
         game_name: formDataGame.nameGame,
@@ -23,6 +22,7 @@ export default function GameModalController() {
       };
       console.log("Enviando datos al backend:", formData);
       const response = await httpService.createGame(formData);
+      onClose?.();
 
       setIsFormOpen(false);
       const { gameId, myPlayerId } = response;
@@ -42,15 +42,10 @@ export default function GameModalController() {
 
   return (
     <div>
-      <GenericButton
-        functionClick={handleOpenForm}
-        className="px-8 py-4"
-        nameButton="Crear partida"
-      />
-      {isFormOpen && (
+      {isOpen && (
         <CreateFormGame
           onSubmit={handleSubmitFromChild}
-          onClose={handleCloseForm}
+          onClose={onClose}
         />
       )}
     </div>
