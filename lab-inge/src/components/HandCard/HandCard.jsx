@@ -1,5 +1,6 @@
 import React from 'react'
 import FaceCard from '../FaceCard/FaceCard'
+import './HandCard.css'
 
 
 function HandCard({ cardIds =[] }) {

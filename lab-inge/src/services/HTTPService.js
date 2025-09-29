@@ -13,14 +13,6 @@ const createHttpService = () => {
 
         try {
             const response = await fetch(url, config);
-            
-            // Intentar parsear el JSON siempre
-            let responseData;
-            try {
-                responseData = await response.json();
-            } catch (parseError) {
-                responseData = { detail: `HTTP error! status: ${response.status}` };
-            }
 
             let responseData;
             try {

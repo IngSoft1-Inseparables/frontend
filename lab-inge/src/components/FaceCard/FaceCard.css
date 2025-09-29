@@ -1,7 +1,7 @@
 .face-card {
   flex: 0 0 auto;          /* no crecer, no encoger, ancho fijo */
-  width: 100px;
-  height: 150px;
+  width: 120px;
+  height: 180px;
   border: 1px solid #aaa;
   border-radius: 10px;
   background-color: #fff;
@@ -23,7 +23,7 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.25);
 }
 
-.face-card:active {
+/* .face-card:active {
   transform: translateY(-4px) scale(3);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
+} */
