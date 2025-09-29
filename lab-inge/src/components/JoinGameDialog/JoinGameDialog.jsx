@@ -155,7 +155,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
             <button
               type="submit"
               disabled={!isFormValid} 
-              className={`${
+              className={`my-button ${
                 !isFormValid ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >

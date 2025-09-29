@@ -1,5 +1,15 @@
 import { vi } from "vitest";
 
+// Mock de React Router - para verificar navegación
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // Mock del WebSocket Service - simula conexiones en tiempo real
 vi.mock("../../services/WSService", () => {
   const listeners = {};
@@ -31,7 +41,7 @@ vi.mock("../../services/WSService", () => {
 // Mock del HTTP Service - simula llamadas al backend
 vi.mock("../../services/HTTPService", () => {
   const mockHttp = {
-    getPartida: vi.fn(),
+    getGame: vi.fn(),
     startGame: vi.fn(),  // ✅ Agregar mock de startGame
   };
 
@@ -76,7 +86,8 @@ describe("WaitingRoom component", () => {
     // Reset mocks antes de cada test para evitar interferencias
     mockWS.__reset();
     vi.clearAllMocks();
-    mockHttp.getPartida.mockResolvedValue(defaultGameData);
+    mockNavigate.mockClear(); // ✅ Reset del mock de navigate
+    mockHttp.getGame.mockResolvedValue(defaultGameData);
     mockHttp.startGame.mockResolvedValue({ success: true }); // ✅ Mock startGame
   });
 
@@ -106,17 +117,17 @@ describe("WaitingRoom component", () => {
     });
 
     // Simula mensaje WebSocket cambiando contador a 3
-    mockWS.__emit("count", { count: 3 });
+    mockWS.__emit("players_amount", { players_amount: 3 });
     expect(await screen.findByText("3/6")).toBeInTheDocument();
 
     // Prueba otro valor para confirmar funcionamiento
-    mockWS.__emit("count", { count: 5 });
+    mockWS.__emit("players_amount", { players_amount: 5 });
     expect(await screen.findByText("5/6")).toBeInTheDocument();
   });
 
   it("no muestra el botón si no es host", async () => {
     // TEST: Verifica que el botón solo aparece para el host
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       hostId: "another-player"  // Otro jugador es el host
     });
@@ -124,7 +135,7 @@ describe("WaitingRoom component", () => {
     renderWithRouter();
     
     await waitFor(() => {
-      expect(mockHttp.getPartida).toHaveBeenCalledWith("test-game-123");
+      expect(mockHttp.getGame).toHaveBeenCalledWith("test-game-123");
     });
 
     // Botón NO debe aparecer para jugadores no-host
@@ -142,7 +153,7 @@ describe("WaitingRoom component", () => {
 
   it("deshabilita el botón cuando no hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón está deshabilitado con pocos jugadores
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 1,    // Solo 1 jugador
       minPlayers: 2       // Mínimo 2 requeridos
@@ -157,7 +168,7 @@ describe("WaitingRoom component", () => {
 
   it("habilita el botón cuando hay suficientes jugadores", async () => {
     // TEST: Verifica que el botón se habilita con suficientes jugadores
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,    // 3 jugadores
       minPlayers: 2       // Más que el mínimo requerido
@@ -176,7 +187,7 @@ describe("WaitingRoom component", () => {
   it("permite clickear el botón cuando está habilitado", async () => {
     // TEST: Verifica que se puede hacer click en el botón habilitado
     const user = userEvent.setup();
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 3,
       minPlayers: 2,
@@ -199,6 +210,44 @@ describe("WaitingRoom component", () => {
     expect(mockHttp.startGame).toHaveBeenCalledWith("test-game-123", "player-456");
   });
 
+  it("navega a la pantalla de game al presionar iniciar partida exitosamente", async () => {
+    // TEST: Verifica que navega a /game cuando startGame es exitoso
+    const user = userEvent.setup();
+    mockHttp.getGame.mockResolvedValue({
+      ...defaultGameData,
+      playersCount: 3,
+      minPlayers: 2,
+      hostId: "player-456"
+    });
+
+    renderWithRouter();
+    
+    const button = await screen.findByRole("button", { name: /Iniciar Partida/i });
+    await waitFor(() => {
+      expect(button).toBeEnabled();
+    });
+
+    // Simula click del usuario
+    await act(async () => {
+      await user.click(button);
+    });
+    
+    // Verificar que se llamó a startGame
+    expect(mockHttp.startGame).toHaveBeenCalledWith("test-game-123", "player-456");
+    
+    // Verificar que navega a la pantalla de game con los estados correctos
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/game', {
+        state: {
+          gameId: "test-game-123",
+          myPlayerId: "player-456",
+          playersCount: 3
+        },
+        replace: true
+      });
+    });
+  });
+
   it("conecta y desconecta el WebSocket correctamente", async () => {
     // TEST: Verifica el ciclo de vida completo del WebSocket
     const { unmount } = renderWithRouter();
@@ -206,33 +255,33 @@ describe("WaitingRoom component", () => {
     // Verifica que se conecta y registra listeners
     await waitFor(() => {
       expect(mockWS.connect).toHaveBeenCalled();
-      expect(mockWS.on).toHaveBeenCalledWith("count", expect.any(Function));
+      expect(mockWS.on).toHaveBeenCalledWith("players_amount", expect.any(Function));
     });
 
     // Simula desmontaje del componente
     unmount();
 
     // Verifica cleanup correcto
-    expect(mockWS.off).toHaveBeenCalledWith("count", expect.any(Function));
+    expect(mockWS.off).toHaveBeenCalledWith("players_amount", expect.any(Function));
     expect(mockWS.disconnect).toHaveBeenCalled();
   });
 
   it("maneja errores de HTTP Service gracefully", async () => {
     // TEST: Verifica manejo robusto de errores de red
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockHttp.getPartida.mockRejectedValue(new Error("Network error"));
+    mockHttp.getGame.mockRejectedValue(new Error("Network error"));
 
     renderWithRouter();
     
     await waitFor(() => {
-      expect(mockHttp.getPartida).toHaveBeenCalled();
+      expect(mockHttp.getGame).toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith("Failed obtaining game:", expect.any(Error));
     });
 
     consoleSpy.mockRestore();
   });
 
-  it("actualiza el estado cuando WS envía count null o undefined", async () => {
+  it("actualiza el estado cuando WS envía players_amount null o undefined", async () => {
     // TEST: Verifica manejo de datos WebSocket inválidos
     renderWithRouter();
     
@@ -241,20 +290,20 @@ describe("WaitingRoom component", () => {
     });
 
     // Payloads inválidos NO deben cambiar el estado
-    mockWS.__emit("count", { count: null });
+    mockWS.__emit("players_amount", { players_amount: null });
     expect(screen.getByText("1/6")).toBeInTheDocument();
 
-    mockWS.__emit("count", {});
+    mockWS.__emit("players_amount", {});
     expect(screen.getByText("1/6")).toBeInTheDocument();
 
     // Payload válido SÍ debe cambiar el estado
-    mockWS.__emit("count", { count: 4 });
+    mockWS.__emit("players_amount", { players_amount: 4 });
     expect(await screen.findByText("4/6")).toBeInTheDocument();
   });
 
   it("muestra el contador con maxPlayers personalizado", async () => {
     // TEST: Verifica soporte para configuración personalizada
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       maxPlayers: 8,    // Diferente del valor por defecto (6)
       playersCount: 5
@@ -269,7 +318,7 @@ describe("WaitingRoom component", () => {
 
   it("aplica las clases CSS correctas según el estado del botón", async () => {
     // TEST: Verifica que los estilos CSS cambian correctamente
-    mockHttp.getPartida.mockResolvedValue({
+    mockHttp.getGame.mockResolvedValue({
       ...defaultGameData,
       playersCount: 1,    // Insuficientes jugadores
       minPlayers: 2
@@ -283,7 +332,7 @@ describe("WaitingRoom component", () => {
     expect(button).toHaveClass("bg-gray-500/50");
 
     // Simula cambio a estado habilitado via WebSocket
-    mockWS.__emit("count", { count: 3 });
+    mockWS.__emit("players_amount", { players_amount: 3 });
     
     // Verifica estilos de botón habilitado
     await waitFor(() => {
