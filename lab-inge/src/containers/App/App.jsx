@@ -1,11 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import WaitingRoom from './containers/waitingRoom/WaitingRoom';
-import Game from './containers/game/Game2';
-import Lobby from './containers/lobby/Lobby';
-import WaitingRoom from './containers/waitingRoom/WaitingRoom.jsx';
-import Lobby from './containers/lobby/Lobby.jsx';
-import GameList from './pages/GameList.jsx';
-import Hand from './pages/Hand.jsx';
+import WaitingRoom from '../waitingRoom/WaitingRoom.jsx';
+import Game from '../game/Game.jsx';
+import Lobby from '../lobby/Lobby.jsx';
+import GameList from '../../pages/GameList.jsx';
+import Decks from '../../pages/Decks.jsx';
 
 function App() {
   return (
@@ -16,7 +14,7 @@ function App() {
         <Route path="/waiting" element={<WaitingRoom />} />
         <Route path="/game" element={<Game />} />
         <Route path="/games" element={<GameList />} />
-        <Route path="/hand" element={<Hand />} />
+        <Route path="/deck" element={<Decks />} />
       </Routes>
     </BrowserRouter>
   );

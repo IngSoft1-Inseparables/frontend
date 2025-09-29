@@ -13,8 +13,13 @@ const createHttpService = () => {
 
         try {
             const response = await fetch(url, config);
+<<<<<<< HEAD
 
             // Intentar parsear el JSON de la respuesta
+=======
+            
+            // Intentar parsear el JSON siempre
+>>>>>>> feature_SCRUM-2_implementar_interfaz_cartas_en_mano
             let responseData;
             try {
                 responseData = await response.json();
@@ -63,6 +68,16 @@ const createHttpService = () => {
     const getPublicTurnData = (gameId) => {
         
     };
+    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/unirse`, {
+        method: 'POST',
+        body: JSON.stringify({
+            partida_id,
+            nombre_usuario,
+            fecha_nacimiento
+        })
+    }
+    );
+
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -98,7 +113,8 @@ const createHttpService = () => {
         getGame,
         getGames,
         startGame,
-        joinGame
+        joinGame,
+        joinLobby,
         // getContacts,
         // getContact,
         // createContact,
