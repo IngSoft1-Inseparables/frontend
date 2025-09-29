@@ -9,109 +9,184 @@ function Game() {
 
     const [turnData, setTurnData] = useState(null);
     const [orderedPlayers, setOrderedPlayers] = useState([]);
+    const [playerData, setPlayerData] = useState(null);
     const [httpService] = createHttpService();
 
     const fetchTurnData = async () => {
 
         try {
             const turnData = await httpService.getPublicTurnData(gameId);
-            // const turnData = {
+            const playerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+
+            // const playerData = {
             //     "id": 1,
-            //     "game_name": "Misterio en la Mansión",
-            //     "min_players": 2,
-            //     "max_players": 6,
+            //     "name": "Alice",
+            //     "avatar": "avatar/avatar1.png",
+            //     "playerSecrets": [
+            //         {
+            //             "secret_id": 5,
+            //             "secret_type": "NORMAL",
+            //             "image_front_name": "05-secret_front",
+            //             "image_back_name": "06-secret_back",
+            //             "revealed": false
+            //         },
+            //         {
+            //             "secret_id": 8,
+            //             "secret_type": "MURDER",
+            //             "image_front_name": "05-secret_front",
+            //             "image_back_name": "06-secret_back",
+            //             "revealed": true
+            //         },
+            //         {
+            //             "secret_id": 8,
+            //             "secret_type": "MURDER",
+            //             "image_front_name": "05-secret_front",
+            //             "image_back_name": "06-secret_back",
+            //             "revealed": true
+            //         }
+            //     ]
+            // };
+
+            // setPlayerData(playerData);
+
+            // const turnData = {
+            //     "gameId": 1,
             //     "players_amount": 6,
-            //     "in_progress": false,
-            //     "available": true,
-            //     "creator_name": "Detective John",
-            //     "creator_id": 101,
-            //     "turn_owner_id": 6,
+            //     "turn_owner_id": 3,
             //     "players": [
             //         {
             //             "id": 1,
-            //             "name": "Alice",
-            //             "birth_date": "1998-05-21",
+            //             "name": "Jugador_1_1",
             //             "avatar": "avatar/avatar1.png",
             //             "turn": 1,
-            //             "game_id": 1,
-            //             "hand": [
+            //             "playerSecrets": [
             //                 {
-            //                     "card_id": 10,
-            //                     "type": "personaje",
-            //                     "is_discard": false,
-            //                     "card_name": "Coronel Mostaza",
-            //                     "image_name": "coronel_mostaza.png",
-            //                     "image_back_name": "back_personaje.png",
-            //                     "player_id": 1,
-            //                     "game_id": 1
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
             //                 },
             //                 {
-            //                     "card_id": 11,
-            //                     "type": "arma",
-            //                     "is_discard": false,
-            //                     "card_name": "Candelabro",
-            //                     "image_name": "candelabro.png",
-            //                     "image_back_name": "back_arma.png",
-            //                     "player_id": 1,
-            //                     "game_id": 1
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
             //                 }
-            //             ],
-            //             "secrets": [
-
             //             ]
             //         },
             //         {
             //             "id": 2,
-            //             "name": "Bob",
-            //             "birth_date": "2000-11-02",
+            //             "name": "Jugador_1_2",
             //             "avatar": "avatar/avatar2.png",
             //             "turn": 2,
-            //             "game_id": 1,
-            //             "hand": [
+            //             "playerSecrets": [
             //                 {
-            //                     "card_id": 12,
-            //                     "type": "habitacion",
-            //                     "is_discard": false,
-            //                     "card_name": "Biblioteca",
-            //                     "image_name": "biblioteca.png",
-            //                     "image_back_name": "back_habitacion.png",
-            //                     "player_id": 2,
-            //                     "game_id": 1
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
             //                 }
             //             ]
             //         },
             //         {
             //             "id": 3,
-            //             "name": "Charlie",
-            //             "birth_date": "1995-03-15",
-            //             "avatar": "avatar/avatar3.png",
+            //             "name": "Jugador_1_2",
+            //             "avatar": "avatar/avatar2.png",
             //             "turn": 3,
-            //             "game_id": 1,
-            //             "hand": []
-            //         }, {
+            //             "playerSecrets": [
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 },
+            //                 {
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 }
+            //             ]
+            //         },
+            //         {
             //             "id": 4,
-            //             "name": "Charlie",
-            //             "birth_date": "1995-03-15",
-            //             "avatar": "avatar/avatar4.png",
+            //             "name": "Jugador_1_2",
+            //             "avatar": "avatar/avatar2.png",
             //             "turn": 4,
-            //             "game_id": 1,
-            //             "hand": []
-            //         }, {
+            //             "playerSecrets": [
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 },
+            //                 {
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 }
+            //             ]
+            //         },
+            //         {
             //             "id": 5,
-            //             "name": "Charlie",
-            //             "birth_date": "1995-03-15",
-            //             "avatar": "avatar/avatar5.png",
+            //             "name": "Jugador_1_2",
+            //             "avatar": "avatar/avatar2.png",
             //             "turn": 5,
-            //             "game_id": 1,
-            //             "hand": []
-            //         }, {
+            //             "playerSecrets": [
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 },
+            //                 {
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 }
+            //             ]
+            //         },
+            //         {
             //             "id": 6,
-            //             "name": "Charlie",
-            //             "birth_date": "1995-03-15",
-            //             "avatar": "avatar/avatar6.png",
+            //             "name": "Jugador_1_2",
+            //             "avatar": "avatar/avatar2.png",
             //             "turn": 6,
-            //             "game_id": 1,
-            //             "hand": []
+            //             "playerSecrets": [
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 },
+            //                 {
+            //                     "secret_id": 4,
+            //                     "revealed": true,
+            //                     "secret_type": "Murder",
+            //                     "image_back_name": "06-secret_back"
+            //                 },
+            //                 {
+            //                     "revealed": false,
+            //                     "image_front_name": "05-secret_front"
+            //                 }
+            //             ]
             //         }
             //     ]
             // };
@@ -139,182 +214,210 @@ function Game() {
 
 
 
-    const PlayerCard = ({ player }) => (
+    const PlayerCard = ({ player }) => {
+        if (!player || !turnData) return null;
+        
+        return (
         <div className={player.id === turnData.turn_owner_id ?
-            "h-full w-full flex flex-col items-center max-w-80 max-h-50 p-2 rounded-xl bg-orange-950/50"
+            "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
             :
-            "h-full w-full flex flex-col items-center max-w-80 max-h-50 p-2"
+            "w-72 h-48 flex flex-col items-center flex-shrink-0"
         }>
             {/* Avatar y Nombre */}
-            < div className="flex items-center h-[30%] gap-2 p-1" >
+            <div className="flex items-center justify-center h-16 w-full gap-2">
                 <div className={player.id === turnData.turn_owner_id ?
-                    "rounded-full bg-cover border border-yellow-400 h-[100%] aspect-square scale-125 transition-all duration-300 transform"
+                    "rounded-full bg-cover border-2 border-yellow-400 w-10 h-10 scale-110 transition-all duration-300 transform flex-shrink-0"
                     :
-                    "rounded-full bg-cover border border-gray-400 h-[100%] aspect-square"}
+                    "rounded-full bg-cover border-2 border-gray-400 w-10 h-10 flex-shrink-0"}
                     style={{ backgroundImage: `url(public/${player.avatar})` }}></div>
                 <p className={
                     player.id === turnData.turn_owner_id ?
-                        "text-white text-s font-bold"
+                        "text-white text-sm font-bold truncate"
                         :
-                        "text-white text-s"
-                } > {player.name}</p>
-            </div >
+                        "text-white text-sm truncate"
+                }>{player.name}</p>
+            </div>
 
             {/* Secretos */}
-            < div className="flex justify-around items-center gap-3 h-[70%] m-3" >
-                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
-                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
+            <div className="flex justify-around items-center flex-1 w-full">
+                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[0]?.revealed ?
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
+                    :
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
+                }
+                    style={
+                        player.playerSecrets?.[0]?.revealed || player.id === parseInt(myPlayerId)
+                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_back_name}.png)` }
+                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_front_name}.png)` }
+                    }>
                 </div>
-                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
-                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
+                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[1]?.revealed ?
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
+                    :
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
+                }
+                    style={
+                        player.playerSecrets?.[1]?.revealed || player.id === parseInt(myPlayerId)
+                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_back_name}.png)` }
+                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_front_name}.png)` }
+                    }>
                 </div>
-                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
-                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
+                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[2]?.revealed ?
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
+                    :
+                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
+                }
+                    style={
+                        player.playerSecrets?.[2]?.revealed || player.id === parseInt(myPlayerId)
+                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_back_name}.png)` }
+                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_front_name}.png)` }
+                    }>
                 </div>
-            </div >
+            </div>
         </div >
-    );
+        );
+    };
 
     const Players = () => {
         const playerCount = turnData.players_amount;
         switch (playerCount) {
             case 2:
                 return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
                         style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
                         {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center">
+                        <div className="flex justify-evenly items-center px-4">
                             {<PlayerCard player={orderedPlayers[1]} />}
                         </div>
 
-                        <div className="grid grid-cols-[15%_70%_15%]">
+                        <div className="grid grid-cols-[20%_60%_20%]">
                             {/* bloque izquierdo */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                             </div>
                             {/* bloque central (mesa)*/}
                             <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5"></div>
                             {/* bloque derecho */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                             </div>
                         </div>
 
                         {/* bloque inferior */}
-                        <div className="flex items-center">
-                            {<PlayerCard player={orderedPlayers[0]} />}
+                        <div className="flex items-center px-4">
+                            {<PlayerCard player={playerData} />}
                         </div>
                     </div>
                 );
             case 3:
                 return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
                         style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
                         {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center">
+                        <div className="flex justify-evenly items-center px-4">
                             {<PlayerCard player={orderedPlayers[1]} />}
                             {<PlayerCard player={orderedPlayers[2]} />}
                         </div>
 
-                        <div className="grid grid-cols-[15%_70%_15%]">
+                        <div className="grid grid-cols-[20%_60%_20%]">
                             {/* bloque izquierdo */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                             </div>
                             {/* bloque central (mesa)*/}
                             <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5"></div>
                             {/* bloque derecho */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                             </div>
                         </div>
 
                         {/* bloque inferior */}
-                        <div className="flex items-center">
-                            {<PlayerCard player={orderedPlayers[0]} />}
+                        <div className="flex items-center px-4">
+                            {<PlayerCard player={playerData} />}
                         </div>
                     </div>
                 );
             case 4:
                 return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
                         style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
                         {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center">
+                        <div className="flex justify-evenly items-center px-4">
                             {<PlayerCard player={orderedPlayers[2]} />}
                         </div>
 
-                        <div className="grid grid-cols-[15%_70%_15%]">
+                        <div className="grid grid-cols-[20%_60%_20%]">
                             {/* bloque izquierdo */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[1]} />}
                             </div>
                             {/* bloque central (mesa)*/}
                             <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5"></div>
                             {/* bloque derecho */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[3]} />}
                             </div>
                         </div>
 
                         {/* bloque inferior */}
-                        <div className="flex items-center">
-                            {<PlayerCard player={orderedPlayers[0]} />}
+                        <div className="flex items-center px-4">
+                            {<PlayerCard player={playerData} />}
                         </div>
                     </div>
                 );
             case 5:
                 return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
                         style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
                         {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center">
+                        <div className="flex justify-evenly items-center px-4">
                             {<PlayerCard player={orderedPlayers[2]} />}
                             {<PlayerCard player={orderedPlayers[3]} />}
                         </div>
 
-                        <div className="grid grid-cols-[15%_70%_15%]">
+                        <div className="grid grid-cols-[20%_60%_20%]">
                             {/* bloque izquierdo */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[1]} />}
                             </div>
                             {/* bloque central (mesa)*/}
                             <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5"></div>
                             {/* bloque derecho */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[4]} />}
                             </div>
                         </div>
 
                         {/* bloque inferior */}
-                        <div className="flex items-center">
-                            {<PlayerCard player={orderedPlayers[0]} />}
+                        <div className="flex items-center px-4">
+                            {<PlayerCard player={playerData} />}
                         </div>
                     </div>
                 );
             case 6:
                 return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
                         style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
                         {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center">
+                        <div className="flex justify-evenly items-center px-4">
                             {<PlayerCard player={orderedPlayers[2]} />}
                             {<PlayerCard player={orderedPlayers[3]} />}
                             {<PlayerCard player={orderedPlayers[4]} />}
                         </div>
 
-                        <div className="grid grid-cols-[15%_70%_15%]">
+                        <div className="grid grid-cols-[20%_60%_20%]">
                             {/* bloque izquierdo */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[1]} />}
                             </div>
                             {/* bloque central (mesa)*/}
                             <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5"></div>
                             {/* bloque derecho */}
-                            <div className="flex items-center">
+                            <div className="flex items-center px-2">
                                 {<PlayerCard player={orderedPlayers[5]} />}
                             </div>
                         </div>
 
                         {/* bloque inferior */}
-                        <div className="flex items-center">
-                            {<PlayerCard player={orderedPlayers[0]} />}
+                        <div className="flex items-center px-4">
+                            {<PlayerCard player={playerData} />}
                         </div>
                     </div>
                 );
