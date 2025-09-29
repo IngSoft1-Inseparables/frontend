@@ -14,7 +14,7 @@ const AVATARS = [
 ]
 
 export default function JoinGameDialog({ onClose, partidaId }) {
-  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '' , idAvatar: null })
+  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '', idAvatar: null })
   const [avatarError, setAvatarError] = useState(false)
   const avatarsRef = useRef(null)
   const navigate = useNavigate()
@@ -27,10 +27,22 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     setForm((f) => ({ ...f, idAvatar: f.idAvatar === id ? null : id }))
   }
 
+  const today = (() => {
+    const d = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+  const isFormValid =
+    form.nombreUsuario.trim() !== '' &&
+    form.fechaNacimiento !== '' &&
+    form.fechaNacimiento <= today &&
+    form.idAvatar !== null
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.idAvatar) {
-      setAvatarError(true)
+    if (!isFormValid) {
+      setAvatarError(!form.idAvatar)
       return
     }
 
@@ -42,7 +54,6 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     }
 
     try {
-      console.log('Unirse:', payload)
       const httpService = createHttpService()
       const data = await httpService.joinLobby(
         payload.partidaId,
@@ -59,19 +70,13 @@ export default function JoinGameDialog({ onClose, partidaId }) {
           replace: true,
         })
       } else if (data.status_code === 400) {
-        alert("La fecha de nacimiento es inválida o la partida está llena")
+        alert('La fecha de nacimiento es inválida o la partida está llena')
       }
     } catch (error) {
       console.error('Error al unirse a la partida:', error)
-      alert("Error al unirse a la partida")
+      alert('Error al unirse a la partida')
     }
   }
-
-  const today = (() => {
-    const d = new Date()
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-  })()
 
   return (
     <div
@@ -85,13 +90,14 @@ export default function JoinGameDialog({ onClose, partidaId }) {
         <h2 className="text-2xl font-bold mb-4">Unirse a una partida</h2>
 
         <form className="grid gap-3" onSubmit={handleSubmit}>
-          <label className="grid gap-1">
+          <label className="grid gap-1 label">
             Nombre de usuario
             <input
               name="nombreUsuario"
               value={form.nombreUsuario}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2"
+              className="border border-gray-300 rounded-lg px-4 py-2 "
+              data-testid="input-username"
               required
             />
           </label>
@@ -105,6 +111,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               value={form.fechaNacimiento}
               onChange={handleChange}
               className="border border-gray-300 rounded-lg px-4 py-2"
+              data-testid="input-fechaNacimiento"
               required
             />
           </label>
@@ -118,6 +125,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               role="radiogroup"
               aria-label="Selección de avatar"
               aria-invalid={avatarError ? 'true' : 'false'}
+              data-testid="avatar-group"
             >
               {AVATARS.map((a) => {
                 const selected = form.idAvatar === a.id
@@ -142,7 +150,10 @@ export default function JoinGameDialog({ onClose, partidaId }) {
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="submit"
-              className="text-white px-4 py-2 rounded-lg my-button"
+              disabled={!isFormValid} 
+              className={`${
+                !isFormValid ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               Unirse
             </button>
