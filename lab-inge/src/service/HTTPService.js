@@ -25,7 +25,7 @@ const createHttpService = () => {
     }
   };
 
-  const getGames = () => request("/games");
+  const getGames = () => request("/games/list?available=true");
 
   const getGame = (gameId) => request(`/game/${gameId}`);
 
