@@ -2,7 +2,7 @@ import { vi } from "vitest";
 
 // Mock de React Router - para verificar navegación y state
 const mockLocation = {
-  state: { gameId: 1, myplayerId: 2 }
+  state: { gameId: 1, myPlayerId: 2 }
 };
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -33,6 +33,7 @@ describe("Game component", () => {
   // Datos de partida por defecto que retorna el mock HTTP
   const defaultTurnData = {
     players_amount: 4,
+    turn_owner_id: 2,
     players: [
       {
         id: 1,
@@ -62,7 +63,7 @@ describe("Game component", () => {
   };
 
   // Helper para renderizar con Router context y state
-  const renderWithRouter = (initialState = { gameId: 1, myplayerId: 2 }) => {
+  const renderWithRouter = (initialState = { gameId: 1, myPlayerId: 2 }) => {
     mockLocation.state = initialState;
     return render(
       <MemoryRouter initialEntries={[{ pathname: "/game", state: initialState }]}>
@@ -98,6 +99,7 @@ describe("Game component", () => {
     // TEST: Verifica el layout para partida de 2 jugadores
     const twoPlayerData = {
       players_amount: 2,
+      turn_owner_id: 1,
       players: [
         { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1 },
         { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2 }
@@ -117,6 +119,7 @@ describe("Game component", () => {
     // TEST: Verifica el layout para partida de 3 jugadores
     const threePlayerData = {
       players_amount: 3,
+      turn_owner_id: 2,
       players: [
         { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1 },
         { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2 },
@@ -150,6 +153,7 @@ describe("Game component", () => {
     // TEST: Verifica el layout para partida de 5 jugadores
     const fivePlayerData = {
       players_amount: 5,
+      turn_owner_id: 3,
       players: [
         { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1 },
         { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2 },
@@ -175,6 +179,7 @@ describe("Game component", () => {
     // TEST: Verifica el layout para partida de 6 jugadores
     const sixPlayerData = {
       players_amount: 6,
+      turn_owner_id: 4,
       players: [
         { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1 },
         { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2 },
@@ -199,8 +204,8 @@ describe("Game component", () => {
   });
 
   it("ordena los jugadores correctamente poniendo al jugador actual primero", async () => {
-    // TEST: Verifica que el jugador actual (myplayerId=2) aparece primero en el orden
-    renderWithRouter({ gameId: 1, myplayerId: 2 });
+    // TEST: Verifica que el jugador actual (myPlayerId=2) aparece primero en el orden
+    renderWithRouter({ gameId: 1, myPlayerId: 2 });
     
     await waitFor(() => {
       // El jugador 2 debería aparecer primero en el orden
@@ -220,6 +225,7 @@ describe("Game component", () => {
     // TEST: Verifica que el reordenamiento funciona incluso con jugadores fuera de orden
     const unorderedTurnData = {
       players_amount: 4,
+      turn_owner_id: 2,
       players: [
         { id: 4, name: "Jugador4", avatar: "avatars/avatar4.png", turn: 4 },
         { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1 },
@@ -229,7 +235,7 @@ describe("Game component", () => {
     };
     mockHttp.getPublicTurnData.mockResolvedValue(unorderedTurnData);
     
-    renderWithRouter({ gameId: 1, myplayerId: 2 }); // Jugador 2 debería estar primero
+    renderWithRouter({ gameId: 1, myPlayerId: 2 }); // Jugador 2 debería estar primero
     
     await waitFor(() => {
       // Verifica que la llamada HTTP se hizo correctamente
@@ -263,11 +269,12 @@ describe("Game component", () => {
     const defaultPlayerId = 1;
     
     // Mock con valores por defecto cuando no hay state
-    mockLocation.state = { gameId: defaultGameId, myplayerId: defaultPlayerId };
+    mockLocation.state = { gameId: defaultGameId, myPlayerId: defaultPlayerId };
     
     // Mock data para el caso por defecto
     const defaultTurnData = {
       players_amount: 2,
+      turn_owner_id: 1,
       players: [
         { id: 1, name: "Player1", avatar: "avatars/avatar1.png", turn: 1 },
         { id: 2, name: "Player2", avatar: "avatars/avatar2.png", turn: 2 }
