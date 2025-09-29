@@ -33,7 +33,7 @@ function WaitingRoom() {
 
     const fetchGameData = async () => {
         try {
-            const gameData = await httpService.getPartida(gameId);
+            const gameData = await httpService.getGame(gameId);
 
             setHostView(gameData.hostId == myPlayerId);
             setMinPlayers(gameData.minPlayers);
