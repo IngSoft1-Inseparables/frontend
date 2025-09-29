@@ -13,12 +13,24 @@ const createHttpService = () => {
 
         try {
             const response = await fetch(url, config);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            
+            // Intentar parsear el JSON siempre
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                responseData = { detail: `HTTP error! status: ${response.status}` };
             }
 
-            return await response.json();
+            if (!response.ok) {
+                // Crear error enriquecido con información del servidor
+                const error = new Error(responseData.detail || `HTTP error! status: ${response.status}`);
+                error.status = response.status;
+                error.data = responseData;
+                throw error;
+            }
+
+            return responseData;
         } catch (error) {
             console.error('API request failed:', error);
             throw error;
@@ -45,10 +57,10 @@ const createHttpService = () => {
         });
     };
 
-    const joinLobby = (partidaId, nombre_usuario, fecha_nacimiento) => request(`/unirse`, {
+    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/unirse`, {
         method: 'POST',
         body: JSON.stringify({
-            partidaId,
+            partida_id,
             nombre_usuario,
             fecha_nacimiento
         })

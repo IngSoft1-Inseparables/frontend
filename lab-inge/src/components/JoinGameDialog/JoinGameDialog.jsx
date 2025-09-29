@@ -61,20 +61,24 @@ export default function JoinGameDialog({ onClose, partidaId }) {
         payload.fecha_nacimiento
       )
 
-      if (data.status_code === 200) {
-        navigate('/waiting', {
-          state: {
-            gameId: payload.partidaId,
-            myPlayerId: payload.nombre_usuario,
-          },
-          replace: true,
-        })
-      } else if (data.status_code === 400) {
-        alert('La fecha de nacimiento es inválida o la partida está llena')
-      }
+      // Si llegamos aquí, la request fue exitosa (200)
+      console.log('Unido exitosamente:', data)
+      navigate('/waiting', {
+        state: {
+          gameId: payload.partidaId,
+          myPlayerId: data.player_id || payload.nombre_usuario, // Usar el ID real del backend
+        },
+        replace: true,
+      })
+
     } catch (error) {
       console.error('Error al unirse a la partida:', error)
-      alert('Error al unirse a la partida')
+      
+      if (error.status === 400) {
+        alert('La fecha de nacimiento es inválida o la partida está llena')
+      } else {
+        alert('Error al unirse a la partida')
+      }
     }
   }
 

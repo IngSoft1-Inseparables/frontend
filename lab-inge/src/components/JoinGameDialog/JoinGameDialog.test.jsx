@@ -90,8 +90,10 @@ test('submit con fecha futura deshabilita el botón', async () => {
 test('submit con datos correctos pero el servidor responde error muestra alert', async () => {
   // ARRANGE
   const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
-  joinLobbyMock.mockResolvedValueOnce({ status_code: 400 }) //
-  
+  const errorResponse = new Error('400 badRequest')
+  errorResponse.status = 400
+  joinLobbyMock.mockRejectedValueOnce(errorResponse)
+
   render(
       <JoinGameDialog onClose={() => {}} partidaId={123} />
   )
