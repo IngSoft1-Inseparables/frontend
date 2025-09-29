@@ -45,18 +45,11 @@ const createHttpService = () => {
     });
   };
 
-  const createGame = async (playerData, formDataGame) => {
-    const response = await fetch("/game", {
+  const createGame = (formData) =>
+    request("/games/create", {
       method: "POST",
-      body: JSON.stringify({ playerData, formDataGame }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to create game");
-    }
-
-    return await response.json(); //espera a que la reespuesta se convierta en json, para tner los datos listos
-  };
+      body: JSON.stringify(formData),
+    }); 
 
   //   const getContacts = async (filters = {}) => {
   //     const params = new URLSearchParams();
