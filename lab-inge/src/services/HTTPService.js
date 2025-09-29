@@ -73,11 +73,11 @@ const createHttpService = () => {
     }
     );
 
-    // MOCK de getHand 
-    const getHand = async (gameId, playerId) => {
-        await new Promise((resolve) => setTimeout(resolve, 300)); 
-        return { hand: [1, 2, 3, 4, 5, 6] }; 
-    };
+    const getHand = (gameId, playerId) => {
+    return request(`/games/${gameId}/turn/${playerId}`, {
+        method: 'GET'
+    });
+};
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();

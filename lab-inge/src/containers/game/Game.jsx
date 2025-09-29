@@ -7,7 +7,7 @@ const httpService = createHttpService();
 
 function Game() {
 
-    const [hand, setHand] = useState([]);
+    const [hand, setHand] = useState([7, 8, 9, 10, 11, 12]); 
 
     // mockeo de IDs de partida/jugador
     const gameId = 1;
@@ -19,7 +19,8 @@ function Game() {
                 const data = await httpService.getHand(gameId, playerId);
                 console.log("Respuesta completa del backend:", data);
                 console.log("Cartas en mano:", data.hand);
-                setHand(data.hand);
+                const cardIds = data.playerCards.map(c => c.card_id);
+                setHand(cardIds);
             } catch (error) {
                 console.error("Error obteniendo la mano:", error);
             }
@@ -88,7 +89,7 @@ function Game() {
 
             {/* Mano del jugador */}
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                <HandCard cardIds={[1, 2, 3, 4, 5, 6]} />
+                <HandCard cardIds={hand} />
             </div>
 
             {/* Cuadro Central */}
