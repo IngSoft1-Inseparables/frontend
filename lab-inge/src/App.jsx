@@ -1,16 +1,16 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import WaitingRoom from './containers/waitingRoom/WaitingRoom';
-import Game from './containers/game/Game';
-import Lobby from './containers/lobby/Lobby';
+import './App.css';
+import Home from './containers/homePages/HomePage';
+import GameList from './containers/gameList/GameList';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+
 
 function App() {
   return (
-    <BrowserRouter>
+   <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Lobby />} />
-        <Route path="/lobby" element={<Lobby />} />
-        <Route path="/waiting" element={<WaitingRoom />} />
-        <Route path="/game" element={<Game />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/gameList" element={<GameList />} />
       </Routes>
     </BrowserRouter>
   );
