@@ -1,4 +1,7 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { createHttpService } from '../../services/HTTPService.js'
+
 import './JoinGameDialog.css'
 
 const AVATARS = [
@@ -10,11 +13,11 @@ const AVATARS = [
   { id: 6, src: '/6.png', alt: 'Avatar 6' },
 ]
 
-export default function JoinGameDialog({ onClose, onSubmit }) {
-  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '' , idAvatar: null})
-
+export default function JoinGameDialog({ onClose, partidaId }) {
+  const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '', idAvatar: null })
   const [avatarError, setAvatarError] = useState(false)
   const avatarsRef = useRef(null)
+  const navigate = useNavigate()
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
@@ -24,45 +27,81 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
     setForm((f) => ({ ...f, idAvatar: f.idAvatar === id ? null : id }))
   }
 
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!form.idAvatar) {
-      setAvatarError(true)
-      return
-    }
-    onSubmit?.(form)
-  }
-
   const today = (() => {
     const d = new Date()
     const pad = (n) => String(n).padStart(2, '0')
-    const yyyy = d.getFullYear()
-    const mm = pad(d.getMonth() + 1)
-    const dd = pad(d.getDate())
-  return `${yyyy}-${mm}-${dd}`
-})()
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+  const isFormValid =
+    form.nombreUsuario.trim() !== '' &&
+    form.fechaNacimiento !== '' &&
+    form.fechaNacimiento <= today &&
+    form.idAvatar !== null
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!isFormValid) {
+      setAvatarError(!form.idAvatar)
+      return
+    }
+
+    const payload = {
+      partidaId,
+      nombre_usuario: form.nombreUsuario,
+      fecha_nacimiento: form.fechaNacimiento,
+      idAvatar: form.idAvatar,
+    }
+
+    try {
+      const httpService = createHttpService()
+      const data = await httpService.joinLobby(
+        payload.partidaId,
+        payload.nombre_usuario,
+        payload.fecha_nacimiento
+      )
+
+      // Si llegamos aquí, la request fue exitosa (200)
+      console.log('Unido exitosamente:', data)
+      navigate('/waiting', {
+        state: {
+          gameId: payload.partidaId,
+          myPlayerId: data.player_id || payload.nombre_usuario, // Usar el ID real del backend
+        },
+        replace: true,
+      })
+
+    } catch (error) {
+      console.error('Error al unirse a la partida:', error)
+      
+      if (error.status === 400) {
+        alert('La fecha de nacimiento es inválida o la partida está llena')
+      } else {
+        alert('Error al unirse a la partida')
+      }
+    }
+  }
 
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center"
-      onClick={onClose}                     // cerrar al clickear el fondo
-    
+      onClick={onClose}
     >
       <div
         className="rounded-lg p-6 my-form"
-        onClick={(e) => e.stopPropagation()} // no cerrar al click dentro
+        onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-2xl font-bold mb-4">Unirse a una partida</h2>
 
         <form className="grid gap-3" onSubmit={handleSubmit}>
-          <label className="grid gap-1">
+          <label className="grid gap-1 label">
             Nombre de usuario
             <input
               name="nombreUsuario"
               value={form.nombreUsuario}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2"
+              className="border border-gray-300 rounded-lg px-4 py-2 "
+              data-testid="input-username"
               required
             />
           </label>
@@ -71,26 +110,27 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
             Fecha de nacimiento
             <input
               type="date"
-              max = {today} // no permitir fechas futuras
+              max={today}
               name="fechaNacimiento"
               value={form.fechaNacimiento}
               onChange={handleChange}
               className="border border-gray-300 rounded-lg px-4 py-2"
+              data-testid="input-fechaNacimiento"
               required
             />
           </label>
 
-           {/*Seleccion de Avatar*/}
+          {/* Selección de Avatar */}
           <div className="grid gap-2">
-
-              <div
+            <div
               ref={avatarsRef}
               tabIndex={-1}
               className={`avatar-grid ${avatarError ? 'avatar-grid--error' : ''}`}
               role="radiogroup"
               aria-label="Selección de avatar"
               aria-invalid={avatarError ? 'true' : 'false'}
-              >
+              data-testid="avatar-group"
+            >
               {AVATARS.map((a) => {
                 const selected = form.idAvatar === a.id
                 return (
@@ -111,11 +151,13 @@ export default function JoinGameDialog({ onClose, onSubmit }) {
             </div>
           </div>
 
-
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="submit"
-              className="text-white px-4 py-2 rounded-lg my-button"
+              disabled={!isFormValid} 
+              className={`my-button ${
+                !isFormValid ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
             >
               Unirse
             </button>

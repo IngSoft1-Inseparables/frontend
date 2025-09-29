@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import background from '../assets/background.png'
 import JoinGameDialog from '../components/JoinGameDialog/JoinGameDialog.jsx'
+import { createHttpService } from '../services/HTTPService.js'
+import { useNavigate } from "react-router-dom";
+
 
 function GameList() {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
+  /* const navigate = useNavigate(); */
 
   return (
     <div
@@ -12,7 +16,9 @@ function GameList() {
        onKeyDown={(e) => 
         {
             console.log("apreta la tecla:", e.key);
-            e.key === 'Escape' && setOpen(false)}} // cerrar con Escape
+            e.key === 'Escape' && setOpen(false)
+        }
+       } // cerrar con Escape
     >
       {/* botón para abrir el diálogo */}
       <button
@@ -26,12 +32,9 @@ function GameList() {
       {open && (
         <JoinGameDialog
           onClose={() => setOpen(false)}
-          onSubmit={(payload) => {
-            console.log('Unirse:', payload)
-            // llamar al backend (metodo POST.... etc)
-            setOpen(false)  
-          }}
-        />
+          partidaId={() => 1}
+          />
+        
       )}
     </div>
   )

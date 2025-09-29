@@ -13,6 +13,14 @@ const createHttpService = () => {
 
         try {
             const response = await fetch(url, config);
+            
+            // Intentar parsear el JSON siempre
+            let responseData;
+            try {
+                responseData = await response.json();
+            } catch (parseError) {
+                responseData = { detail: `HTTP error! status: ${response.status}` };
+            }
 
             let responseData;
             try {
@@ -58,6 +66,17 @@ const createHttpService = () => {
         });
     };
 
+
+    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/unirse`, {
+        method: 'POST',
+        body: JSON.stringify({
+            partida_id,
+            nombre_usuario,
+            fecha_nacimiento
+        })
+    }
+    );
+
     const getPublicTurnData = (gameId) => {
         if (!gameId) {
             throw new Error('Game ID is required');
@@ -74,6 +93,7 @@ const createHttpService = () => {
         }
         return request(`/games/${gameId}/turn/${playerId}`);
     };
+
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -109,9 +129,11 @@ const createHttpService = () => {
         getGame,
         getGames,
         startGame,
+        joinLobby,
         joinGame,
         getPublicTurnData,
         getPrivatePlayerData
+
         // getContacts,
         // getContact,
         // createContact,
