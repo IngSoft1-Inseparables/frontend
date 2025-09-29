@@ -16,7 +16,7 @@ function Lobby() {
         }
 
         try{
-            await httpService.joinGame(data);
+            // await httpService.joinGame(data);
 
             navigate('/waiting', {
                 state: {

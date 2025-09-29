@@ -1,70 +1,299 @@
-import background from "/src/assets/game/game_bg.png"
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { createHttpService } from "../../services/HTTPService";
 
 function Game() {
-    // Player Card
-    const PlayerCard = ({ playerName }) => (
-        <div className="rounded-lg bg-neutral-900/80 p-3 shadow-xl backdrop-blur-sm border border-gray-600/50 w-[12vw] h-[15vh] min-w-[140px] min-h-[100px] max-w-[200px] max-h-[150px] flex items-center">
-            <div className="w-full h-[85%] flex flex-col justify-between">
-                {/* nombre y avatar */}
-                <div className="flex items-center justify-evenly h-[10%]">
-                    <div className="flex justify-center">
-                        <div className="bg-red-500 border border-gray-400 rounded-full shadow-md w-[2vw] h-[2vw] min-w-[20px] min-h-[20px] max-w-[35px] max-h-[35px] flex-shrink-0" />
-                    </div>
-                    <div className="text-center flex-1">
-                        <p className="text-white font-bold text-[1vw] min-text-[8px] max-text-[14px] truncate px-1">{playerName}</p>
-                    </div>
-                </div>
+    const location = useLocation();
 
-                {/* 3 secretos */}
-                <div className="flex justify-center gap-[0.3vw] h-[90%] items-center">
-                    <div
-                        className="w-[1.5vw] h-[3vh] min-w-[18px] min-h-[24px] max-w-[25px] max-h-[35px] border border-gray-400 rounded-sm shadow-md bg-cover bg-center flex-shrink-0"
-                        style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}
-                    />
-                    <div
-                        className="w-[1.5vw] h-[3vh] min-w-[18px] min-h-[24px] max-w-[25px] max-h-[35px] border border-gray-400 rounded-sm shadow-md bg-cover bg-center flex-shrink-0"
-                        style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}
-                    />
-                    <div
-                        className="w-[1.5vw] h-[3vh] min-w-[18px] min-h-[24px] max-w-[25px] max-h-[35px] border border-gray-400 rounded-sm shadow-md bg-cover bg-center flex-shrink-0"
-                        style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}
-                    />
+    const { gameId = 1, myplayerId = 2 } = location.state || {};
+
+    const [turnData, setTurnData] = useState(null);
+    const [orderedPlayers, setOrderedPlayers] = useState([]);
+    // const [httpService] = createHttpService();
+
+    const fetchTurnData = async () => {
+        try {
+            // const turnData = await httpService.getPublicTurnData(gameId);
+
+            const turnData = {
+                "id": 1,
+                "game_name": "Misterio en la Mansión",
+                "min_players": 2,
+                "max_players": 6,
+                "playersAmount": 3,
+                "in_progress": false,
+                "available": true,
+                "creator_name": "Detective John",
+                "creator_id": 101,
+                "turn_owner_id": 102,
+                "players": [
+                    {
+                        "id": 1,
+                        "name": "Alice",
+                        "birth_date": "1998-05-21",
+                        "avatar": "avatar/avatar5.png",
+                        "turn": 1,
+                        "game_id": 1,
+                        "hand": [
+                            {
+                                "card_id": 10,
+                                "type": "personaje",
+                                "is_discard": false,
+                                "card_name": "Coronel Mostaza",
+                                "image_name": "coronel_mostaza.png",
+                                "image_back_name": "back_personaje.png",
+                                "player_id": 1,
+                                "game_id": 1
+                            },
+                            {
+                                "card_id": 11,
+                                "type": "arma",
+                                "is_discard": false,
+                                "card_name": "Candelabro",
+                                "image_name": "candelabro.png",
+                                "image_back_name": "back_arma.png",
+                                "player_id": 1,
+                                "game_id": 1
+                            }
+                        ],
+                        "secrets" : [
+
+                        ]
+                    },
+                    {
+                        "id": 2,
+                        "name": "Bob",
+                        "birth_date": "2000-11-02",
+                        "avatar": "avatar/avatar3.png",
+                        "turn": 2,
+                        "game_id": 1,
+                        "hand": [
+                            {
+                                "card_id": 12,
+                                "type": "habitacion",
+                                "is_discard": false,
+                                "card_name": "Biblioteca",
+                                "image_name": "biblioteca.png",
+                                "image_back_name": "back_habitacion.png",
+                                "player_id": 2,
+                                "game_id": 1
+                            }
+                        ]
+                    },
+                    {
+                        "id": 3,
+                        "name": "Charlie",
+                        "birth_date": "1995-03-15",
+                        "avatar": "avatar/avatar6.png",
+                        "turn": 3,
+                        "game_id": 1,
+                        "hand": []
+                    }
+                ]
+            };
+
+            setTurnData(turnData);
+
+            const sortedByTurn = turnData.players.sort((a, b) => a.turn - b.turn);
+            const myPlayerIndex = sortedByTurn.findIndex(player => player.id === (myplayerId));
+
+            const myPlayer = sortedByTurn[myPlayerIndex];
+            const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+            const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+
+            const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
+            setOrderedPlayers(reorderedPlayers);
+
+        } catch (error) {
+            console.error("Failed obtaining game data:", error);
+        }
+    };
+
+    useEffect(() => {
+        fetchTurnData();
+    }, []);
+
+
+
+    const PlayerCard = ({ player }) => (
+        <div className="h-full w-full flex flex-col items-center max-w-80 max-h-50 p-2">
+            {/* Avatar y Nombre */}
+            <div className="flex items-center h-[30%] gap-2 p-1">
+                <div className="rounded-full bg-cover border border-gray-400 h-[100%] aspect-square"
+                    style={{ backgroundImage: `url(public/${player.avatar})` }}></div>
+                <p className="text-white text-s">{player.name}</p>
+            </div>
+
+            {/* Secretos */}
+            <div className="flex justify-around items-center gap-3 h-[70%] m-3">
+                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
+                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
+                </div>
+                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
+                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
+                </div>
+                <div className="aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm h-[100%]"
+                    style={{ backgroundImage: "url(/src/assets/game/05-secret_front.png)" }}>
                 </div>
             </div>
         </div>
     );
 
+    const Players = () => {
+        const playerCount = turnData.playersAmount;
+        switch (playerCount) {
+            case 2:
+                return (
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
+                        {/* bloque superior (players cards)*/}
+                        <div className="flex justify-evenly items-center">
+                            {<PlayerCard player={orderedPlayers[1]} />}
+                        </div>
+
+                        <div className="grid grid-cols-[15%_70%_15%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center">
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl"></div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center">
+                            </div>
+                        </div>
+
+                        {/* bloque inferior */}
+                        <div className="flex items-center">
+                            {<PlayerCard player={orderedPlayers[0]} />}
+                        </div>
+                    </div>
+                );
+            case 3:
+                return (
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
+                        {/* bloque superior (players cards)*/}
+                        <div className="flex justify-evenly items-center">
+                            {<PlayerCard player={orderedPlayers[1]} />}
+                            {<PlayerCard player={orderedPlayers[2]} />}
+                        </div>
+
+                        <div className="grid grid-cols-[15%_70%_15%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center">
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl"></div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center">
+                            </div>
+                        </div>
+
+                        {/* bloque inferior */}
+                        <div className="flex items-center">
+                            {<PlayerCard player={orderedPlayers[0]} />}
+                        </div>
+                    </div>
+                );
+            case 4:
+                return (
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
+                        {/* bloque superior (players cards)*/}
+                        <div className="flex justify-evenly items-center">
+                            {<PlayerCard player={orderedPlayers[2]} />}
+                        </div>
+
+                        <div className="grid grid-cols-[15%_70%_15%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl"></div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[3]} />}
+                            </div>
+                        </div>
+
+                        {/* bloque inferior */}
+                        <div className="flex items-center">
+                            {<PlayerCard player={orderedPlayers[0]} />}
+                        </div>
+                    </div>
+                );
+            case 5:
+                return (
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
+                        {/* bloque superior (players cards)*/}
+                        <div className="flex justify-evenly items-center">
+                            {<PlayerCard player={orderedPlayers[2]} />}
+                            {<PlayerCard player={orderedPlayers[3]} />}
+                        </div>
+
+                        <div className="grid grid-cols-[15%_70%_15%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl"></div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[4]} />}
+                            </div>
+                        </div>
+
+                        {/* bloque inferior */}
+                        <div className="flex items-center">
+                            {<PlayerCard player={orderedPlayers[0]} />}
+                        </div>
+                    </div>
+                );
+            case 6:
+                return (
+                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover"
+                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
+                        {/* bloque superior (players cards)*/}
+                        <div className="flex justify-evenly items-center">
+                            {<PlayerCard player={orderedPlayers[2]} />}
+                            {<PlayerCard player={orderedPlayers[3]} />}
+                            {<PlayerCard player={orderedPlayers[4]} />}
+                        </div>
+
+                        <div className="grid grid-cols-[15%_70%_15%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl"></div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center">
+                                {<PlayerCard player={orderedPlayers[5]} />}
+                            </div>
+                        </div>
+
+                        {/* bloque inferior */}
+                        <div className="flex items-center">
+                            {<PlayerCard player={orderedPlayers[0]} />}
+                        </div>
+                    </div>
+                );
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-cover bg-center relative overflow-hidden" style={{ backgroundImage: `url(${background})` }}>
-
-            {/* Player Card Superior */}
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
-                <PlayerCard playerName="Jugador1" />
-            </div>
-
-            {/* Player Cards Izquierda */}
-            <div className="absolute left-2 top-1/2 transform -translate-y-1/2 space-y-[10vh] z-10">
-                <PlayerCard playerName="Jugador2" />
-                <PlayerCard playerName="Jugador3" />
-            </div>
-
-            {/* Player Cards Derecha */}
-            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 space-y-[10vh] z-10">
-                <PlayerCard playerName="Jugador4" />
-                <PlayerCard playerName="Jugador5" />
-            </div>
-
-            {/* Player Card Inferior */}
-            <div className="absolute bottom-2 left-1/5 transform -translate-x-1/2 z-10">
-                <PlayerCard playerName="Jugador6" />
-            </div>
-
-            {/* Cuadro Central */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[75vw] h-[75vh] bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl flex items-center justify-center">
-                <div className="text-center">
+        <div className="h-screen w-screen">
+            {orderedPlayers.length > 0 ? (
+                <Players />
+            ) : (
+                <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
+                    <p className="text-white text-xl">Cargando jugadores...</p>
                 </div>
-            </div>
-
+            )}
         </div>
     )
 }

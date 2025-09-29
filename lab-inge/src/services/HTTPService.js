@@ -55,14 +55,27 @@ const createHttpService = () => {
         if (!playerId) {
             throw new Error('Player ID is required');
         }
-        return request(`/games/${gameId}/start/`, {
+        return request(`/games/${gameId}/start`, {
             method: 'PATCH'
         });
     };
 
     const getPublicTurnData = (gameId) => {
-        
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        return request(`/games/${gameId}/turn`);
     };
+
+    const getPrivatePlayerData = (gameId, playerId) => {
+        if (!gameId) {
+            throw new Error('Game ID is required');
+        }
+        if (!playerId) {
+            throw new Error('Player ID is required');
+        }
+        return request(`/games/${gameId}/turn/${playerId}`);
+    }
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -98,7 +111,9 @@ const createHttpService = () => {
         getGame,
         getGames,
         startGame,
-        joinGame
+        joinGame,
+        getPublicTurnData,
+        getPrivatePlayerData
         // getContacts,
         // getContact,
         // createContact,

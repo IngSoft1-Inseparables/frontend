@@ -23,7 +23,7 @@ function WaitingRoom() {
     }, [gameId, myPlayerId, navigate]);
 
 
-    const [playersCount, setPlayersCount] = useState(2);
+    const [playersCount, setPlayersCount] = useState(1);
     const [isHost, setHostView] = useState(false);
     const [minPlayers, setMinPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(6);
@@ -99,7 +99,7 @@ function WaitingRoom() {
                 </div>
             </div>
 
-            {!isHost &&
+            {isHost &&
                 (
                     <div className="flex flex-col items-center gap-6 justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 mt-auto relative z-10">
                         {playersCount < minPlayers && (
