@@ -1,45 +1,44 @@
 import { useState, useEffect } from "react";
-import background from "../assets/background.png";
-import GenericButton from "../components/GenericButton";
+import background from "../../assets/background.png";
 // import JoinGameDialog from "../components/JoinGameDialog";
-// import { createHttpService } from "../../service/HTTPService";
+import { createHttpService } from "../../service/HTTPService";
 
 function GameList() {
   const [open, setOpen] = useState(false);
 
   const [games, setGames] = useState([]);
   const [selectedGameId, setSelectedGameId] = useState(null);
-  // const [httpService] = useState(() => createHttpService());
+  const [httpService] = useState(() => createHttpService());
 
   /*es un httpService simulado */
-  const httpService = {
-    getGames: async () => {
-      // Simulamos tiempo de respuesta
-      await new Promise((res) => setTimeout(res, 500));
+  // const httpService = {
+  //   getGames: async () => {
+  //     // Simulamos tiempo de respuesta
+  //     await new Promise((res) => setTimeout(res, 500));
 
-      // Retornamos datos falsos
-      return [
-        {
-          id: 1,
-          game_name: "Aventura",
-          players_amount: 2,
-          max_players: 4,
-          min_players: 2,
-          avatar: "avatar/avatar1.png",
-          creator_name: "Micaela",
-        },
-        {
-          id: 2,
-          game_name: "Estrategia",
-          players_amount: 4,
-          max_players: 6,
-          min_players: 3,
-          avatar: "avatar/avatar2.png",
-          creator_name: "Norma",
-        },
-      ];
-    },
-  };
+  //     // Retornamos datos falsos
+  //     return [
+  //       {
+  //         id: 1,
+  //         game_name: "Aventura",
+  //         players_amount: 2,
+  //         max_players: 4,
+  //         min_players: 2,
+  //         avatar: "avatar/avatar1.png",
+  //         creator_name: "Micaela",
+  //       },
+  //       {
+  //         id: 2,
+  //         game_name: "Estrategia",
+  //         players_amount: 4,
+  //         max_players: 6,
+  //         min_players: 3,
+  //         avatar: "avatar/avatar2.png",
+  //         creator_name: "Norma",
+  //       },
+  //     ];
+  //   },
+  // };
 
   const [loading, setLoading] = useState(false);
 

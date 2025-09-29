@@ -1,6 +1,6 @@
 import './App.css';
-import Home from "../Pages/HomePage";
-import GameList from '../GameList';
+import Home from './containers/homePages/HomePage';
+import GameList from './containers/gameList/GameList';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 

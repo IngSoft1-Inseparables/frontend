@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import GameList from "../containers/GameList";
+import GameList from "./GameList";
 import { vi } from "vitest";
 
 // Mock del HTTP service interno
@@ -25,7 +25,7 @@ const mockGames = [
 ];
 const mockGamesEmpty =[];
 
-vi.mock("../service/HTTPService", () => ({
+vi.mock("../../service/HTTPService", () => ({
   createHttpService: () => ({
     getGames: vi.fn(async () => mockGames),
   }),
