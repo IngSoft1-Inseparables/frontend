@@ -13,13 +13,8 @@ const createHttpService = () => {
 
         try {
             const response = await fetch(url, config);
-<<<<<<< HEAD
 
             // Intentar parsear el JSON de la respuesta
-=======
-            
-            // Intentar parsear el JSON siempre
->>>>>>> feature_SCRUM-2_implementar_interfaz_cartas_en_mano
             let responseData;
             try {
                 responseData = await response.json();
@@ -78,6 +73,11 @@ const createHttpService = () => {
     }
     );
 
+    // MOCK de getHand 
+    const getHand = async (gameId, playerId) => {
+        await new Promise((resolve) => setTimeout(resolve, 300)); 
+        return { hand: [1, 2, 3, 4, 5, 6] }; 
+    };
 
     //   const getContacts = async (filters = {}) => {
     //     const params = new URLSearchParams();
@@ -115,6 +115,7 @@ const createHttpService = () => {
         startGame,
         joinGame,
         joinLobby,
+        getHand,
         // getContacts,
         // getContact,
         // createContact,

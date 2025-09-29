@@ -1,6 +1,33 @@
+import { useState, useEffect } from "react";
 import background from "/src/assets/game/game_bg.png"
+import HandCard from "../../components/HandCard/HandCard.jsx"
+import { createHttpService } from "../../services/HTTPService";
+
+const httpService = createHttpService();
 
 function Game() {
+
+    const [hand, setHand] = useState([]);
+
+    // mockeo de IDs de partida/jugador
+    const gameId = 1;
+    const playerId = 101;
+
+    useEffect(() => {
+        const fetchHand = async () => {
+            try {
+                const data = await httpService.getHand(gameId, playerId);
+                console.log("Respuesta completa del backend:", data);
+                console.log("Cartas en mano:", data.hand);
+                setHand(data.hand);
+            } catch (error) {
+                console.error("Error obteniendo la mano:", error);
+            }
+        };
+
+        fetchHand();
+    }, []);
+
     // Player Card
     const PlayerCard = ({ playerName }) => (
         <div className="rounded-lg bg-neutral-900/80 p-3 shadow-xl backdrop-blur-sm border border-gray-600/50 w-[12vw] h-[15vh] min-w-[140px] min-h-[100px] max-w-[200px] max-h-[150px] flex items-center">
@@ -57,6 +84,11 @@ function Game() {
             {/* Player Card Inferior */}
             <div className="absolute bottom-2 left-1/5 transform -translate-x-1/2 z-10">
                 <PlayerCard playerName="Jugador6" />
+            </div>
+
+            {/* Mano del jugador */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+                <HandCard cardIds={[1, 2, 3, 4, 5, 6]} />
             </div>
 
             {/* Cuadro Central */}

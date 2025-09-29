@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import WaitingRoom from './containers/waitingRoom/WaitingRoom';
-import Game from './containers/game/Game2';
-import Lobby from './containers/lobby/Lobby';
+import Game from './containers/game/Game.jsx';
 import WaitingRoom from './containers/waitingRoom/WaitingRoom.jsx';
 import Lobby from './containers/lobby/Lobby.jsx';
 import GameList from './pages/GameList.jsx';

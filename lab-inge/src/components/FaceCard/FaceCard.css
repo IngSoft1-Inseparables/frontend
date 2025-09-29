@@ -1,5 +1,5 @@
 .face-card {
-  flex: 0 0 auto;          /* no crecer, no encoger, ancho fijo */
+  flex: 0 0 auto;          
   width: 100px;
   height: 150px;
   border: 1px solid #aaa;
@@ -23,7 +23,7 @@
   box-shadow: 0 6px 16px rgba(0,0,0,0.25);
 }
 
-.face-card:active {
+/* .face-card:active {
   transform: translateY(-4px) scale(3);
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
+} */
