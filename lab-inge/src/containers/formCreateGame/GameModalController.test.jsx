@@ -19,8 +19,8 @@ vi.mock("react-router-dom", async () => {
 describe("GameModalController", () => {
   it("envía los datos correctamente y cierra el modal al hacer submit", async () => {
     const mockCreateGame = vi.fn().mockResolvedValue({
-      gameId: 123,
-      myPlayerId: 456,
+      id: 123,
+      creator_id: 456,
     });
 
     vi.mocked(HTTPService.createHttpService).mockImplementation(() => ({
@@ -51,14 +51,8 @@ describe("GameModalController", () => {
       modalWithin.getByLabelText(/Fecha de nacimiento/i),
       "2000-05-10"
     );
-    await userEvent.selectOptions(
-      modalWithin.getByTestId("minPlayers"),
-      "2"
-    );
-    await userEvent.selectOptions(
-      modalWithin.getByTestId("maxPlayers"),
-      "4"
-    );
+    await userEvent.selectOptions(modalWithin.getByTestId("minPlayers"), "2");
+    await userEvent.selectOptions(modalWithin.getByTestId("maxPlayers"), "4");
 
     const avatars = modalWithin.getAllByRole("img");
     await userEvent.click(avatars[0]);
