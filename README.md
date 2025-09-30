@@ -37,4 +37,4 @@ npm run dev
   Incluye los componentes con la lógica de negocio y manejo de datos.
 
 * **services/**
-  Contiene los módulos externos que proveen funcionalidades de apoyo (por ejemplo, llamadas a APIs o utilidades).
+  Contiene los módulos externos que proveen funcionalidades de apoyo (por ejemplo, llamadas a APIs o Websocket).
