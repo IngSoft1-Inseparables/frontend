@@ -25,7 +25,7 @@ const mockGames = [
 ];
 const mockGamesEmpty =[];
 
-vi.mock("../../service/HTTPService", () => ({
+vi.mock("../../services/HTTPService", () => ({
   createHttpService: () => ({
     getGames: vi.fn(async () => mockGames),
   }),

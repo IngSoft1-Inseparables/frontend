@@ -37,14 +37,9 @@ const createHttpService = () => {
 
 
 
-    const getGames = () => request("/games");
+    const getGames = () => request("/games/list");
 
     const getGame = (gameId) => request(`/games/${gameId}`);
-
-    const joinGame = (data) => request(`/players/join`, {
-        method: 'POST',
-        body: JSON.stringify(data)
-    })
 
     const startGame = (gameId, playerId) => {
         if (!gameId) {
@@ -59,7 +54,7 @@ const createHttpService = () => {
     };
 
 
-    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/unirse`, {
+    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/join`, {
         method: 'POST',
         body: JSON.stringify({
             partida_id,
@@ -85,6 +80,12 @@ const createHttpService = () => {
         }
         return request(`/games/${gameId}/turn/${playerId}`);
     };
+
+    const createGame = (formData) =>
+        request("/games/create", {
+            method: "POST",
+            body: JSON.stringify(formData),
+        });
 
 
     //   const getContacts = async (filters = {}) => {
@@ -122,10 +123,9 @@ const createHttpService = () => {
         getGames,
         startGame,
         joinLobby,
-        joinGame,
         getPublicTurnData,
-        getPrivatePlayerData
-
+        getPrivatePlayerData,
+        createGame
         // getContacts,
         // getContact,
         // createContact,

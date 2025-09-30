@@ -65,8 +65,8 @@ export default function JoinGameDialog({ onClose, partidaId }) {
       console.log('Unido exitosamente:', data)
       navigate('/waiting', {
         state: {
-          gameId: payload.partidaId,
-          myPlayerId: data.player_id || payload.nombre_usuario, // Usar el ID real del backend
+          gameId: data.partida_id,
+          myPlayerId: data.jugador_id
         },
         replace: true,
       })

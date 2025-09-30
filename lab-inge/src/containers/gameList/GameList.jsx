@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import background from "../../assets/background.png";
-// import JoinGameDialog from "../components/JoinGameDialog";
-import { createHttpService } from "../../service/HTTPService";
+import JoinGameDialog from "../../components/JoinGameDialog/JoinGameDialog";
+import { createHttpService } from "../../services/HTTPService";
 
 function GameList() {
   const [open, setOpen] = useState(false);
@@ -45,10 +45,12 @@ function GameList() {
   const fetchGames = async () => {
     setLoading(true);
     try {
-      const data = await httpService.getGames();
-      setGames(data);
+      const data = await httpService.getGames(); 
+      // La respuesta viene como {games: [...]} así que extraemos el array
+      setGames(data.games || []);
     } catch (error) {
       console.error("Error al levantar las partidas:", error);
+      setGames([]);
     } finally {
       setLoading(false);
     }
@@ -146,12 +148,12 @@ function GameList() {
         )}
       </div>
 
-      {/* {open && (
+      {open && (
         <JoinGameDialog
           onClose={() => setOpen(false)}
           partidaId={selectedGameId}
         />
-      )} */}
+      )}
     </div>
   );
 }

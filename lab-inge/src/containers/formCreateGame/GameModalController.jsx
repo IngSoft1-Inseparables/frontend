@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createHttpService} from "../../service/HTTPService.js"
+import { createHttpService} from "../../services/HTTPService.js"
 import GenericButton from "../../components/GenericButton.jsx";
 import CreateFormGame from "./CreateFormGame";
 
@@ -22,10 +22,13 @@ export default function GameModalController({isOpen, onClose}) {
       };
       console.log("Enviando datos al backend:", formData);
       const response = await httpService.createGame(formData);
+      
+      const gameId = response.id;
+      const myPlayerId = response.creator_id;
+
       onClose?.();
 
       setIsFormOpen(false);
-      const { gameId, myPlayerId } = response;
 
       navigate("/waiting", {
         state: {

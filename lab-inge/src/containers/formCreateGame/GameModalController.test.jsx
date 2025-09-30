@@ -1,11 +1,11 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router-dom";
-import * as HTTPService from "../../service/HTTPService";
+import * as HTTPService from "../../services/HTTPService";
 import GameModalController from "./GameModalController";
 import { vi } from "vitest";
 
-vi.mock("../../service/HTTPService");
+vi.mock("../../services/HTTPService");
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {

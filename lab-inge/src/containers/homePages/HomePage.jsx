@@ -9,7 +9,7 @@ import { useState, useEffect } from "react";
 function Home() {
   const navigate = useNavigate();
   const handleOpenGameList = async () => {
-    navigate("/gameList");
+    navigate("/games");
   };
   const [open, setOpen] = useState(false);
   const handleOpenForm = () => setOpen(true);

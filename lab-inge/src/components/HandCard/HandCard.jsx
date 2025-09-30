@@ -7,7 +7,7 @@ function HandCard({ cardIds =[] }) {
     return (
         <div className="hand-card">
             {cardIds.map((id) => (
-                <FaceCard cardId={id} />
+                <FaceCard key={id} cardId={id} />
             ))}
         </div>
     )
