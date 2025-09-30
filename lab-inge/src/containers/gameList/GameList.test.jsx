@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import GameList from "./GameList";
 import { vi } from "vitest";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 // Mock del HTTP service interno
 const mockGames = [
@@ -23,43 +24,53 @@ const mockGames = [
     creator_name: "Norma",
   },
 ];
-const mockGamesEmpty =[];
 
 vi.mock("../../services/HTTPService", () => ({
   createHttpService: () => ({
-    getGames: vi.fn(async () => mockGames),
+    getGames: vi.fn(async () => ({ games: mockGames })),
   }),
 }));
 
 describe("GameList - pruebas básicas sin JoinGameDialog", () => {
   it("renderiza partidas correctamente y muestra mensajes de carga y vacío", async () => {
-    render(<GameList />);
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
 
     // Debe mostrar el loading inicialmente
     expect(screen.getByText(/Cargando partidas/i)).toBeInTheDocument();
 
     // Esperamos que aparezcan las partidas
-    await waitFor(() => screen.getByText("Aventura"));
-    expect(screen.getByText("Aventura")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText("Aventura")).toBeInTheDocument()
+    );
     expect(screen.getByText("Estrategia")).toBeInTheDocument();
 
     // Click en la primera partida (solo para testear click)
     fireEvent.click(screen.getByText("Aventura"));
-    
   });
 
   it("permite actualizar la lista de partidas", async () => {
     render(<GameList />);
 
-    await waitFor(() => screen.getByText("Aventura"));
+    // Esperamos que cargue inicialmente
+    await waitFor(() =>
+      expect(screen.getByText("Aventura")).toBeInTheDocument()
+    );
 
-    const actualizarBtn = screen.getByRole("button", { name: /Actualizar partidas/i });
+    const actualizarBtn = screen.getByRole("button", {
+      name: /Actualizar partidas/i,
+    });
     expect(actualizarBtn).toBeInTheDocument();
 
     fireEvent.click(actualizarBtn);
 
     // Esperamos que vuelva a cargar partidas
-    await waitFor(() => screen.getByText("Aventura"));
+    await waitFor(() =>
+      expect(screen.getByText("Aventura")).toBeInTheDocument()
+    );
     expect(screen.getByText("Estrategia")).toBeInTheDocument();
   });
 });

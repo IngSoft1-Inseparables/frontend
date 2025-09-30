@@ -240,8 +240,7 @@ describe("WaitingRoom component", () => {
       expect(mockNavigate).toHaveBeenCalledWith('/game', {
         state: {
           gameId: "test-game-123",
-          myPlayerId: "player-456",
-          playersCount: 3
+          myPlayerId: "player-456"
         },
         replace: true
       });
