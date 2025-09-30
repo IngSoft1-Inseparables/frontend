@@ -1,11 +1,17 @@
 import { render, screen } from '@testing-library/react'
-import HandCard from './HandCard.jsx' 
+import HandCard from './HandCard.jsx'
 import '@testing-library/jest-dom'
-import { expect, test } from 'vitest'
+import { describe, test, expect } from 'vitest'
 
 describe('HandCard', () => {
-  test('renderiza todas las cartas según cardIds', () => {
-    render(<HandCard cardIds={[1, 2, 3]} />)
+  const sampleCards = [
+    { card_id: 1, card_name: 'Poirot', image_name: 'detective_poirot', image_back_name: 'card_back' },
+    { card_id: 2, card_name: 'Marple', image_name: 'detective_marple', image_back_name: 'card_back' },
+    { card_id: 3, card_name: 'Hastings', image_name: 'detective_hastings', image_back_name: 'card_back' },
+  ]
+
+  test('renderiza todas las cartas según playerCards', () => {
+    render(<HandCard playerCards={sampleCards} />)
 
     const imgs = screen.getAllByRole('img')
     expect(imgs).toHaveLength(3)
@@ -14,26 +20,31 @@ describe('HandCard', () => {
     expect(screen.getByAltText(/Poirot/i)).toBeInTheDocument()
   })
 
-  test('no renderiza cartas si cardIds está vacío', () => {
-    render(<HandCard cardIds={[]} />)
+  test('no renderiza cartas si playerCards está vacío', () => {
+    render(<HandCard playerCards={[]} />)
 
     const imgs = screen.queryAllByRole('img')
     expect(imgs).toHaveLength(0)
   })
 
-  test('renderiza correctamente con varios IDs', () => {
-    render(<HandCard cardIds={[4, 5, 6]} />)
+  test('renderiza correctamente con varios objetos', () => {
+    const extraCards = [
+      { card_id: 4, card_name: 'Pyne', image_name: 'detective_pyne', image_back_name: 'card_back' },
+      { card_id: 5, card_name: 'Brent', image_name: 'detective_brent', image_back_name: 'card_back' },
+      { card_id: 6, card_name: 'Tommy', image_name: 'detective_tommy', image_back_name: 'card_back' },
+    ]
+
+    render(<HandCard playerCards={extraCards} />)
 
     expect(screen.getByAltText(/Pyne/i)).toBeInTheDocument()
     expect(screen.getByAltText(/Brent/i)).toBeInTheDocument()
     expect(screen.getByAltText(/Tommy/i)).toBeInTheDocument()
   })
 
-  test('no explota si recibe un ID inválido', () => {
-    render(<HandCard cardIds={[999]} />)
+  test('no explota si recibe playerCards con datos inválidos', () => {
+    render(<HandCard playerCards={[{ card_id: 999 }]} />)
 
     const imgs = screen.queryAllByRole('img')
     expect(imgs).toHaveLength(0) // no debería renderizar nada
   })
 })
-

@@ -41,12 +41,13 @@ test('render de fomrulario con inputs correctos', async () => {
 
 
 test('submit con datos correctos navega al waiting', async () => {
-  render(
-      <JoinGameDialog onClose={() => {}} partidaId={123} />
-  )
+  render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
   const user = userEvent.setup()
-  joinLobbyMock.mockResolvedValueOnce({ status_code: 200 }) //
-  
+
+  joinLobbyMock.mockResolvedValueOnce({
+    partida_id: 123,
+    jugador_id: 999,
+  })
 
   await user.type(screen.getByTestId('input-username'), 'Candelalu')
   await user.type(screen.getByTestId('input-fechaNacimiento'), '2002-02-16')
@@ -58,9 +59,9 @@ test('submit con datos correctos navega al waiting', async () => {
     expect.objectContaining({
       state: expect.objectContaining({
         gameId: 123,
-        myPlayerId: 'Candelalu',
+        myPlayerId: 999,
       }),
-      replace: true
+      replace: true,
     })
   )
 })
