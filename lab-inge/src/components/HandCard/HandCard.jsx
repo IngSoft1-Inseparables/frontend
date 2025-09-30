@@ -3,11 +3,16 @@ import FaceCard from '../FaceCard/FaceCard'
 import './HandCard.css'
 
 
-function HandCard({ cardIds =[] }) {
+function HandCard({ playerCards = [] }) {
     return (
         <div className="hand-card">
-            {cardIds.map((id) => (
-                <FaceCard key={id} cardId={id} />
+            {playerCards.map((card) => (
+                <FaceCard 
+                    key={card.card_id} 
+                    imageName={card.image_name}
+                    cardName={card.card_name}
+                    imageBackName={card.image_back_name}
+                />
             ))}
         </div>
     )

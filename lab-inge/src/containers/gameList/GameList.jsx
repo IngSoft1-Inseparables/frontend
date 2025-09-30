@@ -129,11 +129,11 @@ function GameList() {
                 </div>
 
                 <div className="flex flex-row items-center gap-4">
-                  <img
+                  {/* <img
                     src={`${game.avatar}`}
                     alt={`Avatar de ${game.creator_name}`}
                     className="w-16 h-16 rounded-full object-cover mt-2"
-                  />
+                  /> */}
                   <p className="text-white font-semibold text-xl">
                     {game.creator_name}
                   </p>

@@ -10,7 +10,6 @@ function Game() {
 
     const { gameId, myPlayerId } = location.state || {};
 
-    const [hand, setHand] = useState([]);
     const [turnData, setTurnData] = useState(null);
     const [orderedPlayers, setOrderedPlayers] = useState([]);
     const [playerData, setPlayerData] = useState(null);
@@ -21,9 +20,6 @@ function Game() {
         try {
             const turnData = await httpService.getPublicTurnData(gameId);
             const playerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
-
-            const cardIds = playerData.playerCards.map(c => c.card_id);
-            setHand(cardIds);
 
             setPlayerData(playerData);
             setTurnData(turnData);
@@ -146,7 +142,7 @@ function Game() {
                         <div className="flex items-center px-4">
                             {<PlayerCard player={playerData} />}
                             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard cardIds={hand} />
+                                <HandCard playerCards={playerData?.playerCards || []} />
                             </div>
                         </div>
                     </div>
@@ -181,7 +177,7 @@ function Game() {
                         <div className="flex items-center px-4">
                             {<PlayerCard player={playerData} />}
                             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard cardIds={hand} />
+                                <HandCard playerCards={playerData?.playerCards || []} />
                             </div>
                         </div>
                     </div>
@@ -217,7 +213,7 @@ function Game() {
                         <div className="flex items-center px-4">
                             {<PlayerCard player={playerData} />}
                             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard cardIds={hand} />
+                                <HandCard playerCards={playerData?.playerCards || []} />
                             </div>
                         </div>
                     </div>
@@ -254,7 +250,7 @@ function Game() {
                         <div className="flex items-center px-4">
                             {<PlayerCard player={playerData} />}
                             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard cardIds={hand} />
+                                <HandCard playerCards={playerData?.playerCards || []} />
                             </div>
                         </div>
                     </div>
@@ -292,7 +288,7 @@ function Game() {
                         <div className="flex items-center px-4">
                             {<PlayerCard player={playerData} />}
                             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-                                <HandCard cardIds={hand} />
+                                <HandCard playerCards={playerData?.playerCards || []} />
                             </div>
                         </div>
                     </div>
