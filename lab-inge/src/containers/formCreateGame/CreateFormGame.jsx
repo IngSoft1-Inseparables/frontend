@@ -188,6 +188,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
                   className={getInputClassName("name")}
                   placeholder="Ingresar nombre de Usuario"
                   autoComplete="off"
+                  maxLength={35}
                 />
               </label>
 
@@ -259,6 +260,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
                   className={getInputClassName("nameGame")}
                   placeholder="Ingresar nombre de la partida"
                   autoComplete="off"
+                   maxLength={40}
                 />
               </label>
               {errors.nameGame && (
