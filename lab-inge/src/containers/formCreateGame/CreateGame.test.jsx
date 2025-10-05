@@ -124,6 +124,20 @@ describe("CreateFormGame - validaciones de errores", () => {
     await userEvent.clear(input);
     await userEvent.click(submitButton);
   });
+  it("muestra un error si se ingresa una fecha menor a 1910", async () => {
+    const input = screen.getByLabelText(/Fecha de nacimiento/i);
+    await userEvent.type(input, "1810-05-15");
+
+    const submitButton = screen.getByRole("button", { name: /Crear Partida/i });
+    await userEvent.click(submitButton); // enviar el form
+    expect(
+      await screen.findByText((text) =>
+        text.includes("La fecha debe estar entre")
+      )
+    ).toBeInTheDocument();
+    await userEvent.clear(input);
+    await userEvent.click(submitButton);
+  });
   it("muestra un error si el minimo es mas grande que el maximo de jugadores", async () => {
     const minSelect = screen.getByTestId("minPlayers");
     const maxSelect = screen.getByTestId("maxPlayers");
