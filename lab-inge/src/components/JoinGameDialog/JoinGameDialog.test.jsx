@@ -38,7 +38,19 @@ test('render de fomrulario con inputs correctos', async () => {
   expect(screen.getByTestId('input-fechaNacimiento')).toBeInTheDocument()
   expect(screen.getByTestId('avatar-group')).toBeInTheDocument()
 })
+test('no permite escribir más de 35 caracteres en el Nombre de Usuario', async () => {
+  render(<JoinGameDialog onClose={() => {}} onSubmit={() => {}} />);
+  const user = userEvent.setup();
 
+  const input = screen.getByTestId('input-username');
+  const longText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ'; 
+
+  await user.type(input, longText);
+
+  // El input solo debería tomar los primeros 35 caracteres
+  expect(input.value.length).toBeLessThanOrEqual(35);
+  expect(input.value).toBe(longText.slice(0, 35));
+});
 
 test('submit con datos correctos navega al waiting', async () => {
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
