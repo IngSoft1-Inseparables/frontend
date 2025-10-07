@@ -138,6 +138,7 @@ describe("CreateFormGame - validaciones de errores", () => {
     await userEvent.clear(input);
     await userEvent.click(submitButton);
   });
+
   it("muestra un error si el minimo es mas grande que el maximo de jugadores", async () => {
     const minSelect = screen.getByTestId("minPlayers");
     const maxSelect = screen.getByTestId("maxPlayers");
