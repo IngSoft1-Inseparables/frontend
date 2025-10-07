@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import background from "../../assets/background.png";
 import JoinGameDialog from "../../components/JoinGameDialog/JoinGameDialog";
 import { createHttpService } from "../../services/HTTPService";
+import { ChevronLeft } from "lucide-react";
+
+import { useNavigate } from "react-router-dom";
 
 function GameList() {
   const [open, setOpen] = useState(false);
@@ -9,43 +12,14 @@ function GameList() {
   const [games, setGames] = useState([]);
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [httpService] = useState(() => createHttpService());
-
-  /*es un httpService simulado */
-  // const httpService = {
-  //   getGames: async () => {
-  //     // Simulamos tiempo de respuesta
-  //     await new Promise((res) => setTimeout(res, 500));
-
-  //     // Retornamos datos falsos
-  //     return [
-  //       {
-  //         id: 1,
-  //         game_name: "Aventura",
-  //         players_amount: 2,
-  //         max_players: 4,
-  //         min_players: 2,
-  //         avatar: "avatar/avatar1.png",
-  //         creator_name: "Micaela",
-  //       },
-  //       {
-  //         id: 2,
-  //         game_name: "Estrategia",
-  //         players_amount: 4,
-  //         max_players: 6,
-  //         min_players: 3,
-  //         avatar: "avatar/avatar2.png",
-  //         creator_name: "Norma",
-  //       },
-  //     ];
-  //   },
-  // };
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
 
   const fetchGames = async () => {
     setLoading(true);
     try {
-      const data = await httpService.getGames(); 
+      const data = await httpService.getGames();
       // La respuesta viene como {games: [...]} así que extraemos el array
       setGames(data.games || []);
     } catch (error) {
@@ -60,6 +34,10 @@ function GameList() {
     fetchGames();
   }, []);
 
+  const goBackHome = async () => {
+    navigate("/home");
+  };
+
   return (
     <div
       className="min-h-screen w-full bg-cover bg-center"
@@ -70,10 +48,23 @@ function GameList() {
       }} // cerrar con Escape
     >
       <div className="p-6">
+        <div className="flex justify-left">
+          <button onClick={goBackHome} className="group flex items-center gap-2 px-4 py-2  text-white text-lg font-bold transition-transform transform hover:scale-105 active:scale-95 ">
+            <ChevronLeft
+              size={35}
+              strokeWidth={3}
+              className="transition-transform group-hover:-translate-x-1"
+            />
+            <span className="transition-transform group-hover:-translate-x-1">
+              Volver
+            </span>
+          </button>
+        </div>
         <h2 className="flex justify-center text-xl text-white font-bold mb-4 ">
           Partidas disponibles
         </h2>
-        <div className="flex justify-center mb-4">
+        <div></div>
+        <div className="flex justify-center mb-6">
           <button
             onClick={fetchGames}
             disabled={loading}
@@ -104,8 +95,8 @@ function GameList() {
               <div
                 key={game.id}
                 onClick={() => {
-                  setSelectedGameId(game.id); 
-                  setOpen(true); 
+                  setSelectedGameId(game.id);
+                  setOpen(true);
                 }}
                 className="
                 bg-[#7a6655]/70 
