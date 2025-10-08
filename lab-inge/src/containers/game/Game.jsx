@@ -1,14 +1,23 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js"
 import HandCard from "../../components/HandCard/HandCard.jsx"
 import DiscardDeck from "../../components/DiscardDeck/DiscardDeck.jsx"
 import RegularDeck from "../../components/RegularDeck/RegularDeck.jsx"
 
 function Game() {
+    const navigate = useNavigate();
     const location = useLocation();
 
     const { gameId, myPlayerId } = location.state || {};
+
+    useEffect(() => {
+        if (!gameId || !myPlayerId) {
+            console.error('Missing gameId or myPlayerId in navigation state');
+            navigate('/games', { replace: true });
+            return;
+        }
+    }, [gameId, myPlayerId, navigate]);
 
     const [turnData, setTurnData] = useState(null);
     const [orderedPlayers, setOrderedPlayers] = useState([]);
