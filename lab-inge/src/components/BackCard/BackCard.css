@@ -5,30 +5,38 @@
   width: 120px;
   height: 180px;
   position: relative;
-  perspective: 1000px; /* da un poco de profundidad */
+  perspective: 1000px; /* leve profundidad */
 }
 
+/* Carta base */
 .back-card {
-  width: 100px; 
-  height: 150px; /* proporción más real de carta */
-  border-radius: 2px; /* esquinas redondeadas tipo carta */
-  border: 1px solid #8a0000; /* borde oscuro y definido */
-  background: linear-gradient(135deg, #fdfdfd, #e3e3e3); /* degradado sutil */
-  box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* sombra */
+  width: 100px;
+  height: 150px;
+  border-radius: 4px;
+  border: 1px solid #8a0000;
+  background: linear-gradient(135deg, #fdfdfd, #e3e3e3);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
   position: absolute;
   top: 0;
   left: 0;
-  transition: transform 0.2s;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transform-origin: center center;
 }
 
-/* Efecto de mazo apilado */
-.back-card:nth-child(1) { transform: rotate(-2deg) translate(2px, -3px); }
-.back-card:nth-child(2) { transform: rotate(1deg) translate(2px, -2px); }
-.back-card:nth-child(3) { transform: rotate(-1deg) translate(-1px, 2px); }
-.back-card:nth-child(4) { transform: rotate(3deg) translate(3px, 1px); }
-.back-card:nth-child(5) { transform: rotate(-4deg) translate(-2px, 4px); }
-.back-card:nth-child(6) { transform: rotate(2deg) translate(-2px, -1px); }
-.back-card:nth-child(7) { transform: rotate(1.5deg) translate(2px, 3px); }
-.back-card:nth-child(8) { transform: rotate(-2.5deg) translate(-3px, 1px); }
-.back-card:nth-child(9) { transform: rotate(0.5deg) translate(1px, -3px); }
+/* Pila compacta: Murder abajo, dorso arriba */
+.back-card:nth-child(1) {
+  transform: translateY(4px);
+  opacity: 0.95;
+}
 
+.back-card:nth-child(2) {
+  transform: translateY(0px);
+  opacity: 1;
+}
+
+/* Hover sutil */
+.back-card-container:hover .back-card:last-child {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
