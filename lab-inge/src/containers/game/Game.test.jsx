@@ -286,6 +286,57 @@ describe("Game component", () => {
     });
   });
 
+  it("logs error and triggers redirection when gameId is missing", async () => {
+    // Mock de console.error para capturar el log
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/game", state: { myPlayerId: 2 } }]}>
+        <Game />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Missing gameId or myPlayerId in navigation state');
+    });
+    
+    consoleSpy.mockRestore();
+  });
+
+  it("logs error and triggers redirection when myPlayerId is missing", async () => {
+    // Mock de console.error para capturar el log
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/game", state: { gameId: 1 } }]}>
+        <Game />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Missing gameId or myPlayerId in navigation state');
+    });
+    
+    consoleSpy.mockRestore();
+  });
+
+  it("logs error and triggers redirection when both gameId and myPlayerId are missing", async () => {
+    // Mock de console.error para capturar el log
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: "/game", state: null }]}>
+        <Game />
+      </MemoryRouter>
+    );
+    
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Missing gameId or myPlayerId in navigation state');
+    });
+    
+    consoleSpy.mockRestore();
+  });
+
     it("shows own secrets always visible", async () => {
     mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
     mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
