@@ -4,7 +4,7 @@ import { createHttpService } from "../../services/HTTPService.js"
 import HandCard from "../../components/HandCard/HandCard.jsx"
 import DiscardDeck from "../../components/DiscardDeck/DiscardDeck.jsx"
 import RegularDeck from "../../components/RegularDeck/RegularDeck.jsx"
-import { createWSService } from "../../services/WSService";
+import { createWSService } from "../../services/WSService.js";
 
 function Game() {
     const navigate = useNavigate();
@@ -24,7 +24,7 @@ function Game() {
     const [orderedPlayers, setOrderedPlayers] = useState([]);
     const [playerData, setPlayerData] = useState(null);
     const [httpService] = useState(() => createHttpService());
-    const [createWSService] = useState(() => createWSService())
+    const [wsService] = useState(() => createWSService(gameId, myPlayerId));
 
     const fetchTurnData = async () => {
 
