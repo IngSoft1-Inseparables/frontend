@@ -4,7 +4,7 @@ import { createHttpService } from "../../services/HTTPService.js"
 import HandCard from "../../components/HandCard/HandCard.jsx"
 import DiscardDeck from "../../components/DiscardDeck/DiscardDeck.jsx"
 import RegularDeck from "../../components/RegularDeck/RegularDeck.jsx"
-import { wsService } from "../../services/WSService";
+import { createWSService } from "../../services/WSService";
 
 function Game() {
     const navigate = useNavigate();
@@ -24,6 +24,7 @@ function Game() {
     const [orderedPlayers, setOrderedPlayers] = useState([]);
     const [playerData, setPlayerData] = useState(null);
     const [httpService] = useState(() => createHttpService());
+    const [createWSService] = useState(() => createWSService())
 
     const fetchTurnData = async () => {
 
@@ -54,38 +55,16 @@ function Game() {
 
         wsService.connect();
 
-        // Enviar mensaje de inicialización para que el backend sepa quién es este jugador, es importante para la info privada
-        wsService.send(
-            JSON.stringify({
-                type: "INIT",
-                playerId: myPlayerId,
-                gameId: gameId,
-            })
-        );
-
         //  Escuchar mensajes públicos
-        wsService.on("GAME_PUBLIC_UPDATE", (payload) => {
-        const data = typeof payload === "string" ? JSON.parse(payload) : payload;
-            setTurnData((prev) => ({
-                ...prev, // se conserva todo lo que ya estaba
-                turn_owner_id: data.turn_owner_id,
-                regpile: {
-                    count: data.regpile.count,
-                    image_back_name: data.regpile.image_back_name
-                    }
-                // aca agregar cualquier campo que querramos actualizar
-            }));
+        wsService.on("game_public_update", (payload) => {
+        const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
+            setTurnData(dataPublic);
         });
 
         // Escuchar mensajes privados (solo para este jugador)
-        wsService.on("PRIVATE_PLAYER_UPDATE", (payload) => {
-        const data = typeof payload === "string" ? JSON.parse(payload) : payload;
-            setPlayerData({
-                //aqui se actualiza info por jugador
-                ...prev,
-                playerCards: data.hand,
-                playerSecrets: data.secrets,
-            });
+        wsService.on("player_private_update", (payload) => {
+        const dataPlayer = typeof payload === "string" ? JSON.parse(payload) : payload;
+           setPlayerData(dataPlayer);
         });
 
         // Cleanup cuando se desmonta el componente
