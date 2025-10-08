@@ -82,7 +82,7 @@ function Game() {
         const data = typeof payload === "string" ? JSON.parse(payload) : payload;
             setPlayerData({
                 //aqui se actualiza info por jugador
-                ...playerData,
+                ...prev,
                 playerCards: data.hand,
                 playerSecrets: data.secrets,
             });
