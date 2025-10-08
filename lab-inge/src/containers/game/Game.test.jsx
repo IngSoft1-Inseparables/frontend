@@ -286,7 +286,7 @@ describe("Game component", () => {
     });
   });
 
-  it("logs error and triggers redirection when gameId is missing", async () => {
+  it("redirects to /home when gameId is missing", async () => {
     // Mock de console.error para capturar el log
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -303,7 +303,7 @@ describe("Game component", () => {
     consoleSpy.mockRestore();
   });
 
-  it("logs error and triggers redirection when myPlayerId is missing", async () => {
+  it("redirects to /home when myPlayerId is missing", async () => {
     // Mock de console.error para capturar el log
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
@@ -320,7 +320,7 @@ describe("Game component", () => {
     consoleSpy.mockRestore();
   });
 
-  it("logs error and triggers redirection when both gameId and myPlayerId are missing", async () => {
+  it("redirects to /home when both gameId and myPlayerId are missing", async () => {
     // Mock de console.error para capturar el log
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 

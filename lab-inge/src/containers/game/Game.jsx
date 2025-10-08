@@ -14,7 +14,7 @@ function Game() {
     useEffect(() => {
         if (!gameId || !myPlayerId) {
             console.error('Missing gameId or myPlayerId in navigation state');
-            navigate('/games', { replace: true });
+            navigate('/home', { replace: true });
             return;
         }
     }, [gameId, myPlayerId, navigate]);
