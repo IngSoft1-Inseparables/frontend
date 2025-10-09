@@ -23,8 +23,10 @@ vi.mock("../../services/WSService", () => {
     connect: vi.fn(),
     disconnect: vi.fn(),
     on: vi.fn(),
+    off: vi.fn(),
     send: vi.fn(),
   };
+
   return {
     createWSService: vi.fn(() => mockWSService),
     __mockWS: mockWSService,
@@ -55,42 +57,10 @@ describe("Game component", () => {
     players_amount: 4,
     turn_owner_id: 2,
     players: [
-      {
-        id: 1,
-        name: "Jugador1",
-        avatar: "avatars/avatar1.png",
-        turn: 1,
-        playerSecrets: [
-          { revealed: false, image_front_name: "05-secret_front" },
-          {},
-          {},
-        ],
-      },
-      {
-        id: 2,
-        name: "Jugador2",
-        avatar: "avatars/avatar2.png",
-        turn: 2,
-        playerSecrets: [
-          { revealed: true, image_back_name: "06-secret_back" },
-          {},
-          {},
-        ],
-      },
-      {
-        id: 3,
-        name: "Jugador3",
-        avatar: "avatars/avatar3.png",
-        turn: 3,
-        playerSecrets: [{}, {}, {}],
-      },
-      {
-        id: 4,
-        name: "Jugador4",
-        avatar: "avatars/avatar4.png",
-        turn: 4,
-        playerSecrets: [{}, {}, {}],
-      },
+      { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1, playerSecrets: [{}, {}, {}] },
+      { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2, playerSecrets: [{}, {}, {}] },
+      { id: 3, name: "Jugador3", avatar: "avatars/avatar3.png", turn: 3, playerSecrets: [{}, {}, {}] },
+      { id: 4, name: "Jugador4", avatar: "avatars/avatar4.png", turn: 4, playerSecrets: [{}, {}, {}] },
     ],
   };
 
@@ -98,48 +68,11 @@ describe("Game component", () => {
     id: 2,
     name: "Jugador2",
     avatar: "avatars/avatar2.png",
-    playerSecrets: [
-      {
-        secret_id: 5,
-        secret_type: "NORMAL",
-        image_front_name: "05-secret_front",
-        image_back_name: "06-secret_back",
-        revealed: false,
-      },
-      {
-        secret_id: 8,
-        secret_type: "MURDER",
-        image_front_name: "05-secret_front",
-        image_back_name: "06-secret_back",
-        revealed: true,
-      },
-      {
-        secret_id: 9,
-        secret_type: "NORMAL",
-        image_front_name: "05-secret_front",
-        image_back_name: "06-secret_back",
-        revealed: false,
-      },
-    ],
+    playerSecrets: [{}, {}, {}],
     playerCards: [
-      {
-        card_id: 1,
-        card_name: "Carta1",
-        image_name: "img1",
-        image_back_name: "back1",
-      },
-      {
-        card_id: 2,
-        card_name: "Carta2",
-        image_name: "img2",
-        image_back_name: "back1",
-      },
-      {
-        card_id: 3,
-        card_name: "Carta3",
-        image_name: "img3",
-        image_back_name: "back1",
-      },
+      { card_id: 1, card_name: "Carta1" },
+      { card_id: 2, card_name: "Carta2" },
+      { card_id: 3, card_name: "Carta3" },
     ],
   };
 
@@ -189,7 +122,9 @@ describe("Game component", () => {
   it("handles API errors gracefully", async () => {
     const error = new Error("network fail");
     mockHttp.getPublicTurnData.mockRejectedValue(error);
+
     renderGame();
+
     await waitFor(() => {
       expect(console.error).toHaveBeenCalledWith(
         "Failed obtaining game data:",
@@ -198,14 +133,18 @@ describe("Game component", () => {
     });
   });
 
-  it("connects and disconnects WSService", async () => {
+  it("connects and disconnects WSService correctly", async () => {
     mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
     mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
 
     const { unmount } = renderGame();
+
     await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+
     unmount();
-    expect(mockWS.disconnect).toHaveBeenCalled();
+
+    expect(mockWS.off).toHaveBeenCalledTimes(4); // Se desuscribe de ambos eventos
+    expect(mockWS.disconnect).toHaveBeenCalled(2);
   });
 
   it("handles missing navigation state", async () => {
