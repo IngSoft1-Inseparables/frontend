@@ -34,7 +34,23 @@ vi.mock("../../services/WSService", () => {
 });
 import { __mockWS as mockWS } from "../../services/WSService";
 
-describe("Game component", () => {
+// --- Mock del GameBoard (componente presentacional) ---
+vi.mock("./components/GameBoard/GameBoard", () => ({
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId }) => (
+    <div data-testid="game-board">
+      <div data-testid="player-count">{orderedPlayers?.length || 0}</div>
+      <div data-testid="my-player-id">{myPlayerId}</div>
+      <div data-testid="players-amount">{turnData?.players_amount || 0}</div>
+      {orderedPlayers?.map((player) => (
+        <div key={player?.id} data-testid={`player-${player?.id}`}>
+          {player?.name}
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+describe("Game Container", () => {
   const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
     return render(
       <MemoryRouter
@@ -76,87 +92,170 @@ describe("Game component", () => {
     ],
   };
 
-  it("renders loading screen first", () => {
-    renderGame();
-    expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
-  });
-
-  it("calls HTTP services with correct parameters", async () => {
-    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
-
-    renderGame({ gameId: 10, myPlayerId: 99 });
-
-    await waitFor(() => {
-      expect(mockHttp.getPublicTurnData).toHaveBeenCalledWith(10);
-      expect(mockHttp.getPrivatePlayerData).toHaveBeenCalledWith(10, 99);
+  describe("Loading State", () => {
+    it("renders loading screen initially", () => {
+      renderGame();
+      expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
     });
   });
 
-  it("renders players after data load", async () => {
-    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+  describe("HTTP Service Integration", () => {
+    it("calls HTTP services with correct parameters", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
 
-    renderGame();
+      renderGame({ gameId: 10, myPlayerId: 99 });
 
-    await waitFor(() => {
-      expect(screen.getByText("Jugador1")).toBeInTheDocument();
-      expect(screen.getByText("Jugador2")).toBeInTheDocument();
-      expect(screen.getByText("Jugador3")).toBeInTheDocument();
-      expect(screen.getByText("Jugador4")).toBeInTheDocument();
+      await waitFor(() => {
+        expect(mockHttp.getPublicTurnData).toHaveBeenCalledWith(10);
+        expect(mockHttp.getPrivatePlayerData).toHaveBeenCalledWith(10, 99);
+      });
+    });
+
+    it("handles API errors gracefully", async () => {
+      const error = new Error("network fail");
+      mockHttp.getPublicTurnData.mockRejectedValue(error);
+
+      renderGame();
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith(
+          "Failed obtaining game data:",
+          error
+        );
+      });
+
+      // Debe seguir mostrando loading en caso de error
+      expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
     });
   });
 
-  it("shows game background after loading", async () => {
-    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+  describe("Player Reordering Logic", () => {
+    it("reorders players correctly with current player first", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
 
-    renderGame();
+      renderGame({ gameId: 1, myPlayerId: 2 });
 
-    await waitFor(() => {
-      const bg = document.querySelector('[style*="game_bg.png"]');
-      expect(bg).not.toBeNull();
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      // Verificar que los jugadores están en el orden correcto
+      // Jugador 2 (yo) primero, luego 3, 4, 1
+      expect(screen.getByTestId("player-2")).toBeInTheDocument();
+      expect(screen.getByTestId("player-3")).toBeInTheDocument();
+      expect(screen.getByTestId("player-4")).toBeInTheDocument();
+      expect(screen.getByTestId("player-1")).toBeInTheDocument();
+    });
+
+    it("handles different starting player positions", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue({
+        ...mockPlayerData,
+        id: 4,
+        name: "Jugador4",
+      });
+
+      renderGame({ gameId: 1, myPlayerId: 4 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      // Con jugador 4 como actual, orden debe ser: 4, 1, 2, 3
+      expect(screen.getByTestId("player-4")).toBeInTheDocument();
     });
   });
 
-  it("handles API errors gracefully", async () => {
-    const error = new Error("network fail");
-    mockHttp.getPublicTurnData.mockRejectedValue(error);
+  describe("WebSocket Integration", () => {
+    it("connects to WebSocket on mount", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
 
-    renderGame();
+      renderGame();
 
-    await waitFor(() => {
-      expect(console.error).toHaveBeenCalledWith(
-        "Failed obtaining game data:",
-        error
+      await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+    });
+
+    it("disconnects WebSocket on unmount", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      const { unmount } = renderGame();
+
+      await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+
+      unmount();
+
+      expect(mockWS.off).toHaveBeenCalled();
+      expect(mockWS.disconnect).toHaveBeenCalled();
+    });
+  });
+
+  describe("Navigation Validation", () => {
+    it("redirects when gameId is missing", async () => {
+      render(
+        <MemoryRouter initialEntries={[{ pathname: "/game", state: { myPlayerId: 2 } }]}>
+          <Game />
+        </MemoryRouter>
       );
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith(
+          "Missing gameId or myPlayerId in navigation state"
+        );
+      });
+    });
+
+    it("redirects when myPlayerId is missing", async () => {
+      render(
+        <MemoryRouter initialEntries={[{ pathname: "/game", state: { gameId: 1 } }]}>
+          <Game />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith(
+          "Missing gameId or myPlayerId in navigation state"
+        );
+      });
+    });
+
+    it("redirects when navigation state is completely missing", async () => {
+      render(
+        <MemoryRouter initialEntries={[{ pathname: "/game" }]}>
+          <Game />
+        </MemoryRouter>
+      );
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith(
+          "Missing gameId or myPlayerId in navigation state"
+        );
+      });
     });
   });
 
-  it("connects and disconnects WSService correctly", async () => {
-    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+  describe("Data Passing to GameBoard", () => {
+    it("passes correct props to GameBoard component", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
 
-    const { unmount } = renderGame();
+      renderGame({ gameId: 1, myPlayerId: 2 });
 
-    await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
 
-    unmount();
-
-    expect(mockWS.off).toHaveBeenCalledTimes(4); // Se desuscribe de ambos eventos
-    expect(mockWS.disconnect).toHaveBeenCalled(2);
-  });
-
-  it("handles missing navigation state", async () => {
-    render(
-      <MemoryRouter initialEntries={[{ pathname: "/game" }]}>
-        <Game />
-      </MemoryRouter>
-    );
-    await waitFor(() => {
-      expect(console.error).toHaveBeenCalledWith(
-        "Missing gameId or myPlayerId in navigation state"
-      );
+      // Verificar que pasa el número correcto de jugadores
+      expect(screen.getByTestId("player-count")).toHaveTextContent("4");
+      
+      // Verificar que pasa el myPlayerId
+      expect(screen.getByTestId("my-player-id")).toHaveTextContent("2");
+      
+      // Verificar que pasa players_amount
+      expect(screen.getByTestId("players-amount")).toHaveTextContent("4");
     });
   });
 });

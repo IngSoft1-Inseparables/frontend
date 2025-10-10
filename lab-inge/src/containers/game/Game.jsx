@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
-import GameBoard from "./components/GameBoard.jsx";
+import GameBoard from "./components/GameBoard/GameBoard.jsx";
 
 function Game() {
     const navigate = useNavigate();

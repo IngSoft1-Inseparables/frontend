@@ -1,7 +1,7 @@
-import HandCard from "../../../components/HandCard/HandCard.jsx";
-import DiscardDeck from "../../../components/DiscardDeck/DiscardDeck.jsx";
-import RegularDeck from "../../../components/RegularDeck/RegularDeck.jsx";
-import PlayerCard from "./PlayerCard.jsx";
+import HandCard from "../HandCard/HandCard.jsx";
+import DiscardDeck from "../DiscardDeck/DiscardDeck.jsx";
+import RegularDeck from "../RegularDeck/RegularDeck.jsx";
+import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
