@@ -116,11 +116,13 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               name="nombreUsuario"
               value={form.nombreUsuario}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2 "
+              className="input-uniform"
+              placeholder="Ingresar nombre de usuario"
               data-testid="input-username"
               required
               maxLength={35}
             />
+
           </label>
 
           <label className="grid gap-1">
@@ -130,12 +132,13 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               name="fechaNacimiento"
               value={form.fechaNacimiento}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2"
+              className="input-uniform"
               data-testid="input-fechaNacimiento"
               min={minDate}
               max={maxDate}
               required
             />
+
           </label>
 
           {/* Selección de Avatar */}

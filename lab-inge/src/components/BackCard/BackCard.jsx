@@ -1,25 +1,18 @@
 import './BackCard.css'
 
-const MURDER = { id: 0, src: '/cards/02-murder_escapes.png', alt: 'MurderEscapes' }
-
 export default function BackCard({ type, deck }) {
+  if (!deck || deck.length === 0) return null
+
   return (
     <div className="back-card-container">
       {deck.map((carta, index) => {
-        const isBottomRegular = type === 'regular' && index === 0
-        const isTopDiscard = type === 'discard' && index === deck.length - 1
-
         let src = carta.back
         let alt = carta.alt
 
-        if (isBottomRegular) {
-          src = MURDER.src
-          alt = MURDER.alt
-        }
-
-        if (isTopDiscard) {
+        // En el mazo de descarte, la última carta se muestra boca arriba
+        const isTopDiscard = type === 'discard' && index === deck.length - 1
+        if (isTopDiscard && carta.face) {
           src = carta.face
-          alt = carta.alt
         }
 
         return (

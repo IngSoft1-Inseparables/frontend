@@ -1,20 +1,33 @@
 import React from 'react'
 import BackCard from '../BackCard/BackCard'
 
-const CARTAS = [
-  { id: 1, back: '/cards/01-card_back.png', face: '/cards/07-detective_poirot.png', alt: 'Poirot' },
-  { id: 2, back: '/cards/01-card_back.png', face: '/cards/08-detective_marple.png', alt: 'Marple' },
-  { id: 3, back: '/cards/01-card_back.png', face: '/cards/09-detective_satterthwaite.png', alt: 'Satterthwaite' },
-  { id: 4, back: '/cards/01-card_back.png', face: '/cards/10-detective_pyne.png', alt: 'Pyne' },
-  { id: 5, back: '/cards/01-card_back.png', face: '/cards/11-detective_brent.png', alt: 'Brent' },
-  { id: 6, back: '/cards/01-card_back.png', face: '/cards/12-detective_tommyberesford.png', alt: 'Tommy' },
-  { id: 7, back: '/cards/01-card_back.png', face: '/cards/13-detective_tuppenceberesford.png', alt: 'Tuppen' },
-  { id: 8, back: '/cards/01-card_back.png', face: '/cards/14-detective_quin.png', alt: 'Quin' },
-  { id: 9, back: '/cards/01-card_back.png', face: '/cards/15-detective_oliver.png', alt: 'Oliver' },
-]
+export default function RegularDeck({ regpile }) {
+  if (!regpile) return null
 
-function RegularDeck() {
-  return <BackCard type="regular" deck={CARTAS} />
+  // Carta fija de "Murder Escapes" 
+  const murderCard = {
+    id: 0,
+    back: '/cards/02-murder_escapes.png',
+    face: '/cards/02-murder_escapes.png',
+    alt: 'MurderEscapes'
+  }
+
+  // para que mientras menos cartas haya se vea mas chiquito el mazo
+  let visibleCount = 1
+  if (regpile.count > 20) visibleCount = 6
+  else if (regpile.count > 10) visibleCount = 5
+  else if (regpile.count > 5) visibleCount = 4
+  else if (regpile.count > 0) visibleCount = 3
+  else visibleCount = 0
+
+  const backCards = Array.from({ length: visibleCount }, (_, i) => ({
+    id: i + 1,
+    back: `/cards/${regpile.image_back_name}.png`,
+    face: null,
+    alt: 'Regular Deck Card'
+  }))
+
+  const fullDeck = [murderCard, ...backCards]
+
+  return <BackCard type="regular" deck={fullDeck} />
 }
-
-export default RegularDeck
