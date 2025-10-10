@@ -69,7 +69,7 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
                 {/* Mesa central - Mazos */}
                 <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
                     <div className="h-full flex justify-evenly items-center">
-                        <RegularDeck />
+                        <RegularDeck regpile={turnData?.regpile}/>
                         <DiscardDeck />
                     </div>
                 </div>
