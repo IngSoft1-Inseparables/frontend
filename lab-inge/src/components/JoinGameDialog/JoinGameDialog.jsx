@@ -33,13 +33,29 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   })()
 
+  const minDate = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 115)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+  const maxDate = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 18)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+
+
   const isFormValid =
     form.nombreUsuario.trim() !== '' &&
     form.fechaNacimiento !== '' &&
     form.fechaNacimiento <= today &&
     form.idAvatar !== null
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault()
     if (!isFormValid) {
       setAvatarError(!form.idAvatar)
@@ -104,6 +120,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               placeholder="Ingresar nombre de usuario"
               data-testid="input-username"
               required
+              maxLength={35}
             />
 
           </label>
@@ -112,12 +129,13 @@ export default function JoinGameDialog({ onClose, partidaId }) {
             Fecha de nacimiento
             <input
               type="date"
-              max={today}
               name="fechaNacimiento"
               value={form.fechaNacimiento}
               onChange={handleChange}
               className="input-uniform"
               data-testid="input-fechaNacimiento"
+              min={minDate}
+              max={maxDate}
               required
             />
 

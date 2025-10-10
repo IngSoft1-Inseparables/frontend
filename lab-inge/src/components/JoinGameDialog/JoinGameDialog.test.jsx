@@ -38,7 +38,19 @@ test('render de fomrulario con inputs correctos', async () => {
   expect(screen.getByTestId('input-fechaNacimiento')).toBeInTheDocument()
   expect(screen.getByTestId('avatar-group')).toBeInTheDocument()
 })
+test('no permite escribir más de 35 caracteres en el Nombre de Usuario', async () => {
+  render(<JoinGameDialog onClose={() => {}} onSubmit={() => {}} />);
+  const user = userEvent.setup();
 
+  const input = screen.getByTestId('input-username');
+  const longText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ'; 
+
+  await user.type(input, longText);
+
+  // El input solo debería tomar los primeros 35 caracteres
+  expect(input.value.length).toBeLessThanOrEqual(35);
+  expect(input.value).toBe(longText.slice(0, 35));
+});
 
 test('submit con datos correctos navega al waiting', async () => {
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
@@ -131,6 +143,22 @@ test('submit cuando el backend no está disponible', async () => {
   // ASSERT
   
   expect(alertMock).toHaveBeenCalledWith('Error al unirse a la partida')
+})
+
+test('el input de fecha tiene min y max correspondientes a 115 y 18 años atrás', async () => {
+  render(<JoinGameDialog onClose={() => {}} partidaId={1} />)
+
+  const inputFecha = screen.getByTestId('input-fechaNacimiento')
+  expect(inputFecha).toBeInTheDocument()
+
+  // Cálculo esperado (idéntico al del componente)
+  const today = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  const maxDate = `${today.getFullYear() - 18}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
+  const minDate = `${today.getFullYear() - 115}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
+
+  expect(inputFecha).toHaveAttribute('max', maxDate)
+  expect(inputFecha).toHaveAttribute('min', minDate)
 })
 
 

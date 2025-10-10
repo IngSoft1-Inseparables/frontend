@@ -39,7 +39,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         return value.trim() ? "" : "Ingresar nombre de usuario";
       case "birthday": {
         if (!value) return "Ingresar fecha de nacimiento";
-        const minDate = new Date(1960, 0, 1); // meses base 0
+        const minDate = new Date(1915, 0, 1); // meses base 0
         const maxDate = new Date(2013, 11, 31);
         const [year, month, day] = value.split("-").map(Number);
         const selectedDate = new Date(year, month - 1, day);
@@ -188,6 +188,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
                   className={getInputClassName("name")}
                   placeholder="Ingresar nombre de Usuario"
                   autoComplete="off"
+                  maxLength={35}
                 />
               </label>
 
@@ -259,6 +260,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
                   className={getInputClassName("nameGame")}
                   placeholder="Ingresar nombre de la partida"
                   autoComplete="off"
+                   maxLength={40}
                 />
               </label>
               {errors.nameGame && (
