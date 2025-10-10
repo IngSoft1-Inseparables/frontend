@@ -119,6 +119,7 @@ useEffect(() => {
           </p>
         </div>
 
+
         {/* Secretos */}
         <div className="flex justify-around items-center flex-1 w-full">
           <div
@@ -179,6 +180,7 @@ useEffect(() => {
     );
   };
 
+
   const Players = () => {
     const playerCount = turnData.players_amount;
     switch (playerCount) {
@@ -193,19 +195,21 @@ useEffect(() => {
               {<PlayerCard player={orderedPlayers[1]} />}
             </div>
 
-            <div className="grid grid-cols-[20%_60%_20%]">
-              {/* bloque izquierdo */}
-              <div className="flex items-center px-2"></div>
-              {/* bloque central (mesa)*/}
-              <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                <div className="h-full flex justify-evenly items-center">
-                  <RegularDeck />
-                  <DiscardDeck />
-                </div>
-              </div>
-              {/* bloque derecho */}
-              <div className="flex items-center px-2"></div>
-            </div>
+                        <div className="grid grid-cols-[20%_60%_20%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center px-2">
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
+                                <div className="h-full flex justify-evenly items-center">
+                                    <RegularDeck regpile={turnData?.regpile}/>
+                                    <DiscardDeck />
+                                </div>
+                            </div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center px-2">
+                            </div>
+                        </div>
 
             {/* bloque inferior */}
             <div className="flex items-center px-4">
@@ -228,19 +232,24 @@ useEffect(() => {
               {<PlayerCard player={orderedPlayers[2]} />}
             </div>
 
-            <div className="grid grid-cols-[20%_60%_20%]">
-              {/* bloque izquierdo */}
-              <div className="flex items-center px-2"></div>
-              {/* bloque central (mesa)*/}
-              <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                <div className="h-full flex justify-evenly items-center">
-                  <RegularDeck />
-                  <DiscardDeck />
-                </div>
-              </div>
-              {/* bloque derecho */}
-              <div className="flex items-center px-2"></div>
-            </div>
+                        <div className="grid grid-cols-[20%_60%_20%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
+                                <div className="h-full flex justify-evenly items-center">
+                                    <RegularDeck regpile={turnData?.regpile}/>
+                                    <DiscardDeck />
+                                </div>
+                            </div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[3]} />}
+                            </div>
+                        </div>
+
 
             {/* bloque inferior */}
             <div className="flex items-center px-4">
@@ -262,23 +271,24 @@ useEffect(() => {
               {<PlayerCard player={orderedPlayers[2]} />}
             </div>
 
-            <div className="grid grid-cols-[20%_60%_20%]">
-              {/* bloque izquierdo */}
-              <div className="flex items-center px-2">
-                {<PlayerCard player={orderedPlayers[1]} />}
-              </div>
-              {/* bloque central (mesa)*/}
-              <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                <div className="h-full flex justify-evenly items-center">
-                  <RegularDeck />
-                  <DiscardDeck />
-                </div>
-              </div>
-              {/* bloque derecho */}
-              <div className="flex items-center px-2">
-                {<PlayerCard player={orderedPlayers[3]} />}
-              </div>
-            </div>
+                        <div className="grid grid-cols-[20%_60%_20%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
+                                <div className="h-full flex justify-evenly items-center">
+                                    <RegularDeck regpile={turnData?.regpile}/>
+                                    <DiscardDeck />
+                                </div>
+                            </div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[4]} />}
+                            </div>
+                        </div>
+
 
             {/* bloque inferior */}
             <div className="flex items-center px-4">
@@ -301,23 +311,25 @@ useEffect(() => {
               {<PlayerCard player={orderedPlayers[3]} />}
             </div>
 
-            <div className="grid grid-cols-[20%_60%_20%]">
-              {/* bloque izquierdo */}
-              <div className="flex items-center px-2">
-                {<PlayerCard player={orderedPlayers[1]} />}
-              </div>
-              {/* bloque central (mesa)*/}
-              <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                <div className="h-full flex justify-evenly items-center">
-                  <RegularDeck />
-                  <DiscardDeck />
-                </div>
-              </div>
-              {/* bloque derecho */}
-              <div className="flex items-center px-2">
-                {<PlayerCard player={orderedPlayers[4]} />}
-              </div>
-            </div>
+
+                        <div className="grid grid-cols-[20%_60%_20%]">
+                            {/* bloque izquierdo */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[1]} />}
+                            </div>
+                            {/* bloque central (mesa)*/}
+                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
+                                <div className="h-full flex justify-evenly items-center">
+                                    <RegularDeck regpile={turnData?.regpile}/>
+                                    <DiscardDeck />
+                                </div>
+                            </div>
+                            {/* bloque derecho */}
+                            <div className="flex items-center px-2">
+                                {<PlayerCard player={orderedPlayers[5]} />}
+                            </div>
+                        </div>
+
 
             {/* bloque inferior */}
             <div className="flex items-center px-4">
