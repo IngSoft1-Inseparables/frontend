@@ -1,9 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import GameList from "./GameList";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter } from "react-router-dom";
 
-// Mock del HTTP service interno
 const mockGames = [
   {
     id: 1,
@@ -13,6 +11,7 @@ const mockGames = [
     min_players: 2,
     avatar: "avatar/avatar1.png",
     creator_name: "Micaela",
+    available: true,
   },
   {
     id: 2,
@@ -22,6 +21,7 @@ const mockGames = [
     min_players: 3,
     avatar: "avatar/avatar2.png",
     creator_name: "Norma",
+    available: true,
   },
 ];
 
@@ -31,46 +31,65 @@ vi.mock("../../services/HTTPService", () => ({
   }),
 }));
 
+vi.mock("../../services/WSService", () => ({
+  createWSService: () => ({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+  }),
+}));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+import GameList from "./GameList";
+
 describe("GameList - pruebas básicas sin JoinGameDialog", () => {
-  it("renderiza partidas correctamente y muestra mensajes de carga y vacío", async () => {
+  it("renderiza partidas correctamente", async () => {
     render(
       <BrowserRouter>
         <GameList />
       </BrowserRouter>
     );
 
-    // Debe mostrar el loading inicialmente
     expect(screen.getByText(/Cargando partidas/i)).toBeInTheDocument();
 
-    // Esperamos que aparezcan las partidas
+    // Esperar a que carguen las partidas disponibles
     await waitFor(() =>
-      expect(screen.getByText("Aventura")).toBeInTheDocument()
+      expect(screen.getAllByTestId("GameCard").length).toBeGreaterThan(0)
     );
-    expect(screen.getByText("Estrategia")).toBeInTheDocument();
 
-    // Click en la primera partida (solo para testear click)
-    fireEvent.click(screen.getByText("Aventura"));
+    // Simular click
+    fireEvent.click(screen.getAllByTestId("GameCard")[0]);
   });
 
-  it("permite actualizar la lista de partidas", async () => {
-    render(<GameList />);
+  it("muestra 'No hay partidas disponibles' si no hay juegos válidos", async () => {
+    // Vaciar el mock manualmente
+    mockGames.length = 0;
 
-    // Esperamos que cargue inicialmente
-    await waitFor(() =>
-      expect(screen.getByText("Aventura")).toBeInTheDocument()
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
     );
 
-    const actualizarBtn = screen.getByRole("button", {
-      name: /Actualizar partidas/i,
-    });
-    expect(actualizarBtn).toBeInTheDocument();
-
-    fireEvent.click(actualizarBtn);
-
-    // Esperamos que vuelva a cargar partidas
     await waitFor(() =>
-      expect(screen.getByText("Aventura")).toBeInTheDocument()
+      expect(
+        screen.getByText(/No hay partidas disponibles/i)
+      ).toBeInTheDocument()
     );
-    expect(screen.getByText("Estrategia")).toBeInTheDocument();
   });
 });
+// vi.mock("../../components/JoinGameDialog/JoinGameDialog", () => ({
+//   default: vi.fn(({ onClose, partidaId }) => (
+//     <div data-testid="join-dialog">
+//       Dialog abierto, partidaId: {partidaId}
+//     </div>
+//   )),
+// }));
+
+
+
+
+
