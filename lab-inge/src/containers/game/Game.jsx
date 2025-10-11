@@ -23,6 +23,17 @@ function Game() {
         }
     }, [gameId, myPlayerId, navigate]);
 
+  const handleCardClick = async () => {
+  try {
+    const hand = await httpService.updateHand(
+      turnData.gameId,
+      turnData.turn_owner_id,
+    );
+    console.log("Mano actualizada:", hand);
+  } catch (error) {
+    console.error("Error al actualizar la mano:", error);
+  }
+};
     const fetchGameData = async () => {
         try {
             setIsLoading(true);
@@ -95,6 +106,7 @@ function Game() {
                 playerData={playerData}
                 turnData={turnData}
                 myPlayerId={myPlayerId}
+                onCardClick = {handleCardClick}
             />
         </div>
     );

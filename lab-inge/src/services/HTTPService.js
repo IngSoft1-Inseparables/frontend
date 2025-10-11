@@ -86,6 +86,15 @@ const createHttpService = () => {
             method: "POST",
             body: JSON.stringify(formData),
         });
+    
+    const updateHand = (gameId, playerId) =>
+        request("players/replenish", {
+            method: "POST",
+            body: JSON.stringify(
+                gameId,
+                playerId
+            )
+        });
 
 
     //   const getContacts = async (filters = {}) => {
@@ -125,7 +134,8 @@ const createHttpService = () => {
         joinLobby,
         getPublicTurnData,
         getPrivatePlayerData,
-        createGame
+        createGame,
+        updateHand
         // getContacts,
         // getContact,
         // createContact,

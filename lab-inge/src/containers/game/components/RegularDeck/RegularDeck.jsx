@@ -1,7 +1,7 @@
 import React from 'react'
 import BackCard from '../BackCard/BackCard'
 
-export default function RegularDeck({ regpile }) {
+export default function RegularDeck({ regpile, isAvailable, onCardClick }) {
   if (!regpile) return null
 
   // Carta fija de "Murder Escapes" 
@@ -29,5 +29,5 @@ export default function RegularDeck({ regpile }) {
 
   const fullDeck = [murderCard, ...backCards]
 
-  return <BackCard type="regular" deck={fullDeck} />
+  return <BackCard type="regular" deck={fullDeck} available = {isAvailable} onCardClick={onCardClick}/>
 }
