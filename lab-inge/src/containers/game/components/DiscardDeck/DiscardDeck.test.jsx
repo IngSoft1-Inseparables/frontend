@@ -1,8 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import DiscardDeck from './DiscardDeck.jsx'
 import '@testing-library/jest-dom'
-import { describe, test, expect } from 'vitest'
-
+import { test, expect } from 'vitest'
 
 test('no renderiza si discardpile es null o undefined', () => {
   const { container } = render(<DiscardDeck discardpile={null} />)
@@ -12,13 +11,15 @@ test('no renderiza si discardpile es null o undefined', () => {
   expect(container2.firstChild).toBeNull()
 })
 
-
-test('no renderiza si discardpile.count es 0', () => {
+test('renderiza el slot de descarte cuando discardpile.count es 0', () => {
   const discardpile = { count: 0 }
-  const { container } = render(<DiscardDeck discardpile={discardpile} />)
-  expect(container.firstChild).toBeNull()
-})
+  render(<DiscardDeck discardpile={discardpile} />)
 
+  // El slot tiene una imagen con alt="Zona de descarte"
+  const img = screen.getByRole('img', { name: /zona de descarte/i })
+  expect(img).toBeInTheDocument()
+  expect(img).toHaveAttribute('src', '/icons/discard-slot.png')
+})
 
 test('renderiza hasta 5 cartas cuando hay más descartadas', () => {
   const discardpile = {
@@ -34,7 +35,6 @@ test('renderiza hasta 5 cartas cuando hay más descartadas', () => {
   expect(imgs.length).toBe(5)
 })
 
-
 test('la última carta del mazo está boca arriba', () => {
   const discardpile = {
     count: 3,
@@ -49,7 +49,6 @@ test('la última carta del mazo está boca arriba', () => {
 
   expect(topCard).toHaveAttribute('src', '/cards/08-detective_marple.png')
 })
-
 
 test('todas las cartas menos la última tienen el reverso', () => {
   const discardpile = {

@@ -4,10 +4,44 @@ import BackCard from '../BackCard/BackCard';
 export default function DiscardDeck({ discardpile }) {
   if (!discardpile) return null;
 
-  // Si no hay cartas descartadas, no mostrar nada
-  if (discardpile.count === 0) {
-    return null;
-  }
+// Si no hay cartas descartadas
+if (discardpile.count === 0) {
+  return (
+    <div className="back-card-container relative">
+      <div
+        style={{
+          width: '100px',
+          height: '150px',
+          border: '2px dashed rgba(255, 255, 255, 0.4)',
+          borderRadius: '2px',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
+          color: 'rgba(255, 255, 255, 0.8)',
+          fontSize: '0.85rem',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }}
+      >
+        <img
+          src="/icons/discard-slot.png"
+          alt="Zona de descarte"
+          style={{
+            width: '65px',
+            height: '65px',
+            opacity: 0.85,
+            transition: 'transform 0.25s ease',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+        />
+      </div>
+    </div>
+  );
+}
 
   // Mostrar solo una pila visual (máximo 5 cartas)
   const visibleCount = Math.min(discardpile.count, 5);
