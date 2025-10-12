@@ -2,40 +2,85 @@ import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import BackCard from '../BackCard/BackCard'
 
-const CARTAS = [
-  { id: 1, back: '/cards/01-card_back.png', face: '/cards/07-detective_poirot.png', alt: 'Poirot' },
-  { id: 2, back: '/cards/01-card_back.png', face: '/cards/08-detective_marple.png', alt: 'Marple' },
-  { id: 3, back: '/cards/01-card_back.png', face: '/cards/09-detective_satterthwaite.png', alt: 'Satterthwaite' },
-  { id: 4, back: '/cards/01-card_back.png', face: '/cards/10-detective_pyne.png', alt: 'Pyne' },
-  { id: 5, back: '/cards/01-card_back.png', face: '/cards/11-detective_brent.png', alt: 'Brent' },
-  { id: 6, back: '/cards/01-card_back.png', face: '/cards/12-detective_tommyberesford.png', alt: 'Tommy' },
-  { id: 7, back: '/cards/01-card_back.png', face: '/cards/13-detective_tuppenceberesford.png', alt: 'Tuppen' },
-  { id: 8, back: '/cards/01-card_back.png', face: '/cards/14-detective_quin.png', alt: 'Quin' },
-  { id: 9, back: '/cards/01-card_back.png', face: '/cards/15-detective_oliver.png', alt: 'Oliver' },
+export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
+  if (!discardpile) return null;
 
-  //TODO: completar el mazo
-]
-
-function DiscardDeck({turnData, myPlayerId}) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'discard-deck',
   });
+
+  // Si no hay cartas descartadas
+  if (discardpile.count === 0) {
+    return (
+      <div className="back-card-container relative" ref={setNodeRef}>
+        <div
+          style={{
+            width: '100px',
+            height: '150px',
+            borderRadius: '2px',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: '0.85rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'absolute',
+            padding: '4px',
+            transition: 'all 0.2s ease',
+            border: isOver && turnData.turn_owner_id === myPlayerId ? '2px dashed #facc15' : '2px dashed rgba(255, 255, 255, 0.4)',
+            transform: isOver && turnData.turn_owner_id === myPlayerId ? 'scale(1.05)' : 'scale(1)',
+          }}
+        >
+          <img
+            src="/icons/discard-slot.png"
+            alt="Zona de descarte"
+            style={{
+              width: '65px',
+              height: '65px',
+              opacity: 0.85,
+              transition: 'transform 0.25s ease',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar solo una pila visual (máximo 5 cartas)
+  const visibleCount = Math.min(discardpile.count, 5);
+
+  // Generar los dorsos
+  const backCards = Array.from({ length: visibleCount - 1 }, (_, i) => ({
+    id: i,
+    back: '/cards/01-card_back.png',
+    alt: 'Back',
+  }));
+
+  // Carta superior boca arriba
+  const topCard = {
+    id: visibleCount,
+    face: `/cards/${discardpile.last_card_image}.png`,
+    alt: discardpile.last_card_name || 'Top Discarded Card',
+  };
+
+  // Combinar cartas
+  const deck = [...backCards, topCard];
 
   return (
     <div
       ref={setNodeRef}
       style={{
-        border: isOver && turnData.turn_owner_id === myPlayerId ? '3px solid #facc15' : '3px solid transparent',
-        borderRadius: '12px',
-        padding: '4px',
+        border: isOver && turnData.turn_owner_id === myPlayerId ? '2px dashed #facc15' : '2px dashed transparent',
+        borderRadius: '2px',
+        padding: '2px',
         transition: 'all 0.2s ease',
         transform: isOver && turnData.turn_owner_id === myPlayerId ? 'scale(1.05)' : 'scale(1)',
       }}
     >
-      <BackCard type="discard" deck={CARTAS} />
+      <BackCard type="discard" deck={deck} />
     </div>
-  )
+  );
 }
-
-export default DiscardDeck
-
