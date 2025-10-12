@@ -62,17 +62,7 @@ function WaitingRoom() {
             });
 
         }
-    }
-
-    // const handleJoinGame = async () => {
-    //     navigate('/game', {
-    //         state: {
-    //             gameId: gameId,
-    //             myPlayerId: myPlayerId
-    //         },
-    //         replace: true
-    //     });
-    // }
+    };
 
     const handleStartGame = async () => {
         if (playersCount < minPlayers) return;
@@ -161,53 +151,6 @@ function WaitingRoom() {
 
                     </div>
                 )}
-
-
-
-
-            {/* {!isHost &&
-                (
-                    <div className="flex flex-col items-center gap-6 justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 mt-auto relative z-10">
-                        {!isStarted && (
-                            <p className="text-white text-center">
-                                Esperando a que el anfitrión inicie la partida...
-                            </p>
-                        )}
-                        {isStarted && (
-                            <p className="text-white text-center">
-                                ¡La partida ha comenzado! Puedes ingresar ahora.
-                            </p>
-                        )}
-                        <button
-                            disabled={!isStarted || isStartingGame}
-                            onClick={handleJoinGame}
-                            type="button"
-                            aria-label="Ingresar a Partida"
-                            name="Ingresar a Partida"
-                            className={
-                                isStarted && !isStartingGame
-                                    ? "w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gradient-to-r from-[#CA8747]/70 to-[#A56A30]/70 text-white rounded-xl lg:rounded-2xl font-bold hover:from-[#CA8747] hover:to-[#A56A30] transition-all duration-300 transform hover:scale-105 active:scale-95"
-                                    : "w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gray-500/50 text-white rounded-xl lg:rounded-2xl font-bold cursor-not-allowed"
-                            }
-                        >
-                            {isStartingGame ? (
-                                <>
-                                    Iniciando...<br />
-                                    <span className="text-sm">Por favor espera</span>
-                                </>
-                            ) : (
-                                <>
-                                    Ingresar<br />
-                                    a Partida
-                                </>
-                            )}
-                        </button>
-
-                    </div>
-                )} */}
-
-
-
 
         </div>
     )

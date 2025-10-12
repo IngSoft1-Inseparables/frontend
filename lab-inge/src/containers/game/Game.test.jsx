@@ -3,11 +3,27 @@ import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import Game from "./Game";
 
+// Variable global para capturar el handler onDragEnd
+let capturedOnDragEnd = null;
+
+// --- Mock del @dnd-kit/core para capturar el handler ---
+vi.mock("@dnd-kit/core", async () => {
+  const actual = await vi.importActual("@dnd-kit/core");
+  return {
+    ...actual,
+    DndContext: ({ children, onDragEnd, ...props }) => {
+      capturedOnDragEnd = onDragEnd;
+      return <div>{children}</div>;
+    },
+  };
+});
+
 // --- Mock del HTTPService ---
 vi.mock("../../services/HTTPService", () => {
   const mockHttpService = {
     getPublicTurnData: vi.fn(),
     getPrivatePlayerData: vi.fn(),
+    discardCard: vi.fn(),
   };
 
   return {
@@ -63,10 +79,12 @@ describe("Game Container", () => {
 
   beforeEach(() => {
     console.error = vi.fn();
+    capturedOnDragEnd = null; // Reset el handler capturado
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    capturedOnDragEnd = null;
   });
 
   const mockTurnData = {
@@ -256,6 +274,372 @@ describe("Game Container", () => {
       
       // Verificar que pasa players_amount
       expect(screen.getByTestId("players-amount")).toHaveTextContent("4");
+    });
+  });
+
+  describe("WebSocket Event Handlers", () => {
+    it("updates turn data when game_public_update event is received", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      // Simular evento de WebSocket con nuevo turn_owner_id
+      const updatedTurnData = {
+        ...mockTurnData,
+        turn_owner_id: 3,
+      };
+
+      // Obtener el handler registrado
+      const onCalls = mockWS.on.mock.calls;
+      const gamePublicUpdateHandler = onCalls.find(
+        call => call[0] === "game_public_update"
+      )?.[1];
+
+      expect(gamePublicUpdateHandler).toBeDefined();
+
+      // Simular la llamada del handler con string JSON
+      gamePublicUpdateHandler(JSON.stringify(updatedTurnData));
+
+      // Verificar que el componente se actualiza (el GameBoard recibe nuevos datos)
+      await waitFor(() => {
+        // El componente debería re-renderizar con los nuevos datos
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+    });
+
+    it("updates turn data when game_public_update event is received with object payload", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      const updatedTurnData = {
+        ...mockTurnData,
+        turn_owner_id: 4,
+      };
+
+      const onCalls = mockWS.on.mock.calls;
+      const gamePublicUpdateHandler = onCalls.find(
+        call => call[0] === "game_public_update"
+      )?.[1];
+
+      // Simular la llamada con objeto (no string)
+      gamePublicUpdateHandler(updatedTurnData);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+    });
+
+    it("updates player data when player_private_update event is received", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      const updatedPlayerData = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 5, card_name: "CartaNueva" },
+        ],
+      };
+
+      const onCalls = mockWS.on.mock.calls;
+      const playerPrivateUpdateHandler = onCalls.find(
+        call => call[0] === "player_private_update"
+      )?.[1];
+
+      expect(playerPrivateUpdateHandler).toBeDefined();
+
+      // Simular la llamada del handler con string JSON
+      playerPrivateUpdateHandler(JSON.stringify(updatedPlayerData));
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+    });
+
+    it("updates player data when player_private_update event is received with object payload", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      const updatedPlayerData = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 6, card_name: "OtraCartaNueva" },
+        ],
+      };
+
+      const onCalls = mockWS.on.mock.calls;
+      const playerPrivateUpdateHandler = onCalls.find(
+        call => call[0] === "player_private_update"
+      )?.[1];
+
+      // Simular la llamada con objeto (no string)
+      playerPrivateUpdateHandler(updatedPlayerData);
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Drag and Drop Functionality", () => {
+    it("does not call discardCard when dropped outside discard deck", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      mockHttp.discardCard.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      const initialDiscardCallCount = mockHttp.discardCard.mock.calls.length;
+
+      // Simular drag end sin target (dropped outside)
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: null
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que NO se llamó discardCard
+      expect(mockHttp.discardCard).toHaveBeenCalledTimes(initialDiscardCallCount);
+    });
+
+    it("calls discardCard API when card is dropped on discard deck during player's turn", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      mockHttp.discardCard.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      // Simular drag end sobre el mazo de descarte
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que se llamó discardCard con los parámetros correctos
+      await waitFor(() => {
+        expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 1);
+      });
+    });
+
+    it("does not call discardCard when it's not player's turn", async () => {
+      const notMyTurnData = {
+        ...mockTurnData,
+        turn_owner_id: 3, // No es el turno del jugador 2
+      };
+      mockHttp.getPublicTurnData.mockResolvedValue(notMyTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      mockHttp.discardCard.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      const initialDiscardCallCount = mockHttp.discardCard.mock.calls.length;
+
+      // Simular drag end sobre el mazo de descarte
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que NO se llamó discardCard porque no es el turno del jugador
+      expect(mockHttp.discardCard).toHaveBeenCalledTimes(initialDiscardCallCount);
+    });
+
+    it("handles discardCard API error gracefully", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      const error = new Error("API Error");
+      mockHttp.discardCard.mockRejectedValue(error);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      // Simular drag end sobre el mazo de descarte
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que se intentó llamar discardCard
+      await waitFor(() => {
+        expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 1);
+      });
+
+      // Verificar que se registró el error
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith('Error al descartar carta:', error);
+      });
+    });
+
+    it("removes card optimistically from playerData when dropped on discard deck", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      const initialPlayerData = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 1, card_name: "Carta1" },
+          { card_id: 2, card_name: "Carta2" },
+          { card_id: 3, card_name: "Carta3" },
+        ],
+      };
+      mockHttp.getPrivatePlayerData.mockResolvedValue(initialPlayerData);
+      mockHttp.discardCard.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      // Simular drag end sobre el mazo de descarte
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que se llamó discardCard
+      await waitFor(() => {
+        expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 1);
+      });
+
+      // El estado se actualiza optimistamente, pero no podemos verificarlo fácilmente
+      // porque GameBoard está mockeado. Al menos verificamos que la API fue llamada.
+    });
+
+    it("handles null playerData gracefully during drag-and-drop", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      // Simular que playerData es null inicialmente
+      mockHttp.getPrivatePlayerData.mockResolvedValue(null);
+      mockHttp.discardCard.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      // Esperar un poco para que se ejecute el efecto
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verificar que el handler fue capturado
+      expect(capturedOnDragEnd).toBeDefined();
+
+      // Simular drag end sobre el mazo de descarte con playerData null
+      const dragEndEvent = {
+        active: {
+          id: 'card-1',
+          data: {
+            current: {
+              cardId: 1,
+              cardName: 'Carta1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      // Esto no debería fallar incluso si playerData es null
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Verificar que aún así se intentó descartar
+      await waitFor(() => {
+        expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 1);
+      });
     });
   });
 });

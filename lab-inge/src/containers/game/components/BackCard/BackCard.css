@@ -16,8 +16,6 @@
   background: linear-gradient(135deg, #fdfdfd, #e3e3e3);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   position: absolute;
-  top: 0;
-  left: 0;
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 

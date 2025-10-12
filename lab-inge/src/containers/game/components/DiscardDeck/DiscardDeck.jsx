@@ -1,4 +1,5 @@
 import React from 'react'
+import { useDroppable } from '@dnd-kit/core'
 import BackCard from '../BackCard/BackCard'
 
 const CARTAS = [
@@ -15,8 +16,25 @@ const CARTAS = [
   //TODO: completar el mazo
 ]
 
-function DiscardDeck() {
-  return <BackCard type="discard" deck={CARTAS} />
+function DiscardDeck({turnData, myPlayerId}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'discard-deck',
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        border: isOver && turnData.turn_owner_id === myPlayerId ? '3px solid #facc15' : '3px solid transparent',
+        borderRadius: '12px',
+        padding: '4px',
+        transition: 'all 0.2s ease',
+        transform: isOver && turnData.turn_owner_id === myPlayerId ? 'scale(1.05)' : 'scale(1)',
+      }}
+    >
+      <BackCard type="discard" deck={CARTAS} />
+    </div>
+  )
 }
 
 export default DiscardDeck

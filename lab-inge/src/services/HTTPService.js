@@ -87,36 +87,22 @@ const createHttpService = () => {
             body: JSON.stringify(formData),
         });
 
+    const discardCard = (playerId, cardId) => {
+        if (!playerId) {
+            throw new Error('Game ID is required');
+        }
+        if (!cardId) {
+            throw new Error('Card ID is required');
+        }
 
-    //   const getContacts = async (filters = {}) => {
-    //     const params = new URLSearchParams();
-    //     Object.entries(filters).forEach(([key, value]) => {
-    //       if (value) params.append(key, value);
-    //     });
-    //     const queryString = params.toString();
-    //     return request(`/contacts${queryString ? `?${queryString}` : ''}`);
-    //   };
-
-    //   const getContact = async (id) => {
-    //     return request(`/contacts/${id}`);
-    //   };
-
-    //   const createContact = async (contactData) => {
-    //     return request('/contacts', {
-    //       method: 'POST',
-    //       body: JSON.stringify(contactData),
-    //     });
-    //   };
-
-    //   const deleteContact = async (id) => {
-    //     return request(`/contacts/${id}`, {
-    //       method: 'DELETE',
-    //     });
-    //   };
-
-    //   const getTags = async () => {
-    //     return request('/tags');
-    //   };
+        return request("/players/discard", {
+            method: "POST",
+            body: JSON.stringify({
+                playerId,
+                cardId
+            })
+        });
+    }
 
     return {
         getGame,
@@ -125,12 +111,8 @@ const createHttpService = () => {
         joinLobby,
         getPublicTurnData,
         getPrivatePlayerData,
-        createGame
-        // getContacts,
-        // getContact,
-        // createContact,
-        // deleteContact,
-        // getTags
+        createGame,
+        discardCard
     };
 };
 

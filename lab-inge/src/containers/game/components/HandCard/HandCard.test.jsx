@@ -1,7 +1,17 @@
 import { render, screen } from '@testing-library/react'
+import { DndContext } from '@dnd-kit/core'
 import HandCard from './HandCard.jsx'
 import '@testing-library/jest-dom'
 import { describe, test, expect } from 'vitest'
+
+// Helper function to render with DndContext
+const renderWithDnd = (component) => {
+  return render(
+    <DndContext>
+      {component}
+    </DndContext>
+  )
+}
 
 describe('HandCard', () => {
   const sampleCards = [
@@ -11,20 +21,20 @@ describe('HandCard', () => {
   ]
 
   test('renderiza todas las cartas según playerCards', () => {
-    render(<HandCard playerCards={sampleCards} />)
+    renderWithDnd(<HandCard playerCards={sampleCards} />)
 
-    const imgs = screen.getAllByRole('img')
-    expect(imgs).toHaveLength(3)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons).toHaveLength(3)
 
     // Verifica que al menos una carta específica esté
     expect(screen.getByAltText(/Poirot/i)).toBeInTheDocument()
   })
 
   test('no renderiza cartas si playerCards está vacío', () => {
-    render(<HandCard playerCards={[]} />)
+    renderWithDnd(<HandCard playerCards={[]} />)
 
-    const imgs = screen.queryAllByRole('img')
-    expect(imgs).toHaveLength(0)
+    const buttons = screen.queryAllByRole('button')
+    expect(buttons).toHaveLength(0)
   })
 
   test('renderiza correctamente con varios objetos', () => {
@@ -34,7 +44,7 @@ describe('HandCard', () => {
       { card_id: 6, card_name: 'Tommy', image_name: 'detective_tommy', image_back_name: 'card_back' },
     ]
 
-    render(<HandCard playerCards={extraCards} />)
+    renderWithDnd(<HandCard playerCards={extraCards} />)
 
     expect(screen.getByAltText(/Pyne/i)).toBeInTheDocument()
     expect(screen.getByAltText(/Brent/i)).toBeInTheDocument()
@@ -42,9 +52,9 @@ describe('HandCard', () => {
   })
 
   test('no explota si recibe playerCards con datos inválidos', () => {
-    render(<HandCard playerCards={[{ card_id: 999 }]} />)
+    renderWithDnd(<HandCard playerCards={[{ card_id: 999 }]} />)
 
-    const imgs = screen.queryAllByRole('img')
-    expect(imgs).toHaveLength(0) // no debería renderizar nada
+    const buttons = screen.queryAllByRole('button')
+    expect(buttons).toHaveLength(0) // no debería renderizar nada
   })
 })
