@@ -101,13 +101,28 @@ function Game() {
         // Si se soltó sobre el mazo de descarte
         if (over.id === 'discard-deck') {
             const cardId = active.data.current?.cardId;
+            const cardName = active.data.current?.cardName;
+            const imageName = active.data.current?.imageName;
 
+            // Actualizar optimisticamente la mano del jugador
             setPlayerData(prevData => {
                 if (!prevData) return prevData;
 
                 return {
                     ...prevData,
                     playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
+                };
+            });
+
+            // Actualizar optimisticamente el mazo de descarte
+            setTurnData(prevTurnData => {
+                return {
+                    ...prevTurnData,
+                    discardpile: {
+                        count: (prevTurnData.discardpile?.count || 0) + 1,
+                        last_card_name: cardName,
+                        last_card_image: imageName
+                    }
                 };
             });
 
