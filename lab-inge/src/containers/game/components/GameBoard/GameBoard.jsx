@@ -37,8 +37,9 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
-const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.length < 6;
-const playerCardsLess = playerData.playerCards.slice(0,4);
+const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
+
+
     return (
         <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
             style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
@@ -98,7 +99,7 @@ const playerCardsLess = playerData.playerCards.slice(0,4);
                     myPlayerId={myPlayerId}
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
-                    <HandCard playerCards={playerCardsLess || []} />
+                    <HandCard playerCards={playerData?.playerCards || []} />
                 </div>
             </div>
         </div>

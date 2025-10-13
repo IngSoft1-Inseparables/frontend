@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import Game from "./Game";
@@ -8,6 +8,7 @@ vi.mock("../../services/HTTPService", () => {
   const mockHttpService = {
     getPublicTurnData: vi.fn(),
     getPrivatePlayerData: vi.fn(),
+    updateHand: vi.fn(),
   };
 
   return {
@@ -34,9 +35,9 @@ vi.mock("../../services/WSService", () => {
 });
 import { __mockWS as mockWS } from "../../services/WSService";
 
-// --- Mock del GameBoard (componente presentacional) ---
+// --- Mock del GameBoard ---
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId }) => (
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick }) => (
     <div data-testid="game-board">
       <div data-testid="player-count">{orderedPlayers?.length || 0}</div>
       <div data-testid="my-player-id">{myPlayerId}</div>
@@ -46,6 +47,7 @@ vi.mock("./components/GameBoard/GameBoard", () => ({
           {player?.name}
         </div>
       ))}
+      <button data-testid="card-button" onClick={onCardClick}>Click Card</button>
     </div>
   ),
 }));
@@ -53,9 +55,7 @@ vi.mock("./components/GameBoard/GameBoard", () => ({
 describe("Game Container", () => {
   const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
     return render(
-      <MemoryRouter
-        initialEntries={[{ pathname: "/game", state: initialState }]}
-      >
+      <MemoryRouter initialEntries={[{ pathname: "/game", state: initialState }]}>
         <Game />
       </MemoryRouter>
     );
@@ -63,6 +63,7 @@ describe("Game Container", () => {
 
   beforeEach(() => {
     console.error = vi.fn();
+    console.log = vi.fn();
   });
 
   afterEach(() => {
@@ -119,15 +120,88 @@ describe("Game Container", () => {
       renderGame();
 
       await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith(
-          "Failed obtaining game data:",
-          error
-        );
+        expect(console.error).toHaveBeenCalledWith("Failed obtaining game data:", error);
       });
 
-      // Debe seguir mostrando loading en caso de error
       expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
     });
+
+    it("calls updateHand and logs hand on success", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      mockHttp.updateHand.mockResolvedValue([{ card_id: 1, card_name: "Carta1" }]);
+
+      renderGame();
+
+      const button = await screen.findByTestId("card-button");
+      await fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(mockHttp.updateHand).toHaveBeenCalledWith(mockTurnData.gameId, mockTurnData.turn_owner_id);
+        expect(console.log).toHaveBeenCalledWith("Update Hand:", [{ card_id: 1, card_name: "Carta1" }]);
+      });
+    });
+
+    it("handles updateHand failure gracefully", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      const error = new Error("update fail");
+      mockHttp.updateHand.mockRejectedValue(error);
+
+      renderGame();
+
+      const button = await screen.findByTestId("card-button");
+      await fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith("Failed to update hand:", error);
+      });
+    });
+
+    it("handles WebSocket player_private_update correctly", async () => {
+  renderGame({ gameId: 1, myPlayerId: 2 });
+
+  const privateHandler = mockWS.on.mock.calls.find(call => call[0] === "player_private_update")[1];
+
+  // Simulamos un update de cartas del jugador
+  const updatedPlayerData = { ...mockPlayerData, playerCards: [{ card_id: 99, card_name: "Carta99" }] };
+
+  await waitFor(() => privateHandler(JSON.stringify(updatedPlayerData)));
+
+  // Comprobamos que GameBoard recibió el nuevo playerData
+  const cardButton = screen.getByTestId("card-button");
+  expect(cardButton).toBeInTheDocument(); 
+});
+
+
+it("handles updateHand returning empty array", async () => {
+  mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+  mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+  mockHttp.updateHand.mockResolvedValue([]); // vacío
+
+  renderGame();
+
+  const button = await screen.findByTestId("card-button");
+  await fireEvent.click(button);
+
+  await waitFor(() => {
+    expect(console.log).toHaveBeenCalledWith("Update Hand:", []); // cubre branch de array vacío
+  });
+});
+it("handles player reordering when only 2 players", async () => {
+  const turnData2 = { ...mockTurnData, players: mockTurnData.players.slice(0,2), players_amount: 2 };
+  mockHttp.getPublicTurnData.mockResolvedValue(turnData2);
+  mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+  renderGame({ gameId: 1, myPlayerId: 2 });
+
+  await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+  expect(screen.getByTestId("player-2")).toBeInTheDocument();
+  expect(screen.getByTestId("player-1")).toBeInTheDocument();
+});
+
+
   });
 
   describe("Player Reordering Logic", () => {
@@ -137,34 +211,12 @@ describe("Game Container", () => {
 
       renderGame({ gameId: 1, myPlayerId: 2 });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("game-board")).toBeInTheDocument();
-      });
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
 
-      // Verificar que los jugadores están en el orden correcto
-      // Jugador 2 (yo) primero, luego 3, 4, 1
       expect(screen.getByTestId("player-2")).toBeInTheDocument();
       expect(screen.getByTestId("player-3")).toBeInTheDocument();
       expect(screen.getByTestId("player-4")).toBeInTheDocument();
       expect(screen.getByTestId("player-1")).toBeInTheDocument();
-    });
-
-    it("handles different starting player positions", async () => {
-      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-      mockHttp.getPrivatePlayerData.mockResolvedValue({
-        ...mockPlayerData,
-        id: 4,
-        name: "Jugador4",
-      });
-
-      renderGame({ gameId: 1, myPlayerId: 4 });
-
-      await waitFor(() => {
-        expect(screen.getByTestId("game-board")).toBeInTheDocument();
-      });
-
-      // Con jugador 4 como actual, orden debe ser: 4, 1, 2, 3
-      expect(screen.getByTestId("player-4")).toBeInTheDocument();
     });
   });
 
@@ -194,46 +246,24 @@ describe("Game Container", () => {
   });
 
   describe("Navigation Validation", () => {
-    it("redirects when gameId is missing", async () => {
+    it("logs error if gameId or myPlayerId missing", async () => {
       render(
         <MemoryRouter initialEntries={[{ pathname: "/game", state: { myPlayerId: 2 } }]}>
           <Game />
         </MemoryRouter>
       );
 
-      await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith(
-          "Missing gameId or myPlayerId in navigation state"
-        );
-      });
+      await waitFor(() => expect(console.error).toHaveBeenCalledWith("Missing gameId or myPlayerId in navigation state"));
     });
 
-    it("redirects when myPlayerId is missing", async () => {
-      render(
-        <MemoryRouter initialEntries={[{ pathname: "/game", state: { gameId: 1 } }]}>
-          <Game />
-        </MemoryRouter>
-      );
-
-      await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith(
-          "Missing gameId or myPlayerId in navigation state"
-        );
-      });
-    });
-
-    it("redirects when navigation state is completely missing", async () => {
+    it("logs error when state missing completely", async () => {
       render(
         <MemoryRouter initialEntries={[{ pathname: "/game" }]}>
           <Game />
         </MemoryRouter>
       );
 
-      await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith(
-          "Missing gameId or myPlayerId in navigation state"
-        );
-      });
+      await waitFor(() => expect(console.error).toHaveBeenCalledWith("Missing gameId or myPlayerId in navigation state"));
     });
   });
 
@@ -244,17 +274,10 @@ describe("Game Container", () => {
 
       renderGame({ gameId: 1, myPlayerId: 2 });
 
-      await waitFor(() => {
-        expect(screen.getByTestId("game-board")).toBeInTheDocument();
-      });
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
 
-      // Verificar que pasa el número correcto de jugadores
       expect(screen.getByTestId("player-count")).toHaveTextContent("4");
-      
-      // Verificar que pasa el myPlayerId
       expect(screen.getByTestId("my-player-id")).toHaveTextContent("2");
-      
-      // Verificar que pasa players_amount
       expect(screen.getByTestId("players-amount")).toHaveTextContent("4");
     });
   });

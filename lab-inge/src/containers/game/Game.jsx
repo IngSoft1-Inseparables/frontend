@@ -29,9 +29,9 @@ function Game() {
       turnData.gameId,
       turnData.turn_owner_id,
     );
-    console.log("Mano actualizada:", hand);
+    console.log("Update Hand:", hand);
   } catch (error) {
-    console.error("Error al actualizar la mano:", error);
+    console.error("Failed to update hand:", error);
   }
 };
     const fetchGameData = async () => {
@@ -102,6 +102,7 @@ function Game() {
     return (
         <div className="h-screen w-screen">
             <GameBoard
+                data-testid="game-board"
                 orderedPlayers={orderedPlayers}
                 playerData={playerData}
                 turnData={turnData}

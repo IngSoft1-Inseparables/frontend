@@ -21,15 +21,39 @@
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-.back-card:nth-child(1) { transform: rotate(-2deg) translate(2px, -3px); }
-.back-card:nth-child(2) { transform: rotate(1deg) translate(2px, -2px); }
-.back-card:nth-child(3) { transform: rotate(-1deg) translate(-1px, 2px); }
-.back-card:nth-child(4) { transform: rotate(3deg) translate(3px, 1px); }
-.back-card:nth-child(5) { transform: rotate(-4deg) translate(-2px, 4px); }
-.back-card:nth-child(6) { transform: rotate(2deg) translate(-2px, -1px); }
-.back-card:nth-child(7) { transform: rotate(1.5deg) translate(2px, 3px); }
-.back-card:nth-child(8) { transform: rotate(-2.5deg) translate(-3px, 1px); }
-.back-card:nth-child(9) { transform: rotate(0.5deg) translate(1px, -3px); }
+.back-card-clickable {
+  box-shadow: 0 0 15px #facc15;
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.back-card:nth-child(1) {
+  transform: rotate(-2deg) translate(2px, -3px);
+}
+.back-card:nth-child(2) {
+  transform: rotate(1deg) translate(2px, -2px);
+}
+.back-card:nth-child(3) {
+  transform: rotate(-1deg) translate(-1px, 2px);
+}
+.back-card:nth-child(4) {
+  transform: rotate(3deg) translate(3px, 1px);
+}
+.back-card:nth-child(5) {
+  transform: rotate(-4deg) translate(-2px, 4px);
+}
+.back-card:nth-child(6) {
+  transform: rotate(2deg) translate(-2px, -1px);
+}
+.back-card:nth-child(7) {
+  transform: rotate(1.5deg) translate(2px, 3px);
+}
+.back-card:nth-child(8) {
+  transform: rotate(-2.5deg) translate(-3px, 1px);
+}
+.back-card:nth-child(9) {
+  transform: rotate(0.5deg) translate(1px, -3px);
+}
 
 .back-card-container:hover .back-card:last-child {
   transform: scale(1.03) translateY(-4px);
