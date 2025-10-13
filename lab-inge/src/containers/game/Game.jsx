@@ -115,6 +115,10 @@ function Game() {
             const cardName = active.data.current?.cardName;
             const imageName = active.data.current?.imageName;
 
+            // Guardar el estado anterior para poder hacer rollback
+            const previousPlayerData = playerData;
+            const previousTurnData = turnData;
+
             // Actualizar optimisticamente la mano del jugador
             setPlayerData(prevData => {
                 if (!prevData) return prevData;
@@ -141,6 +145,10 @@ function Game() {
                 await httpService.discardCard(myPlayerId, cardId);
             } catch (error) {
                 console.error('Error al descartar carta:', error);
+                
+                // Revertir los cambios optimistas en caso de error
+                setPlayerData(previousPlayerData);
+                setTurnData(previousTurnData);
             }
         }
     };

@@ -52,20 +52,27 @@ vi.mock("../../services/WSService", () => {
 import { __mockWS as mockWS } from "../../services/WSService";
 
 // --- Mock del GameBoard ---
+let gameBoardProps = null;
+
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick }) => (
-    <div data-testid="game-board">
-      <div data-testid="player-count">{orderedPlayers?.length || 0}</div>
-      <div data-testid="my-player-id">{myPlayerId}</div>
-      <div data-testid="players-amount">{turnData?.players_amount || 0}</div>
-      {orderedPlayers?.map((player) => (
-        <div key={player?.id} data-testid={`player-${player?.id}`}>
-          {player?.name}
-        </div>
-      ))}
-      <button data-testid="card-button" onClick={onCardClick}>Click Card</button>
-    </div>
-  ),
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick }) => {
+    // Capturar los props cada vez que se renderiza
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick };
+    
+    return (
+      <div data-testid="game-board">
+        <div data-testid="player-count">{orderedPlayers?.length || 0}</div>
+        <div data-testid="my-player-id">{myPlayerId}</div>
+        <div data-testid="players-amount">{turnData?.players_amount || 0}</div>
+        {orderedPlayers?.map((player) => (
+          <div key={player?.id} data-testid={`player-${player?.id}`}>
+            {player?.name}
+          </div>
+        ))}
+        <button data-testid="card-button" onClick={onCardClick}>Click Card</button>
+      </div>
+    );
+  },
 }));
 
 describe("Game Container", () => {
@@ -81,11 +88,13 @@ describe("Game Container", () => {
     console.error = vi.fn();
     console.log = vi.fn();
     capturedOnDragEnd = null; // Reset el handler capturado
+    gameBoardProps = null; // Reset los props capturados
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     capturedOnDragEnd = null;
+    gameBoardProps = null;
   });
 
   const mockTurnData = {
@@ -538,8 +547,25 @@ it("handles player reordering when only 2 players", async () => {
     });
 
     it("handles discardCard API error gracefully", async () => {
-      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
-      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+      const initialTurnData = {
+        ...mockTurnData,
+        discardpile: {
+          count: 3,
+          last_card_name: 'OldCard',
+          last_card_image: 'old_card_image'
+        }
+      };
+
+      const initialPlayerData = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 1, card_name: 'Carta1', image_name: 'detective_poirot' },
+          { card_id: 2, card_name: 'Carta2', image_name: 'detective_marple' },
+        ]
+      };
+
+      mockHttp.getPublicTurnData.mockResolvedValue(initialTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(initialPlayerData);
       const error = new Error("API Error");
       mockHttp.discardCard.mockRejectedValue(error);
 
@@ -557,7 +583,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'detective_poirot'
             }
           }
         },
@@ -577,6 +604,98 @@ it("handles player reordering when only 2 players", async () => {
       await waitFor(() => {
         expect(console.error).toHaveBeenCalledWith('Error al descartar carta:', error);
       });
+
+      // El test verifica que el error se manejó correctamente
+      // En una implementación real, verificaríamos que los estados se revirtieron
+      // pero como GameBoard está mockeado, no podemos verificar el estado interno directamente
+    });
+
+    it("rollbacks playerData and turnData when discardCard API fails", async () => {
+      const initialTurnData = {
+        ...mockTurnData,
+        discardpile: {
+          count: 5,
+          last_card_name: 'InitialCard',
+          last_card_image: 'initial_image'
+        }
+      };
+
+      const initialPlayerData = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 10, card_name: 'TestCard1', image_name: 'test_image_1' },
+          { card_id: 20, card_name: 'TestCard2', image_name: 'test_image_2' },
+          { card_id: 30, card_name: 'TestCard3', image_name: 'test_image_3' },
+        ]
+      };
+
+      mockHttp.getPublicTurnData.mockResolvedValue(initialTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(initialPlayerData);
+      
+      // Simular error en la API
+      const apiError = new Error("Network Error");
+      mockHttp.discardCard.mockRejectedValue(apiError);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(capturedOnDragEnd).toBeDefined();
+      });
+
+      // Esperar a que se establezcan los props iniciales
+      await waitFor(() => {
+        expect(gameBoardProps).toBeDefined();
+        expect(gameBoardProps.playerData).toBeDefined();
+        expect(gameBoardProps.turnData).toBeDefined();
+      });
+
+      // Capturar el estado inicial
+      const initialPlayerCards = [...gameBoardProps.playerData.playerCards];
+      const initialDiscardPile = { ...gameBoardProps.turnData.discardpile };
+
+      // Verificar que el estado inicial es correcto
+      expect(initialPlayerCards).toHaveLength(3);
+      expect(initialPlayerCards[0].card_id).toBe(10);
+      expect(initialDiscardPile.count).toBe(5);
+      expect(initialDiscardPile.last_card_name).toBe('InitialCard');
+
+      // Simular drag end sobre el mazo de descarte
+      const dragEndEvent = {
+        active: {
+          id: 'card-10',
+          data: {
+            current: {
+              cardId: 10,
+              cardName: 'TestCard1',
+              imageName: 'test_image_1'
+            }
+          }
+        },
+        over: {
+          id: 'discard-deck'
+        }
+      };
+
+      await capturedOnDragEnd(dragEndEvent);
+
+      // Esperar a que el error se procese y se ejecute el rollback
+      await waitFor(() => {
+        expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 10);
+        expect(console.error).toHaveBeenCalledWith('Error al descartar carta:', apiError);
+      });
+
+      // Esperar un tick adicional para que se ejecute el setState del rollback
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Verificar que después del error, el estado se restauró
+      expect(gameBoardProps.playerData.playerCards).toHaveLength(3);
+      expect(gameBoardProps.playerData.playerCards[0].card_id).toBe(10);
+      expect(gameBoardProps.playerData.playerCards[1].card_id).toBe(20);
+      expect(gameBoardProps.playerData.playerCards[2].card_id).toBe(30);
+      expect(gameBoardProps.turnData.discardpile.count).toBe(5);
+      expect(gameBoardProps.turnData.discardpile.last_card_name).toBe('InitialCard');
+      expect(gameBoardProps.turnData.discardpile.last_card_image).toBe('initial_image');
     });
 
     it("removes card optimistically from playerData when dropped on discard deck", async () => {

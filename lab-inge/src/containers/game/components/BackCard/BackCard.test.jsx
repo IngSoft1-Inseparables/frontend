@@ -76,9 +76,13 @@ describe("BackCard", () => {
 
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(2);
-    imgs.forEach((img) => {
-      expect(img).toHaveAttribute("src", "/cards/back1.png");
-    });
+    
+    // La primera carta debe ser Murder Escapes cuando type="regular"
+    expect(imgs[0]).toHaveAttribute("src", "/cards/02-murder_escapes.png");
+    expect(imgs[0]).toHaveAttribute("alt", "MurderEscapes");
+    
+    // Las demás cartas tienen el dorso
+    expect(imgs[1]).toHaveAttribute("src", "/cards/back1.png");
   });
 
   test('reemplaza la primera carta por Murder Escapes cuando type="regular"', () => {
@@ -146,10 +150,14 @@ describe("BackCard", () => {
       />
     );
 
-    const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(1); // solo la última carta es botón
+    const imgs = screen.getAllByRole("img");
+    expect(imgs).toHaveLength(2); 
+    
+    // La última carta (índice 1) debe tener la clase clickable
+    const topCard = imgs[1];
+    expect(topCard).toHaveClass("back-card-clickable");
 
-    fireEvent.click(buttons[0]); // hacemos click en la carta clickeable
+    fireEvent.click(topCard); // hacemos click en la carta clickeable
 
     expect(onCardClickMock).toHaveBeenCalledTimes(1); // se llamó a onCardClick
   });

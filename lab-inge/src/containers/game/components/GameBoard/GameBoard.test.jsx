@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import GameBoard from "./GameBoard";
 
@@ -228,16 +228,14 @@ describe("GameBoard component", () => {
       />
     );
 
-    // Seleccionamos la última carta
-    const backCardButton = container.querySelector(
-      ".back-card-container button"
-    );
-    const topCardImg = backCardButton.querySelector("img");
+    // Seleccionamos la última carta clickeable
+    const topCardImg = container.querySelector(".back-card-clickable");
 
+    expect(topCardImg).toBeInTheDocument();
     expect(topCardImg).toHaveClass("back-card-clickable");
 
     // Simulamos click
-    topCardImg.click();
+    fireEvent.click(topCardImg);
     expect(mockOnCardClick).toHaveBeenCalled();
   });
   it("renders RegularDeck with non-clickable BackCard when not available", () => {
@@ -275,16 +273,15 @@ describe("GameBoard component", () => {
       />
     );
 
-    const backCardButton = container.querySelector(
-      ".back-card-container button"
-    );
-    const topCardImg = backCardButton.querySelector("img");
-
-    // La carta NO debe tener la clase clickable
+    // Buscar todas las imágenes en el contenedor de BackCard
+    const backCardImages = container.querySelectorAll(".back-card-container img");
+    
+    // La última carta (top card) no debe tener la clase clickable porque available=false
+    const topCardImg = backCardImages[backCardImages.length - 1];
     expect(topCardImg).not.toHaveClass("back-card-clickable");
 
     // Simulamos click
-    topCardImg.click();
+    fireEvent.click(topCardImg);
     expect(mockOnCardClick).not.toHaveBeenCalled();
   });
   it("renders RegularDeck BackCard with empty deck without crashing", () => {
