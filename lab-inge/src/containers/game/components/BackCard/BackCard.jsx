@@ -17,58 +17,35 @@ export default function BackCard({ type, deck, available, onCardClick }) {
   return (
     <div className="back-card-container">
       {deck.map((carta, index) => {
-        let src = carta.back;
-        let alt = carta.alt;
+    let src = carta.back;
+    let alt = carta.alt;
 
-        // En el mazo de descarte, la última carta se muestra boca arriba
-        const isTopDiscard = type === "discard" && index === deck.length - 1;
-        if (isTopDiscard && carta.face) {
-          src = carta.face;
-        }
-        const isTopRegpile = type !== "discard" && index === deck.length - 1;
+    const isTopDiscard = type === "discard" && index === deck.length - 1;
+    if (isTopDiscard && carta.face) {
+      src = carta.face;
+    }
 
-        // Todas apiladas
-        const cardStyle = {
-          zIndex: index,
-          cursor: isTopRegpile && available ? "pointer" : "default",
-          transform: `translateY(-${index * 2}px)`,
-        };
+    const isTopCard = index === deck.length - 1; // Solo la última carta
 
-        // La última carta brilla solo si available
-        if (isTopRegpile) {
-          return (
-            <button
-              key={carta.id}
-              onClick={() => handleClick(carta)}
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: isTopRegpile && available ? "pointer" : "default",
-              }}
-            >
-              <img
-                src={src}
-                alt={alt}
-                className={`back-card${
-                  available ? " back-card-clickable" : ""
-                }`}
-                style={cardStyle}
-              />
-            </button>
-          );
-        } else {
-          return (
-            <img
-              key={carta.id}
-              className="back-card"
-              src={src}
-              alt={alt}
-              style={cardStyle}
-            />
-          );
-        }
-      })}
+    const className = `back-card ${isTopCard && available ? "back-card-clickable" : ""}`;
+
+    const cardStyle = {
+      zIndex: index,
+      transform: `translateY(-${index * 2}px)`,
+      position: "absolute",
+    };
+
+    return (
+      <img
+        key={carta.id}
+        src={src}
+        alt={alt}
+        className={className}
+        style={cardStyle}
+        onClick={isTopCard && available ? () => handleClick(carta) : undefined}
+      />
+    );
+  })}
     </div>
   );
 }

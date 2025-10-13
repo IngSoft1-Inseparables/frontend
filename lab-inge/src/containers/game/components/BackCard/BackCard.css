@@ -16,18 +16,23 @@
   background: linear-gradient(135deg, #fdfdfd, #e3e3e3);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   position: absolute;
-  top: 0;
-  left: 0;
+  /* top: 0;
+  left: 0; */
   transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .back-card-clickable {
   box-shadow: 0 0 15px #facc15;
-  transform: scale(1.05);
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.back-card:nth-child(1) {
+.back-card-clickable:hover {
+  box-shadow: 0 0 25px #facc15, 0 0 10px rgba(250, 204, 21, 0.5);
+  filter: brightness(1.1);
+}
+
+/* .back-card:nth-child(1) {
   transform: rotate(-2deg) translate(2px, -3px);
 }
 .back-card:nth-child(2) {
@@ -53,7 +58,7 @@
 }
 .back-card:nth-child(9) {
   transform: rotate(0.5deg) translate(1px, -3px);
-}
+} */
 
 .back-card-container:hover .back-card:last-child {
   transform: scale(1.03) translateY(-4px);
