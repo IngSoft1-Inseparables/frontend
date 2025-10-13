@@ -8,7 +8,8 @@ function HandCard({ playerCards = [] }) {
         <div className="hand-card">
             {playerCards.map((card) => (
                 <FaceCard 
-                    key={card.card_id} 
+                    key={card.card_id}
+                    cardId={card.card_id} 
                     imageName={card.image_name}
                     cardName={card.card_name}
                     imageBackName={card.image_back_name}
