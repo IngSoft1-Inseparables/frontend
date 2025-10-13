@@ -88,43 +88,33 @@ const createHttpService = () => {
 
   const updateHand = (gameId, playerId) => {
     if (!gameId) {
-      throw new Error('Game ID is required');
+      throw new Error("Game ID is required");
     }
     if (!playerId) {
-      throw new Error('Player ID is required');
+      throw new Error("Player ID is required");
     }
     return request("/players/replenish", {
       method: "POST",
-      body: JSON.stringify({ gameId, playerId })
+      body: JSON.stringify({ gameId, playerId }),
     });
-  }
-  //     Object.entries(filters).forEach(([key, value]) => {
-  //       if (value) params.append(key, value);
-  //     });
-  //     const queryString = params.toString();
-  //     return request(`/contacts${queryString ? `?${queryString}` : ''}`);
-  //   };
+  };
 
-  //   const getContact = async (id) => {
-  //     return request(`/contacts/${id}`);
-  //   };
+  const discardCard = (playerId, cardId) => {
+    if (!playerId) {
+      throw new Error("Game ID is required");
+    }
+    if (!cardId) {
+      throw new Error("Card ID is required");
+    }
 
-  //   const createContact = async (contactData) => {
-  //     return request('/contacts', {
-  //       method: 'POST',
-  //       body: JSON.stringify(contactData),
-  //     });
-  //   };
-
-  //   const deleteContact = async (id) => {
-  //     return request(`/contacts/${id}`, {
-  //       method: 'DELETE',
-  //     });
-  //   };
-
-  //   const getTags = async () => {
-  //     return request('/tags');
-  //   };
+    return request("/players/discard", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId,
+        cardId,
+      }),
+    });
+  };
 
   return {
     getGame,
@@ -135,11 +125,8 @@ const createHttpService = () => {
     getPrivatePlayerData,
     createGame,
     updateHand,
-    // getContacts,
-    // getContact,
-    // createContact,
-    // deleteContact,
-    // getTags
+    discardCard,
+
   };
 };
 

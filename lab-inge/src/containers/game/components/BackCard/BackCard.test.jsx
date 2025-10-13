@@ -81,6 +81,19 @@ describe("BackCard", () => {
     });
   });
 
+  test('reemplaza la primera carta por Murder Escapes cuando type="regular"', () => {
+    const deck = [
+      { id: 1, back: '/cards/back1.png', face: '/cards/front1.png', alt: 'card1' },
+      { id: 2, back: '/cards/back2.png', face: '/cards/front2.png', alt: 'card2' }
+    ]
+
+    render(<BackCard type="regular" deck={deck} />)
+
+    const firstCard = screen.getAllByRole('img')[0]
+    expect(firstCard).toHaveAttribute('src', '/cards/02-murder_escapes.png')
+    expect(firstCard).toHaveAttribute('alt', 'MurderEscapes')
+  })
+
   test('renderiza la última carta boca arriba cuando type="discard"', () => {
     const deck = [
       {

@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 
 function Game() {
     const navigate = useNavigate();
     const location = useLocation();
-    
+
     const { gameId, myPlayerId } = location.state || {};
     const [turnData, setTurnData] = useState(null);
     const [orderedPlayers, setOrderedPlayers] = useState([]);
@@ -15,6 +17,8 @@ function Game() {
     const [isLoading, setIsLoading] = useState(true);
     const [httpService] = useState(() => createHttpService());
     const [wsService] = useState(() => createWSService(gameId, myPlayerId));
+
+
 
     useEffect(() => {
         if (!gameId || !myPlayerId) {
@@ -88,7 +92,58 @@ function Game() {
             wsService.off("player_private_update", handlePlayerPrivateUpdate);
             wsService.disconnect();
         };
-    }, []); // solo una ejecución al montar
+    }, []);
+
+
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+
+    // Handler para cuando se suelta una carta
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (!over || myPlayerId != turnData.turn_owner_id) return;
+
+        // Si se soltó sobre el mazo de descarte
+        if (over.id === 'discard-deck') {
+            const cardId = active.data.current?.cardId;
+            const cardName = active.data.current?.cardName;
+            const imageName = active.data.current?.imageName;
+
+            // Actualizar optimisticamente la mano del jugador
+            setPlayerData(prevData => {
+                if (!prevData) return prevData;
+
+                return {
+                    ...prevData,
+                    playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
+                };
+            });
+
+            // Actualizar optimisticamente el mazo de descarte
+            setTurnData(prevTurnData => {
+                return {
+                    ...prevTurnData,
+                    discardpile: {
+                        count: (prevTurnData.discardpile?.count || 0) + 1,
+                        last_card_name: cardName,
+                        last_card_image: imageName
+                    }
+                };
+            });
+
+            try {
+                await httpService.discardCard(myPlayerId, cardId);
+            } catch (error) {
+                console.error('Error al descartar carta:', error);
+            }
+        }
+    };
 
 
     if (isLoading || orderedPlayers.length === 0) {
@@ -100,7 +155,12 @@ function Game() {
     }
 
     return (
-        <div className="h-screen w-screen">
+        <div className="h-screen w-screen overflow-hidden">
+             <DndContext
+                sensors={sensors}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToWindowEdges]}
+            >
             <GameBoard
                 data-testid="game-board"
                 orderedPlayers={orderedPlayers}
@@ -109,6 +169,7 @@ function Game() {
                 myPlayerId={myPlayerId}
                 onCardClick = {handleCardClick}
             />
+            </DndContext>
         </div>
     );
 }

@@ -4,9 +4,12 @@ import { useState } from "react";
 export default function BackCard({ type, deck, available, onCardClick }) {
   console.log("BackCard available:", available);
   if (!deck || deck.length === 0) return null;
-
+ 
   const [selectedCardId, setSelectedCardId] = useState(null);
-
+ const MURDER_CARD = {
+    src: '/cards/02-murder_escapes.png',
+    alt: 'MurderEscapes', 
+ }
   const handleClick = (carta) => {
     if (!available) return;
     setSelectedCardId(carta.id);
@@ -15,10 +18,17 @@ export default function BackCard({ type, deck, available, onCardClick }) {
   };
 
   return (
-    <div className="back-card-container">
+    <div className="back-card-container relative">
       {deck.map((carta, index) => {
-    let src = carta.back;
-    let alt = carta.alt;
+   let src = carta.back || '/cards/01-card_back.png';
+        let alt = carta.alt || 'Card Back';
+
+        const isBottomRegular = type === 'regular' && index === 0;
+        if (isBottomRegular) {
+          src = MURDER_CARD.src;
+          alt = MURDER_CARD.alt;
+        }
+
 
     const isTopDiscard = type === "discard" && index === deck.length - 1;
     if (isTopDiscard && carta.face) {
