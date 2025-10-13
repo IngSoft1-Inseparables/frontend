@@ -37,7 +37,7 @@ export default function BackCard({ type, deck, available, onCardClick }) {
 
     const isTopCard = index === deck.length - 1; // Solo la última carta
 
-    const className = `back-card ${isTopCard && available ? "back-card-clickable" : ""}`;
+    const className = `back-card ${isTopCard && available && carta.id != 0 ? "back-card-clickable" : ""}`;
 
     const cardStyle = {
       zIndex: index,
@@ -52,7 +52,7 @@ export default function BackCard({ type, deck, available, onCardClick }) {
         alt={alt}
         className={className}
         style={cardStyle}
-        onClick={isTopCard && available ? () => handleClick(carta) : undefined}
+        onClick={isTopCard && available && carta.id != 0 ? () => handleClick(carta) : undefined}
       />
     );
   })}
