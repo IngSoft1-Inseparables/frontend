@@ -3,7 +3,6 @@ import background from "../../assets/background.png";
 import JoinGameDialog from "../../components/JoinGameDialog/JoinGameDialog";
 import { createHttpService } from "../../services/HTTPService";
 import { createWSService } from "../../services/WSService";
-// import { createWSService } from "./TestInteractiveWS.test";
 
 function GameList() {
   const [open, setOpen] = useState(false);
@@ -12,37 +11,6 @@ function GameList() {
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService());
-
-  // /*es un httpService simulado */
-  // const httpService = {
-  //   getGames: async () => {
-  //     // Simulamos tiempo de respuesta
-  //     await new Promise((res) => setTimeout(res, 500));
-
-  //     // Retornamos datos falsos
-  //     return [
-  //       {
-  //         id: 1,
-  //         game_name: "Aventura",
-  //         players_amount: 2,
-  //         max_players: 4,
-  //         min_players: 2,
-  //         avatar: "avatar/avatar1.png",
-  //         creator_name: "Micaela",
-  //       },
-  //       {
-  //         id: 2,
-  //         game_name: "Estrategia",
-  //         players_amount: 4,
-  //         max_players: 6,
-  //         min_players: 3,
-  //         avatar: "avatar/avatar2.png",
-  //         creator_name: "Norma",
-  //       },
-  //     ];
-  //   },
-  // };
-
   const [loading, setLoading] = useState(false);
 
   const fetchGames = async () => {
@@ -101,7 +69,7 @@ function GameList() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {availableGames.map((game) => (
               <div
-                data-testid = "GameCard"
+                data-testid="GameCard"
                 key={game.id}
                 onClick={() => {
                   setSelectedGameId(game.id);
@@ -146,7 +114,7 @@ function GameList() {
         <JoinGameDialog
           onClose={() => setOpen(false)}
           partidaId={selectedGameId}
-          data-testid = "joing-dialog"
+          data-testid="joing-dialog"
         />
       )}
     </div>
