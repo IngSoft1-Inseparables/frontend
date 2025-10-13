@@ -96,6 +96,9 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
                     <HandCard playerCards={playerData?.playerCards || []} />
+                    <div>
+                        <p className={turnData.turn_owner_id === myPlayerId ? "text-white text-center" : "transparent"}>Arrastrá una carta al mazo de descarte para descartarla.</p>
+                    </div>
                 </div>
             </div>
         </div>
