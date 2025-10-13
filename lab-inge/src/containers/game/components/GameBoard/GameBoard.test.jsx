@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import GameBoard from "./GameBoard";
 
@@ -9,10 +9,34 @@ describe("GameBoard component", () => {
   };
 
   const mockPlayers = [
-    { id: 2, name: "Yo", avatar: "avatar2.png", turn: 2, playerSecrets: [{}, {}, {}] },
-    { id: 3, name: "Jugador3", avatar: "avatar3.png", turn: 3, playerSecrets: [{}, {}, {}] },
-    { id: 4, name: "Jugador4", avatar: "avatar4.png", turn: 4, playerSecrets: [{}, {}, {}] },
-    { id: 1, name: "Jugador1", avatar: "avatar1.png", turn: 1, playerSecrets: [{}, {}, {}] },
+    {
+      id: 2,
+      name: "Yo",
+      avatar: "avatar2.png",
+      turn: 2,
+      playerSecrets: [{}, {}, {}],
+    },
+    {
+      id: 3,
+      name: "Jugador3",
+      avatar: "avatar3.png",
+      turn: 3,
+      playerSecrets: [{}, {}, {}],
+    },
+    {
+      id: 4,
+      name: "Jugador4",
+      avatar: "avatar4.png",
+      turn: 4,
+      playerSecrets: [{}, {}, {}],
+    },
+    {
+      id: 1,
+      name: "Jugador1",
+      avatar: "avatar1.png",
+      turn: 1,
+      playerSecrets: [{}, {}, {}],
+    },
   ];
 
   const mockPlayerData = {
@@ -77,12 +101,48 @@ describe("GameBoard component", () => {
       players_amount: 6,
     };
     const sixPlayers = [
-      { id: 1, name: "P1", avatar: "a1.png", turn: 1, playerSecrets: [{}, {}, {}] },
-      { id: 2, name: "P2", avatar: "a2.png", turn: 2, playerSecrets: [{}, {}, {}] },
-      { id: 3, name: "P3", avatar: "a3.png", turn: 3, playerSecrets: [{}, {}, {}] },
-      { id: 4, name: "P4", avatar: "a4.png", turn: 4, playerSecrets: [{}, {}, {}] },
-      { id: 5, name: "P5", avatar: "a5.png", turn: 5, playerSecrets: [{}, {}, {}] },
-      { id: 6, name: "P6", avatar: "a6.png", turn: 6, playerSecrets: [{}, {}, {}] },
+      {
+        id: 1,
+        name: "P1",
+        avatar: "a1.png",
+        turn: 1,
+        playerSecrets: [{}, {}, {}],
+      },
+      {
+        id: 2,
+        name: "P2",
+        avatar: "a2.png",
+        turn: 2,
+        playerSecrets: [{}, {}, {}],
+      },
+      {
+        id: 3,
+        name: "P3",
+        avatar: "a3.png",
+        turn: 3,
+        playerSecrets: [{}, {}, {}],
+      },
+      {
+        id: 4,
+        name: "P4",
+        avatar: "a4.png",
+        turn: 4,
+        playerSecrets: [{}, {}, {}],
+      },
+      {
+        id: 5,
+        name: "P5",
+        avatar: "a5.png",
+        turn: 5,
+        playerSecrets: [{}, {}, {}],
+      },
+      {
+        id: 6,
+        name: "P6",
+        avatar: "a6.png",
+        turn: 6,
+        playerSecrets: [{}, {}, {}],
+      },
     ];
 
     render(
@@ -104,15 +164,15 @@ describe("GameBoard component", () => {
 
   it("renders RegularDeck and DiscardDeck", () => {
     const { container } = render(<GameBoard {...defaultProps} />);
-    
+
     // Verificar que existe la mesa central con los mazos
-    const centralTable = container.querySelector('.bg-orange-950\\/90');
+    const centralTable = container.querySelector(".bg-orange-950\\/90");
     expect(centralTable).toBeInTheDocument();
   });
 
   it("applies correct z-index for HandCard based on player count", () => {
     const { container } = render(<GameBoard {...defaultProps} />);
-    
+
     // Con 4 jugadores, HandCard debe tener z-20
     const handContainer = container.querySelector('[class*="z-20"]');
     expect(handContainer).toBeInTheDocument();
@@ -129,15 +189,195 @@ describe("GameBoard component", () => {
     );
 
     // Con 6 jugadores, no debe tener z-20 en el contenedor de la mano
-    const handContainer = container.querySelector('.absolute.bottom-6');
-    expect(handContainer?.className).not.toContain('z-20');
+    const handContainer = container.querySelector(".absolute.bottom-6");
+    expect(handContainer?.className).not.toContain("z-20");
   });
 
   it("handles empty orderedPlayers array", () => {
     render(<GameBoard {...defaultProps} orderedPlayers={[]} />);
-    
+
     // No debe crashear, solo renderizar la estructura base
     const bg = document.querySelector('[style*="game_bg.png"]');
     expect(bg).toBeInTheDocument();
+  });
+  it("renders RegularDeck with clickable BackCard when available", () => {
+    const regpileMock = [
+      { id: 1, back: "/carta1.png", alt: "Carta1" },
+      { id: 2, back: "/carta2.png", alt: "Carta2" },
+    ];
+
+    const turnDataWithDeck = {
+      players_amount: 4,
+      turn_owner_id: "2", // coincide con myPlayerId
+      regpile: regpileMock,
+    };
+
+    const playerDataFewCards = {
+      ...mockPlayerData,
+      playerCards: [{ card_id: 1 }, { card_id: 2 }], // <6
+    };
+
+    const mockOnCardClick = vi.fn();
+
+    const { container } = render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnDataWithDeck}
+        playerData={playerDataFewCards}
+        onCardClick={mockOnCardClick}
+      />
+    );
+
+    // Seleccionamos la última carta clickeable
+    const topCardImg = container.querySelector(".back-card-clickable");
+
+    expect(topCardImg).toBeInTheDocument();
+    expect(topCardImg).toHaveClass("back-card-clickable");
+
+    // Simulamos click
+    fireEvent.click(topCardImg);
+    expect(mockOnCardClick).toHaveBeenCalled();
+  });
+  it("renders RegularDeck with non-clickable BackCard when not available", () => {
+    const regpileMock = [
+      { id: 1, back: "/carta1.png", alt: "Carta1" },
+      { id: 2, back: "/carta2.png", alt: "Carta2" },
+    ];
+
+    const turnDataWithDeck = {
+      players_amount: 4,
+      turn_owner_id: "2",
+      regpile: regpileMock,
+    };
+
+    const playerDataFewCards = {
+      ...mockPlayerData,
+      playerCards: [
+        { card_id: 1 },
+        { card_id: 2 },
+        { card_id: 3 },
+        { card_id: 4 },
+        { card_id: 5 },
+        { card_id: 6 },
+      ], // >=6 cartas, BackCard no disponible
+    };
+
+    const mockOnCardClick = vi.fn();
+
+    const { container } = render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnDataWithDeck}
+        playerData={playerDataFewCards}
+        onCardClick={mockOnCardClick}
+      />
+    );
+
+    // Buscar todas las imágenes en el contenedor de BackCard
+    const backCardImages = container.querySelectorAll(".back-card-container img");
+    
+    // La última carta (top card) no debe tener la clase clickable porque available=false
+    const topCardImg = backCardImages[backCardImages.length - 1];
+    expect(topCardImg).not.toHaveClass("back-card-clickable");
+
+    // Simulamos click
+    fireEvent.click(topCardImg);
+    expect(mockOnCardClick).not.toHaveBeenCalled();
+  });
+  it("renders RegularDeck BackCard with empty deck without crashing", () => {
+    const turnDataEmptyDeck = {
+      players_amount: 4,
+      turn_owner_id: "2",
+      regpile: [], // deck vacío
+    };
+
+    const { container } = render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnDataEmptyDeck}
+        playerData={mockPlayerData}
+      />
+    );
+
+    // La imagen existe pero debe ser la clase base, no clickeable
+    const topCardImg = container.querySelector(".back-card-container img");
+    expect(topCardImg).toBeInTheDocument();
+  });
+  it("does not allow BackCard click when it's not the player's turn", () => {
+    const regpileMock = [
+      { id: 1, back: "/carta1.png", alt: "Carta1" },
+      { id: 2, back: "/carta2.png", alt: "Carta2" },
+    ];
+
+    const turnDataNotMyTurn = {
+      players_amount: 4,
+      turn_owner_id: "3", // distinto a myPlayerId
+      regpile: regpileMock,
+    };
+
+    const mockOnCardClick = vi.fn();
+
+    const { container } = render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnDataNotMyTurn}
+        onCardClick={mockOnCardClick}
+      />
+    );
+
+    const topCardImg = container.querySelector(".back-card-container img");
+
+    // La carta no debe ser clickeable
+    expect(topCardImg).not.toHaveClass("back-card-clickable");
+
+    // Click no dispara nada
+    topCardImg.click();
+    expect(mockOnCardClick).not.toHaveBeenCalled();
+  });
+  it("renders correctly with 3 players", () => {
+    const threePlayers = [
+      { id: 1, name: "P1", avatar: "a1.png", turn: 1, playerSecrets: [{}] },
+      { id: 2, name: "P2", avatar: "a2.png", turn: 2, playerSecrets: [{}] },
+      { id: 3, name: "P3", avatar: "a3.png", turn: 3, playerSecrets: [{}] },
+    ];
+    const turnData3 = { ...mockTurnData, players_amount: 3 };
+
+    render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnData3}
+        orderedPlayers={threePlayers}
+        playerData={threePlayers[0]}
+      />
+    );
+
+    expect(screen.getByText("P2")).toBeInTheDocument();
+    expect(screen.getByText("P3")).toBeInTheDocument();
+    expect(screen.getByText("P1")).toBeInTheDocument(); // mi jugador
+  });
+
+  it("renders correctly with 5 players", () => {
+    const fivePlayers = [
+      { id: 1, name: "P1", avatar: "a1.png", turn: 1, playerSecrets: [{}] },
+      { id: 2, name: "P2", avatar: "a2.png", turn: 2, playerSecrets: [{}] },
+      { id: 3, name: "P3", avatar: "a3.png", turn: 3, playerSecrets: [{}] },
+      { id: 4, name: "P4", avatar: "a4.png", turn: 4, playerSecrets: [{}] },
+      { id: 5, name: "P5", avatar: "a5.png", turn: 5, playerSecrets: [{}] },
+    ];
+    const turnData5 = { ...mockTurnData, players_amount: 5 };
+
+    render(
+      <GameBoard
+        {...defaultProps}
+        turnData={turnData5}
+        orderedPlayers={fivePlayers}
+        playerData={fivePlayers[0]}
+      />
+    );
+
+    expect(screen.getByText("P2")).toBeInTheDocument();
+    expect(screen.getByText("P3")).toBeInTheDocument();
+    expect(screen.getByText("P4")).toBeInTheDocument();
+    expect(screen.getByText("P5")).toBeInTheDocument();
   });
 });

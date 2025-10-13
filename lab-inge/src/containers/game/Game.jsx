@@ -27,6 +27,17 @@ function Game() {
         }
     }, [gameId, myPlayerId, navigate]);
 
+  const handleCardClick = async () => {
+  try {
+    const hand = await httpService.updateHand(
+      turnData.gameId,
+      turnData.turn_owner_id,
+    );
+    console.log("Update Hand:", hand);
+  } catch (error) {
+    console.error("Failed to update hand:", error);
+  }
+};
     const fetchGameData = async () => {
         try {
             setIsLoading(true);
@@ -104,6 +115,10 @@ function Game() {
             const cardName = active.data.current?.cardName;
             const imageName = active.data.current?.imageName;
 
+            // Guardar el estado anterior para poder hacer rollback
+            const previousPlayerData = playerData;
+            const previousTurnData = turnData;
+
             // Actualizar optimisticamente la mano del jugador
             setPlayerData(prevData => {
                 if (!prevData) return prevData;
@@ -130,6 +145,10 @@ function Game() {
                 await httpService.discardCard(myPlayerId, cardId);
             } catch (error) {
                 console.error('Error al descartar carta:', error);
+                
+                // Revertir los cambios optimistas en caso de error
+                setPlayerData(previousPlayerData);
+                setTurnData(previousTurnData);
             }
         }
     };
@@ -145,17 +164,19 @@ function Game() {
 
     return (
         <div className="h-screen w-screen overflow-hidden">
-            <DndContext
+             <DndContext
                 sensors={sensors}
                 onDragEnd={handleDragEnd}
                 modifiers={[restrictToWindowEdges]}
             >
-                <GameBoard
-                    orderedPlayers={orderedPlayers}
-                    playerData={playerData}
-                    turnData={turnData}
-                    myPlayerId={myPlayerId}
-                />
+            <GameBoard
+                data-testid="game-board"
+                orderedPlayers={orderedPlayers}
+                playerData={playerData}
+                turnData={turnData}
+                myPlayerId={myPlayerId}
+                onCardClick = {handleCardClick}
+            />
             </DndContext>
         </div>
     );

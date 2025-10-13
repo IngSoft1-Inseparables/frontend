@@ -1,121 +1,133 @@
 const createHttpService = () => {
-    const baseUrl = import.meta.env.VITE_SERVER_URI || 'http://localhost:8000';
+  const baseUrl = import.meta.env.VITE_SERVER_URI || "http://localhost:8000";
 
-    const request = async (endpoint, options = {}) => {
-        const url = `${baseUrl}${endpoint}`;
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        };
-
-        try {
-            const response = await fetch(url, config);
-
-            let responseData;
-            try {
-                responseData = await response.json();
-            } catch (parseError) {
-                responseData = { detail: `HTTP error! status: ${response.status}` };
-            }
-
-            if (!response.ok) {
-                const error = new Error(responseData.detail || `HTTP error! status: ${response.status}`);
-                error.status = response.status;
-                error.data = responseData;
-                throw error;
-            }
-
-            return responseData;
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
+  const request = async (endpoint, options = {}) => {
+    const url = `${baseUrl}${endpoint}`;
+    const config = {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
     };
 
+    try {
+      const response = await fetch(url, config);
 
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (parseError) {
+        responseData = { detail: `HTTP error! status: ${response.status}` };
+      }
 
-    const getGames = () => request("/games/list");
+      if (!response.ok) {
+        const error = new Error(
+          responseData.detail || `HTTP error! status: ${response.status}`
+        );
+        error.status = response.status;
+        error.data = responseData;
+        throw error;
+      }
 
-    const getGame = (gameId) => request(`/games/${gameId}`);
-
-    const startGame = (gameId, playerId) => {
-        if (!gameId) {
-            throw new Error('Game ID is required');
-        }
-        if (!playerId) {
-            throw new Error('Player ID is required');
-        }
-        return request(`/games/${gameId}/start`, {
-            method: 'PATCH'
-        });
-    };
-
-
-    const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) => request(`/players/join`, {
-        method: 'POST',
-        body: JSON.stringify({
-            partida_id,
-            nombre_usuario,
-            fecha_nacimiento
-        })
+      return responseData;
+    } catch (error) {
+      console.error("API request failed:", error);
+      throw error;
     }
-    );
+  };
 
-    const getPublicTurnData = (gameId) => {
-        if (!gameId) {
-            throw new Error('Game ID is required');
-        }
-        return request(`/games/${gameId}/turn`);
-    };
+  const getGames = () => request("/games/list");
 
-    const getPrivatePlayerData = (gameId, playerId) => {
-        if (!gameId) {
-            throw new Error('Game ID is required');
-        }
-        if (!playerId) {
-            throw new Error('Player ID is required');
-        }
-        return request(`/games/${gameId}/turn/${playerId}`);
-    };
+  const getGame = (gameId) => request(`/games/${gameId}`);
 
-    const createGame = (formData) =>
-        request("/games/create", {
-            method: "POST",
-            body: JSON.stringify(formData),
-        });
+  const startGame = (gameId, playerId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+    return request(`/games/${gameId}/start`, {
+      method: "PATCH",
+    });
+  };
 
-    const discardCard = (playerId, cardId) => {
-        if (!playerId) {
-            throw new Error('Game ID is required');
-        }
-        if (!cardId) {
-            throw new Error('Card ID is required');
-        }
+  const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) =>
+    request(`/players/join`, {
+      method: "POST",
+      body: JSON.stringify({
+        partida_id,
+        nombre_usuario,
+        fecha_nacimiento,
+      }),
+    });
 
-        return request("/players/discard", {
-            method: "POST",
-            body: JSON.stringify({
-                playerId,
-                cardId
-            })
-        });
+  const getPublicTurnData = (gameId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    return request(`/games/${gameId}/turn`);
+  };
+
+  const getPrivatePlayerData = (gameId, playerId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+    return request(`/games/${gameId}/turn/${playerId}`);
+  };
+
+  const createGame = (formData) =>
+    request("/games/create", {
+      method: "POST",
+      body: JSON.stringify(formData),
+    });
+
+  const updateHand = (gameId, playerId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+    return request("/players/replenish", {
+      method: "POST",
+      body: JSON.stringify({ gameId, playerId }),
+    });
+  };
+
+  const discardCard = (playerId, cardId) => {
+    if (!playerId) {
+      throw new Error("Game ID is required");
+    }
+    if (!cardId) {
+      throw new Error("Card ID is required");
     }
 
-    return {
-        getGame,
-        getGames,
-        startGame,
-        joinLobby,
-        getPublicTurnData,
-        getPrivatePlayerData,
-        createGame,
-        discardCard
-    };
+    return request("/players/discard", {
+      method: "POST",
+      body: JSON.stringify({
+        playerId,
+        cardId,
+      }),
+    });
+  };
+
+  return {
+    getGame,
+    getGames,
+    startGame,
+    joinLobby,
+    getPublicTurnData,
+    getPrivatePlayerData,
+    createGame,
+    updateHand,
+    discardCard,
+
+  };
 };
 
-export {
-    createHttpService
-};
+export { createHttpService };

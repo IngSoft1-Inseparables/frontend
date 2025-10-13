@@ -11,6 +11,8 @@ export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
 
   // Si no hay cartas descartadas
   if (discardpile.count === 0) {
+    const isMyTurn = turnData && turnData.turn_owner_id === myPlayerId;
+    
     return (
       <div className="back-card-container relative" ref={setNodeRef}>
         <div
@@ -28,8 +30,8 @@ export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
             position: 'absolute',
             padding: '4px',
             transition: 'all 0.2s ease',
-            border: isOver && turnData.turn_owner_id === myPlayerId ? '2px dashed #facc15' : '2px dashed rgba(255, 255, 255, 0.4)',
-            transform: isOver && turnData.turn_owner_id === myPlayerId ? 'scale(1.05)' : 'scale(1)',
+            border: isOver && isMyTurn ? '2px dashed #facc15' : '2px dashed rgba(255, 255, 255, 0.4)',
+            transform: isOver && isMyTurn ? 'scale(1.05)' : 'scale(1)',
           }}
         >
           <img
@@ -69,15 +71,17 @@ export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
   // Combinar cartas
   const deck = [...backCards, topCard];
 
+  const isMyTurn = turnData && turnData.turn_owner_id === myPlayerId;
+
   return (
     <div
       ref={setNodeRef}
       style={{
-        border: isOver && turnData.turn_owner_id === myPlayerId ? '2px dashed #facc15' : '2px dashed transparent',
+        border: isOver && isMyTurn ? '2px dashed #facc15' : '2px dashed transparent',
         borderRadius: '2px',
         padding: '2px',
         transition: 'all 0.2s ease',
-        transform: isOver && turnData.turn_owner_id === myPlayerId ? 'scale(1.05)' : 'scale(1)',
+        transform: isOver && isMyTurn ? 'scale(1.05)' : 'scale(1)',
       }}
     >
       <BackCard type="discard" deck={deck} />

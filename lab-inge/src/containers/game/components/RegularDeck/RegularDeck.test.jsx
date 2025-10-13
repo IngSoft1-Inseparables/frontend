@@ -71,4 +71,10 @@ describe('RegularDeck', () => {
     // Murder + 6 dorsos => total 7 imágenes
     expect(imgs).toHaveLength(7)
   })
+  test('maneja regpile sin count definido', () => {
+  const regpile = { image_back_name: '01-card_back' } // count undefined
+  render(<RegularDeck regpile={regpile} />)
+  const imgs = screen.getAllByRole('img')
+  expect(imgs).toHaveLength(1) 
+})
 })
