@@ -54,7 +54,7 @@ describe("GameBoard component", () => {
     orderedPlayers: mockPlayers,
     playerData: mockPlayerData,
     turnData: mockTurnData,
-    myPlayerId: "2",
+    myPlayerId: 2,
   };
 
   it("renders game background", () => {
@@ -201,14 +201,14 @@ describe("GameBoard component", () => {
     expect(bg).toBeInTheDocument();
   });
   it("renders RegularDeck with clickable BackCard when available", () => {
-    const regpileMock = [
-      { id: 1, back: "/carta1.png", alt: "Carta1" },
-      { id: 2, back: "/carta2.png", alt: "Carta2" },
-    ];
+    const regpileMock = {
+      count: 10,
+      image_back_name: '01-card_back'
+    };
 
     const turnDataWithDeck = {
       players_amount: 4,
-      turn_owner_id: "2", // coincide con myPlayerId
+      turn_owner_id: 2, // debe ser número para coincidir con myPlayerId
       regpile: regpileMock,
     };
 
