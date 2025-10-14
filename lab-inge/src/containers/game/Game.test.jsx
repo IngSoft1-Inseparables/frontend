@@ -50,6 +50,20 @@ vi.mock("./components/GameBoard/GameBoard", () => ({
   ),
 }));
 
+// --- Mock del EndGameDialog ---
+vi.mock("./components/EndGameDialog/EndGameDialog", () => ({
+  default: ({ winners }) => (
+    <div data-testid="endgame-dialog">
+      <h2>Game Over</h2>
+      <ul>
+        {winners.map((w) => (
+          <li key={w.id}>{w.name}</li>
+        ))}
+      </ul>
+    </div>
+  ),
+}));
+
 describe("Game Container", () => {
   const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
     return render(
@@ -191,6 +205,48 @@ describe("Game Container", () => {
       expect(mockWS.off).toHaveBeenCalled();
       expect(mockWS.disconnect).toHaveBeenCalled();
     });
+
+    it("renders EndGameDialog when an end_game event is received", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      // Intercepta los handlers que se registran con mockWS.on()
+      let handlers = {};
+      mockWS.on.mockImplementation((event, callback) => {
+      handlers[event] = callback;
+      });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      // Esperar que se haya hecho la conexión inicial
+      await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+
+      // Simulamos que llega un evento del tipo end_game
+      const fakeEvent = {
+        type: "end_game",
+        payload: {
+          winners: [
+            { id: 1, name: "Candela" },
+            { id: 2, name: "Vsbev" },
+          ],
+        },
+      };
+
+      // Ejecutamos manualmente el callback como si viniera del WS
+      await waitFor(() => {
+        expect(handlers["game_public_update"]).toBeDefined();
+      });
+
+      // Simulamos el evento
+      await waitFor(() => handlers["game_public_update"](fakeEvent));
+
+      // Verificamos que el modal se renderiza con los ganadores correctos
+      expect(await screen.findByTestId("endgame-dialog")).toBeInTheDocument();
+      expect(screen.getByText("Game Over")).toBeInTheDocument();
+      expect(screen.getByText("Candela")).toBeInTheDocument();
+      expect(screen.getByText("Vsbev")).toBeInTheDocument();
+    });
+
   });
 
   describe("Navigation Validation", () => {
