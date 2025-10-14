@@ -9,9 +9,9 @@ export default function EndGameDialog({ onClose, winners }) {
   return (
     <div className="dialog-backdrop">
       <div className="dialog">
-        <h2>Game Over</h2>
+        <h2>PARTIDA FINALIZADA</h2>
         <div className="winners-section">
-          <h3>Winners:</h3>
+          <h3>Ganadores:</h3>
           <ul className="winners-list">
             {winners.map((winner) => (
               <li key={winner.id} className="winner-item">

@@ -18,8 +18,6 @@ function Game() {
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
 
-  //debug
-  const [debugClicks, setDebugClicks] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
@@ -62,6 +60,13 @@ function Game() {
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
+
+      if (dataPublic.type === "end_game"){
+        console.log("fin de la partida recibido:", dataPublic.payload);
+        setWinnerData(dataPublic.payload.winners);
+        setShowEndDialog(true);
+        return;
+      }
       setTurnData(dataPublic);
 
       if (dataPublic.winners && dataPublic.winners.length > 0) {
@@ -84,20 +89,6 @@ function Game() {
     };
   }, []);
 
-  //implentación del debug
-  const handleTableClick = () => {
-    const newCount = debugClicks + 1;
-    setDebugClicks(newCount);
-
-    
-    if (newCount >= 3 && !showEndDialog) {
-      console.log("🧩 Debug: mostrando EndGameDialog");
-      
-      const mockWinners = winnerData || [{ id: 1, name: "Jugador Debug" }];
-      setWinnerData(mockWinners);
-      setShowEndDialog(true);
-    }
-  };
 
   if (isLoading || orderedPlayers.length === 0) {
     return (
@@ -109,11 +100,7 @@ function Game() {
 
   return (
     <div
-      className="h-screen w-screen relative"
-
-      //lo voy a tener que borrar, se usa para debug sin el WS
-      onClick={handleTableClick} 
-    >
+      className="h-screen w-screen relative">
       <GameBoard
         orderedPlayers={orderedPlayers}
         playerData={playerData}
