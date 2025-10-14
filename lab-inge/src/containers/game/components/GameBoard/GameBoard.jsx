@@ -37,7 +37,7 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
-const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
+const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
 
 
     return (
