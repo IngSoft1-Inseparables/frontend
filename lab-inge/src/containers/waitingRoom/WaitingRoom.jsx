@@ -28,9 +28,8 @@ function WaitingRoom() {
     const [minPlayers, setMinPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(6);
     const [isStartingGame, setIsStartingGame] = useState(false);
-    const [isStarted, setIsStarted] = useState(false);
     const [httpService] = useState(() => createHttpService());
-    const [wsService] = useState(() => createWSService());
+    const [wsService] = useState(() => createWSService(gameId, myPlayerId));
 
     const fetchGameData = async () => {
         try {
@@ -71,8 +70,6 @@ function WaitingRoom() {
         try {
             await httpService.startGame(gameId, myPlayerId);
             console.log('Partida iniciada exitosamente');
-
-            setIsStarted(true);
 
             navigate('/game', {
                 state: {
