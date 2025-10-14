@@ -326,7 +326,20 @@ it("handles player reordering when only 2 players", async () => {
       expect(screen.getByText("Vsbev")).toBeInTheDocument();
     });
 
+    it("does NOT render EndGameDialog if end_game event is not received", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(mockWS.connect).toHaveBeenCalled());
+
+      // No disparamos ningún evento end_game
+      expect(screen.queryByTestId("endgame-dialog")).toBeNull();
+    });
+
   });
+
 
   describe("Navigation Validation", () => {
     it("logs error if gameId or myPlayerId missing", async () => {
