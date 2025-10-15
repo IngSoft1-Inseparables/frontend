@@ -94,3 +94,13 @@
   }
 }
 
+.victory-message {
+  color: #ffb347;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+  text-align: center;
+}
+
+

@@ -74,9 +74,13 @@ function Game() {
     const handleGamePublicUpdate = (payload) => {
       const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
 
-      if (dataPublic.type === "end_game"){
+      if (dataPublic.end_game){
         console.log("fin de la partida recibido:", dataPublic.payload);
-        setWinnerData(dataPublic.payload.winners);
+
+        const winners = dataPublic.end_game.winners;
+        const regpileCount = dataPublic?.regpile?.count ?? 0;
+
+        setWinnerData({ winners, regpileCount });
         setShowEndDialog(true);
         return;
       }
