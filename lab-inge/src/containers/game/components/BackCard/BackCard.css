@@ -63,3 +63,48 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
   z-index: 10;
 }
+
+/* === NUEVAS REGLAS PARA EL MAZO DRAFT === */
+
+/* Layout horizontal para las 3 cartas del draft */
+.draft-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem; /* separación entre las cartas */
+  margin-top: 1rem;
+}
+
+/* Efecto de brillo cuando el draft está disponible (es tu turno) */
+.draft-available {
+  box-shadow: 0 0 15px 4px rgba(255, 165, 0, 0.7);
+  animation: glowPulse 1.5s infinite alternate;
+  border-radius: 1rem;
+  padding: 0.5rem;
+}
+
+/* Estilo visual de las cartas del draft (no apiladas) */
+.back-card-draft {
+  width: 6rem;       /* más chico que el regular para mostrar las 3 en línea */
+  height: 9rem;
+  border-radius: 0.5rem;
+  position: static;  /* las cartas no se apilan */
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+/* Pequeño zoom al pasar el mouse sobre una carta del draft */
+.back-card-draft:hover {
+  transform: scale(1.05);
+}
+
+/* Animación del brillo pulsante */
+@keyframes glowPulse {
+  from {
+    box-shadow: 0 0 10px 2px rgba(255, 165, 0, 0.6);
+  }
+  to {
+    box-shadow: 0 0 25px 8px rgba(255, 165, 0, 1);
+  }
+}
+
