@@ -33,11 +33,14 @@ const PLAYER_POSITIONS = {
     },
 };
 
-function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick}) {
+function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onDragStart }) {
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
 const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
+const availableToPlay = turnData.turn_owner_id === myPlayerId;
+const currentTurnState = turnData?.turn_state || "None".toLowerCase(); 
+
 
 
     return (
@@ -57,7 +60,7 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.p
             </div>
 
             {/* Bloque central */}
-            <div className="grid grid-cols-[20%_60%_20%]">
+            <div className="grid grid-cols-[15%_70%_15%]">
                 {/* Jugador izquierdo */}
                 <div className="flex items-center justify-center px-2">
                     {positions.left.map((index) => (
@@ -99,7 +102,7 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData.p
                     myPlayerId={myPlayerId}
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
-                    <HandCard playerCards={playerData?.playerCards || []} />
+                    <HandCard playerCards={playerData?.playerCards || []} onDragStart={onDragStart} availableToPlay={availableToPlay} turnState={currentTurnState} />
                     <div>
                         <p className={turnData.turn_owner_id === myPlayerId ? "text-white text-center" : "invisible"}>Arrastrá una carta al mazo de descarte para descartarla.</p>
                     </div>
