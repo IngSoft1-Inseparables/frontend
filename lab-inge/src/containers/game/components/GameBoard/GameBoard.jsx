@@ -73,10 +73,15 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
 
                 {/* Mesa central - Mazos */}
                 <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                    <div className="h-full flex justify-center items-center">
-                        <RegularDeck regpile={turnData?.regpile} isAvailable = {isRegpileAvailable} onCardClick={onCardClick}/>
-                        <DraftDeck draft={turnData?.draft} isAvailable={turnData?.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6} onCardClick={onCardClick}/>
-                        <DiscardDeck discardpile={turnData?.discardpile} turnData={ turnData } myPlayerId={myPlayerId} />
+                    <div className="h-full flex justify-between items-center px-40">
+                        {/* Grupo izquierdo: mazo regular + draft */}
+                        <div className="flex items-center gap-2">
+                            <RegularDeck regpile={turnData?.regpile} isAvailable={isRegpileAvailable} onCardClick={onCardClick}/>
+                            <DraftDeck draft={turnData?.draft} isAvailable={turnData?.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6} onCardClick={onCardClick}/>
+                        </div>
+
+                        {/* Grupo derecho: mazo de descarte */}
+                        <DiscardDeck discardpile={turnData?.discardpile} turnData={turnData} myPlayerId={myPlayerId}/>
                     </div>
                 </div>
 

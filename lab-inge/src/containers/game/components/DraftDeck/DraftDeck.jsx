@@ -35,7 +35,7 @@ export default function DraftDeck({ draft, isAvailable, onCardClick }) {
         <BackCard
           key={card.id}
           type="draft"
-          deck={[card]} // una carta por BackCard
+          deck={[card]} // una carta por BackCard!!
           available={isAvailable}
           onCardClick={onCardClick}
         />

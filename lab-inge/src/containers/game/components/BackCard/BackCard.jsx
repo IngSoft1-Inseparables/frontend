@@ -49,11 +49,14 @@ export default function BackCard({ type, deck, available, onCardClick }) {
 
         const className = `back-card ${
           type === "draft"
-            ? "back-card-draft"
-            : isTopCard && available && carta.id != 0
-            ? "back-card-clickable"
-            : ""
+          ? available
+          ? "back-card-draft back-card-clickable"
+          : "back-card-draft"
+          : isTopCard && available && carta.id != 0
+          ? "back-card-clickable"
+          : ""
         }`;
+
 
         const cardStyle =
           type === "draft"

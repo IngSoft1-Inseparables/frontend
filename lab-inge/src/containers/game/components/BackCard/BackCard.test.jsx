@@ -188,4 +188,80 @@ describe("BackCard", () => {
     // Esperamos que la función no haya sido llamada
     expect(onCardClickMock).not.toHaveBeenCalled();
   });
+
+    test('renderiza correctamente las cartas del draft', () => {
+    const deck = [
+      { id: 1, face: '/cards/card1.png', alt: 'draft1' },
+      { id: 2, face: '/cards/card2.png', alt: 'draft2' },
+      { id: 3, face: '/cards/card3.png', alt: 'draft3' },
+    ];
+
+    render(<BackCard type="draft" deck={deck} available={false} />);
+
+    const imgs = screen.getAllByRole('img');
+    expect(imgs).toHaveLength(3);
+
+    // Cada carta usa su "face" (frente)
+    expect(imgs[0]).toHaveAttribute('src', '/cards/card1.png');
+    expect(imgs[1]).toHaveAttribute('src', '/cards/card2.png');
+    expect(imgs[2]).toHaveAttribute('src', '/cards/card3.png');
+
+    // No tienen posición absoluta, deben tener position: static
+    imgs.forEach(img => {
+      expect(img).toHaveStyle('position: static');
+    });
+  });
+
+  test('agrega la clase back-card-clickable cuando el draft está disponible', () => {
+    const deck = [{ id: 1, face: '/cards/card1.png', alt: 'draft1' }];
+
+    const { container } = render(
+      <BackCard type="draft" deck={deck} available={true} />
+    );
+
+    const img = container.querySelector('img');
+    expect(img).toHaveClass('back-card-draft');
+    expect(img).toHaveClass('back-card-clickable');
+  });
+
+  test('no agrega la clase clickable cuando el draft no está disponible', () => {
+    const deck = [{ id: 1, face: '/cards/card1.png', alt: 'draft1' }];
+
+    const { container } = render(
+      <BackCard type="draft" deck={deck} available={false} />
+    );
+
+    const img = container.querySelector('img');
+    expect(img).toHaveClass('back-card-draft');
+    expect(img).not.toHaveClass('back-card-clickable');
+  });
+
+  test('ejecuta onCardClick al hacer click en una carta del draft cuando available es true', () => {
+    const deck = [{ id: 1, face: '/cards/card1.png', alt: 'draft1' }];
+    const onCardClickMock = vi.fn();
+
+    const { container } = render(
+      <BackCard type="draft" deck={deck} available={true} onCardClick={onCardClickMock} />
+    );
+
+    const img = container.querySelector('img');
+    fireEvent.click(img);
+
+    expect(onCardClickMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('no ejecuta onCardClick cuando available es false', () => {
+    const deck = [{ id: 1, face: '/cards/card1.png', alt: 'draft1' }];
+    const onCardClickMock = vi.fn();
+
+    const { container } = render(
+      <BackCard type="draft" deck={deck} available={false} onCardClick={onCardClickMock} />
+    );
+
+    const img = container.querySelector('img');
+    fireEvent.click(img);
+
+    expect(onCardClickMock).not.toHaveBeenCalled();
+  });
+
 });
