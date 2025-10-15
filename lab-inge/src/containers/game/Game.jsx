@@ -47,6 +47,8 @@ function Game() {
 
             setPlayerData(fetchedPlayerData);
             setTurnData(fetchedTurnData);
+            
+            console.log("Draft recibido (GET):", fetchedTurnData?.draft);
 
             const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
             const myPlayerIndex = sortedByTurn.findIndex(player => player.id === parseInt(myPlayerId));
@@ -74,6 +76,7 @@ function Game() {
             const dataPublic =
                 typeof payload === "string" ? JSON.parse(payload) : payload;
             setTurnData(dataPublic);
+            console.log("Draft recibido:", dataPublic?.draft);
         };
 
         const handlePlayerPrivateUpdate = (payload) => {
