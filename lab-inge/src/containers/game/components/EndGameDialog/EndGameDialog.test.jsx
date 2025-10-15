@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
 import EndGameDialog from "./EndGameDialog";
 
 describe("EndGameDialog", () => {
@@ -10,67 +11,58 @@ describe("EndGameDialog", () => {
     regpileCount: 0, // Mazo vacío => gana el asesino
   };
 
-  const mockNormalesGanan = {
+  const mockDetectivesGanan = {
     winners: [
       { id: 3, name: "Jugador Normal 1" },
       { id: 4, name: "Jugador Normal 2" },
     ],
-    regpileCount: 5, // Mazo con cartas => ganan los normales
+    regpileCount: 5, // Mazo con cartas => ganan los detectives
   };
 
-  it("muestra mensaje y lista correctos cuando gana el asesino", () => {
+  it("renderiza correctamente cuando gana el asesino", () => {
     render(<EndGameDialog winners={mockAsesinoGana} onClose={() => {}} />);
 
-    // Título general
     expect(screen.getByText("PARTIDA FINALIZADA")).toBeInTheDocument();
-
-    // Mensaje de victoria del asesino
     expect(
-      screen.getByText(/el asesino/i)
+      screen.getByText("El Asesino (y el Cómplice, si existe) ha ganado la partida.")
     ).toBeInTheDocument();
 
-    // Lista de ganadores
-    expect(screen.getByText("Jugador Asesino")).toBeInTheDocument();
-    expect(screen.getByText("Jugador Cómplice")).toBeInTheDocument();
-
-    // Verifica cantidad de ganadores
-    const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(2);
+    const winners = screen.getAllByRole("listitem");
+    expect(winners).toHaveLength(2);
+    expect(winners[0]).toHaveTextContent("Jugador Asesino");
+    expect(winners[1]).toHaveTextContent("Jugador Cómplice");
   });
 
-  it("muestra mensaje y lista correctos cuando ganan los jugadores normales", () => {
-    render(<EndGameDialog winners={mockNormalesGanan} onClose={() => {}} />);
+  it("renderiza correctamente cuando ganan los detectives", () => {
+    render(<EndGameDialog winners={mockDetectivesGanan} onClose={() => {}} />);
 
     expect(screen.getByText("PARTIDA FINALIZADA")).toBeInTheDocument();
+    expect(
+      screen.getByText("Los Detectives descubrieron al Asesino.")
+    ).toBeInTheDocument();
 
-    // Texto parcial para evitar problemas por HTML interno
-    expect(screen.getByText(/jugadores descubrieron/i)).toBeInTheDocument();
-
-    expect(screen.getByText("Jugador Normal 1")).toBeInTheDocument();
-    expect(screen.getByText("Jugador Normal 2")).toBeInTheDocument();
-
-    const items = screen.getAllByRole("listitem");
-    expect(items).toHaveLength(2);
+    const winners = screen.getAllByRole("listitem");
+    expect(winners).toHaveLength(2);
+    expect(winners[0]).toHaveTextContent("Jugador Normal 1");
+    expect(winners[1]).toHaveTextContent("Jugador Normal 2");
   });
 
   it("no renderiza nada si winners es null o undefined", () => {
-    const { container: container1 } = render(
-      <EndGameDialog winners={null} onClose={() => {}} />
-    );
-    expect(container1.firstChild).toBeNull();
+    const { container: c1 } = render(<EndGameDialog winners={null} onClose={() => {}} />);
+    expect(c1.firstChild).toBeNull();
 
-    const { container: container2 } = render(
-      <EndGameDialog winners={undefined} onClose={() => {}} />
-    );
-    expect(container2.firstChild).toBeNull();
+    const { container: c2 } = render(<EndGameDialog winners={undefined} onClose={() => {}} />);
+    expect(c2.firstChild).toBeNull();
   });
 
-  it("muestra correctamente cuando no hay ganadores", () => {
+  it("muestra correctamente estructura aunque la lista de ganadores esté vacía", () => {
     const mockEmpty = { winners: [], regpileCount: 3 };
     render(<EndGameDialog winners={mockEmpty} onClose={() => {}} />);
 
     expect(screen.getByText("PARTIDA FINALIZADA")).toBeInTheDocument();
-    expect(screen.getByText(/jugadores descubrieron/i)).toBeInTheDocument();
+    expect(
+      screen.getByText("Los Detectives descubrieron al Asesino.")
+    ).toBeInTheDocument();
 
     const items = screen.queryAllByRole("listitem");
     expect(items).toHaveLength(0);

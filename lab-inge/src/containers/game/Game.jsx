@@ -71,24 +71,25 @@ function Game() {
 
     wsService.connect();
 
-    const handleGamePublicUpdate = (payload) => {
-      const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
-
-      if (dataPublic.end_game){
-        console.log("fin de la partida recibido:", dataPublic.payload);
+    const handleEndGameEvent = (dataPublic) => {
+      if (dataPublic.end_game?.game_status === "Finished") {
+        console.log("Fin de la partida detectado:", dataPublic.end_game);
 
         const winners = dataPublic.end_game.winners;
         const regpileCount = dataPublic?.regpile?.count ?? 0;
 
         setWinnerData({ winners, regpileCount });
         setShowEndDialog(true);
-        return;
       }
+    };
+
+    const handleGamePublicUpdate = (payload) => {
+      const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
+
       setTurnData(dataPublic);
 
-      if (dataPublic.winners && dataPublic.winners.length > 0) {
-        setWinnerData(dataPublic.winners);
-      }
+      handleEndGameEvent(dataPublic);
+
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
