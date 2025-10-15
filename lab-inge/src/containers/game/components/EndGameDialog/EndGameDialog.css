@@ -1,0 +1,106 @@
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/*contenedor del diálogo*/
+.dialog {
+  background: linear-gradient(135deg, #3a0000 0%, #5c1b00 50%, #2b0000 100%);
+  border: 2px solid #ca8747; 
+  border-radius: 1rem;
+  box-shadow: 0 0 40px rgba(202, 135, 71, 0.3), 0 0 15px rgba(0, 0, 0, 0.8);
+  padding: 2rem 2.5rem;
+  width: 90%;
+  max-width: 440px;
+  color: #fdf5e6; 
+  text-align: center;
+  animation: popIn 0.3s ease-in-out;
+  position: relative;
+}
+
+/*titulo GAME OVER*/
+.dialog h2 {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #ffb15e;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255, 155, 70, 0.4);
+}
+
+/* partecita de los jugadores */
+.winners-section {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  padding: 1.2rem 1.5rem;
+  margin-top: 1.2rem;
+  border: 1px solid rgba(255, 195, 130, 0.2);
+  box-shadow: inset 0 0 15px rgba(202, 135, 71, 0.15);
+}
+
+.winners-section h3 {
+  font-size: 1.3rem;
+  color: #ffb15e;
+  margin-bottom: 0.8rem;
+  text-transform: uppercase;
+}
+
+/* lista de los ganadores */
+.winners-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.winner-item {
+  padding: 0.5rem 0;
+  font-size: 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.winner-item:last-child {
+  border-bottom: none;
+}
+
+.winner-item:hover {
+  color: #ca8747;
+  transform: scale(1.05);
+}
+
+
+/*animaciones para abrir el dialog */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.victory-message {
+  color: #ffb347;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(255, 140, 0, 0.5);
+  text-align: center;
+}
+
+
