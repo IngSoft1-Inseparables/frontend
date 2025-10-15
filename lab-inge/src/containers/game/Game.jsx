@@ -17,7 +17,8 @@ function Game() {
     const [isLoading, setIsLoading] = useState(true);
     const [httpService] = useState(() => createHttpService());
     const [wsService] = useState(() => createWSService(gameId, myPlayerId));
-
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [selectionMode, setSelectionMode] = useState(null);
 
 
     useEffect(() => {
@@ -27,17 +28,23 @@ function Game() {
         }
     }, [gameId, myPlayerId, navigate]);
 
-  const handleCardClick = async () => {
-  try {
-    const hand = await httpService.updateHand(
-      turnData.gameId,
-      turnData.turn_owner_id,
-    );
-    console.log("Update Hand:", hand);
-  } catch (error) {
-    console.error("Failed to update hand:", error);
-  }
-};
+    const handlePlayerSelection = (playerId) => {
+        setSelectedPlayer(playerId);
+        setSelectionMode(null);
+    }
+
+    const handleCardClick = async () => {
+        try {
+            const hand = await httpService.updateHand(
+                turnData.gameId,
+                turnData.turn_owner_id,
+            );
+            console.log("Update Hand:", hand);
+        } catch (error) {
+            console.error("Failed to update hand:", error);
+        }
+    };
+
     const fetchGameData = async () => {
         try {
             setIsLoading(true);
@@ -129,7 +136,6 @@ function Game() {
                 };
             });
 
-            // Actualizar optimisticamente el mazo de descarte
             setTurnData(prevTurnData => {
                 return {
                     ...prevTurnData,
@@ -145,8 +151,6 @@ function Game() {
                 await httpService.discardCard(myPlayerId, cardId);
             } catch (error) {
                 console.error('Error al descartar carta:', error);
-                
-                // Revertir los cambios optimistas en caso de error
                 setPlayerData(previousPlayerData);
                 setTurnData(previousTurnData);
             }
@@ -164,19 +168,21 @@ function Game() {
 
     return (
         <div className="h-screen w-screen overflow-hidden">
-             <DndContext
+            <DndContext
                 sensors={sensors}
                 onDragEnd={handleDragEnd}
                 modifiers={[restrictToWindowEdges]}
             >
-            <GameBoard
-                data-testid="game-board"
-                orderedPlayers={orderedPlayers}
-                playerData={playerData}
-                turnData={turnData}
-                myPlayerId={myPlayerId}
-                onCardClick = {handleCardClick}
-            />
+                <GameBoard
+                    orderedPlayers={orderedPlayers}
+                    playerData={playerData}
+                    turnData={turnData}
+                    myPlayerId={myPlayerId}
+                    onCardClick={handleCardClick}
+                    onPlayerSelect={handlePlayerSelection}
+                    selectedPlayer={selectedPlayer}
+                    selectionMode={selectionMode}
+                />
             </DndContext>
         </div>
     );

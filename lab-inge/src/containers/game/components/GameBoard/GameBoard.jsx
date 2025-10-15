@@ -33,11 +33,11 @@ const PLAYER_POSITIONS = {
     },
 };
 
-function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick}) {
+function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode }) {
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
-const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
+    const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
 
 
     return (
@@ -52,6 +52,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                         player={orderedPlayers[index]}
                         turnData={turnData}
                         myPlayerId={myPlayerId}
+                        onPlayerSelect={onPlayerSelect}
+                        selectedPlayer={selectedPlayer}
+                        selectionMode={selectionMode}
                     />
                 ))}
             </div>
@@ -66,6 +69,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                             player={orderedPlayers[index]}
                             turnData={turnData}
                             myPlayerId={myPlayerId}
+                            onPlayerSelect={onPlayerSelect}
+                            selectedPlayer={selectedPlayer}
+                            selectionMode={selectionMode}
                         />
                     ))}
                 </div>
@@ -73,8 +79,8 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                 {/* Mesa central - Mazos */}
                 <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
                     <div className="h-full flex justify-evenly items-center">
-                        <RegularDeck regpile={turnData?.regpile} isAvailable = {isRegpileAvailable} onCardClick={onCardClick}/>
-                        <DiscardDeck discardpile={turnData?.discardpile} turnData={ turnData } myPlayerId={myPlayerId} />
+                        <RegularDeck regpile={turnData?.regpile} isAvailable={isRegpileAvailable} onCardClick={onCardClick} />
+                        <DiscardDeck discardpile={turnData?.discardpile} turnData={turnData} myPlayerId={myPlayerId} />
                     </div>
                 </div>
 
@@ -86,6 +92,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                             player={orderedPlayers[index]}
                             turnData={turnData}
                             myPlayerId={myPlayerId}
+                            onPlayerSelect={onPlayerSelect}
+                            selectedPlayer={selectedPlayer}
+                            selectionMode={selectionMode}
                         />
                     ))}
                 </div>
@@ -97,6 +106,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                     player={playerData}
                     turnData={turnData}
                     myPlayerId={myPlayerId}
+                    onPlayerSelect={onPlayerSelect}
+                    selectedPlayer={selectedPlayer}
+                    selectionMode={selectionMode}
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
                     <HandCard playerCards={playerData?.playerCards || []} />
