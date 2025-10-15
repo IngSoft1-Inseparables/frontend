@@ -7,7 +7,14 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
         }
     };
 
-    const isPlayerSelectable = selectionMode === 'select-player' && !selectedPlayer;
+    let isPlayerSelectable;
+
+    if(selectionMode === 'select-player'){
+        isPlayerSelectable = !selectedPlayer;
+    }else if (selectionMode === 'select-other-player'){
+        isPlayerSelectable = myPlayerId != player.id && !selectedPlayer;
+    }
+
     const isThisPlayerSelected = selectedPlayer === player.id;
     const isOtherPlayerSelected = selectedPlayer && selectedPlayer !== player.id;
 

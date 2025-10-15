@@ -18,7 +18,7 @@ function Game() {
     const [httpService] = useState(() => createHttpService());
     const [wsService] = useState(() => createWSService(gameId, myPlayerId));
     const [selectedPlayer, setSelectedPlayer] = useState(null);
-    const [selectionMode, setSelectionMode] = useState(null);
+    const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
 
 
     useEffect(() => {
