@@ -3,6 +3,7 @@ import DiscardDeck from "../DiscardDeck/DiscardDeck.jsx";
 import RegularDeck from "../RegularDeck/RegularDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 
+
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
     2: {
@@ -32,9 +33,12 @@ const PLAYER_POSITIONS = {
     },
 };
 
-function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
+function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick}) {
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
+
+const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
+
 
     return (
         <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
@@ -55,7 +59,7 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
             {/* Bloque central */}
             <div className="grid grid-cols-[20%_60%_20%]">
                 {/* Jugador izquierdo */}
-                <div className="flex items-center px-2">
+                <div className="flex items-center justify-center px-2">
                     {positions.left.map((index) => (
                         <PlayerCard
                             key={index}
@@ -69,13 +73,13 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
                 {/* Mesa central - Mazos */}
                 <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
                     <div className="h-full flex justify-evenly items-center">
-                        <RegularDeck regpile={turnData?.regpile}/>
-                        <DiscardDeck discardpile={turnData?.discardpile} />
+                        <RegularDeck regpile={turnData?.regpile} isAvailable = {isRegpileAvailable} onCardClick={onCardClick}/>
+                        <DiscardDeck discardpile={turnData?.discardpile} turnData={ turnData } myPlayerId={myPlayerId} />
                     </div>
                 </div>
 
                 {/* Jugador derecho */}
-                <div className="flex items-center px-2">
+                <div className="flex items-center justify-center px-2">
                     {positions.right.map((index) => (
                         <PlayerCard
                             key={index}
@@ -96,6 +100,9 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId }) {
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
                     <HandCard playerCards={playerData?.playerCards || []} />
+                    <div>
+                        <p className={turnData.turn_owner_id === myPlayerId ? "text-white text-center" : "invisible"}>Arrastrá una carta al mazo de descarte para descartarla.</p>
+                    </div>
                 </div>
             </div>
         </div>

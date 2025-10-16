@@ -1,31 +1,89 @@
-import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom'
-import { describe, test, expect } from 'vitest'
-import BackCard from './BackCard.jsx'
+import { render, screen, fireEvent } from "@testing-library/react";
+import BackCard from "./BackCard.jsx";
+import "@testing-library/jest-dom";
+import { describe, test, expect } from "vitest";
 
-describe('BackCard', () => {
-
-  test('renderiza Murder Escapes en la primera carta y las demás con el dorso cuando type="regular"', () => {
+describe("BackCard", () => {
+  test("todas las cartas están apiladas con transform", () => {
     const deck = [
-      { id: 1, back: '/cards/back1.png', face: '/cards/front1.png', alt: 'card1' },
-      { id: 2, back: '/cards/back2.png', face: '/cards/front2.png', alt: 'card2' },
-      { id: 3, back: '/cards/back3.png', face: '/cards/front3.png', alt: 'card3' },
-    ]
+      { id: 1, back: "/cards/back1.png", alt: "card1" },
+      { id: 2, back: "/cards/back1.png", alt: "card2" },
+      { id: 3, back: "/cards/back1.png", alt: "card3" },
+    ];
+    render(<BackCard type="regular" deck={deck} />);
+    const imgs = screen.getAllByRole("img");
+    imgs.forEach((img, idx) => {
+      expect(img).toHaveStyle(`transform: translateY(-${idx * 2}px)`);
+    });
+  });
 
-    render(<BackCard type="regular" deck={deck} />)
+  test("la última carta tiene la clase back-card-clickable solo si available es true", () => {
+    const deck = [
+      { id: 1, back: "/cards/back1.png", alt: "card1" },
+      { id: 2, back: "/cards/back1.png", alt: "card2" },
+    ];
+    // available true
+    render(<BackCard type="regular" deck={deck} available={true} />);
+    const imgsTrue = screen.getAllByRole("img");
+    expect(imgsTrue[imgsTrue.length - 1]).toHaveClass("back-card-clickable");
 
-    const imgs = screen.getAllByRole('img')
-    expect(imgs).toHaveLength(3)
+    // available false
+    render(<BackCard type="regular" deck={deck} available={false} />);
+    const imgsFalse = screen.getAllByRole("img");
+    expect(imgsFalse[imgsFalse.length - 1]).not.toHaveClass(
+      "back-card-clickable"
+    );
+  });
 
-    // Primera carta: Murder Escapes
-    expect(imgs[0]).toHaveAttribute('src', '/cards/02-murder_escapes.png')
-    expect(imgs[0]).toHaveAttribute('alt', 'MurderEscapes')
+  test("la última carta es clickeable solo si available es true", () => {
+    const deck = [
+      { id: 1, back: "/cards/back1.png", alt: "card1" },
+      { id: 2, back: "/cards/back1.png", alt: "card2" },
+    ];
 
-    // Las demás cartas: dorso
-    imgs.slice(1).forEach(img => {
-      expect(img).toHaveAttribute('src', expect.stringMatching(/back/))
-    })
-  })
+    // available true
+    const { container: containerTrue } = render(
+      <BackCard type="regular" deck={deck} available={true} />
+    );
+    const lastCardTrue = containerTrue.querySelector(".back-card:last-child");
+    expect(lastCardTrue).toHaveClass("back-card-clickable");
+
+    // available false
+    const { container: containerFalse } = render(
+      <BackCard type="regular" deck={deck} available={false} />
+    );
+    const lastCardFalse = containerFalse.querySelector(".back-card:last-child");
+    expect(lastCardFalse).not.toHaveClass("back-card-clickable");
+  });
+
+  test('renderiza todas las cartas con el dorso cuando type="regular"', () => {
+    const deck = [
+      {
+        id: 1,
+        back: "/cards/back1.png",
+        face: "/cards/front1.png",
+        alt: "card1",
+      },
+      {
+        id: 2,
+        back: "/cards/back1.png",
+        face: "/cards/front2.png",
+        alt: "card2",
+      },
+    ];
+
+    render(<BackCard type="regular" deck={deck} />);
+
+    const imgs = screen.getAllByRole("img");
+    expect(imgs).toHaveLength(2);
+    
+    // La primera carta debe ser Murder Escapes cuando type="regular"
+    expect(imgs[0]).toHaveAttribute("src", "/cards/02-murder_escapes.png");
+    expect(imgs[0]).toHaveAttribute("alt", "MurderEscapes");
+    
+    // Las demás cartas tienen el dorso
+    expect(imgs[1]).toHaveAttribute("src", "/cards/back1.png");
+  });
 
   test('reemplaza la primera carta por Murder Escapes cuando type="regular"', () => {
     const deck = [
@@ -42,30 +100,92 @@ describe('BackCard', () => {
 
   test('renderiza la última carta boca arriba cuando type="discard"', () => {
     const deck = [
-      { id: 1, back: '/cards/back1.png', face: '/cards/front1.png', alt: 'card1' },
-      { id: 2, back: '/cards/back1.png', face: '/cards/front2.png', alt: 'card2' }
-    ]
+      {
+        id: 1,
+        back: "/cards/back1.png",
+        face: "/cards/front1.png",
+        alt: "card1",
+      },
+      {
+        id: 2,
+        back: "/cards/back1.png",
+        face: "/cards/front2.png",
+        alt: "card2",
+      },
+    ];
 
-    render(<BackCard type="discard" deck={deck} />)
+    render(<BackCard type="discard" deck={deck} />);
 
-    const imgs = screen.getAllByRole('img')
-    expect(imgs).toHaveLength(2)
+    const imgs = screen.getAllByRole("img");
+    expect(imgs).toHaveLength(2);
 
-    const lastCard = imgs[imgs.length - 1]
-    expect(lastCard).toHaveAttribute('src', '/cards/front2.png')
-  })
+    const lastCard = imgs[imgs.length - 1];
+    expect(lastCard).toHaveAttribute("src", "/cards/front2.png");
+  });
 
-  
-  test('no renderiza nada si el deck está vacío', () => {
-    render(<BackCard type="regular" deck={[]} />)
-    const imgs = screen.queryAllByRole('img')
-    expect(imgs).toHaveLength(0)
-  })
+  test("no renderiza nada si el deck está vacío", () => {
+    render(<BackCard type="regular" deck={[]} />);
+    const imgs = screen.queryAllByRole("img");
+    expect(imgs).toHaveLength(0);
+  });
 
+  test("no renderiza nada si no se pasa deck", () => {
+    render(<BackCard type="regular" />);
+    const imgs = screen.queryAllByRole("img");
+    expect(imgs).toHaveLength(0);
+  });
+  test("handleClick se ejecuta al clickear la última carta si available es true", () => {
+    const deck = [
+      { id: 1, back: "/cards/back1.png", alt: "card1" },
+      { id: 2, back: "/cards/back2.png", alt: "card2" },
+    ];
 
-  test('no renderiza nada si no se pasa deck', () => {
-    render(<BackCard type="regular" />)
-    const imgs = screen.queryAllByRole('img')
-    expect(imgs).toHaveLength(0)
-  })
-})
+    const onCardClickMock = vi.fn();
+    render(
+      <BackCard
+        type="regular"
+        deck={deck}
+        available={true}
+        onCardClick={onCardClickMock}
+      />
+    );
+
+    const imgs = screen.getAllByRole("img");
+    expect(imgs).toHaveLength(2); 
+    
+    // La última carta (índice 1) debe tener la clase clickable
+    const topCard = imgs[1];
+    expect(topCard).toHaveClass("back-card-clickable");
+
+    fireEvent.click(topCard); // hacemos click en la carta clickeable
+
+    expect(onCardClickMock).toHaveBeenCalledTimes(1); // se llamó a onCardClick
+  });
+
+  test("no se ejecuta handleClick si available es false", () => {
+    const deck = [
+      { id: 1, back: "/cards/back1.png", alt: "card1" },
+      { id: 2, back: "/cards/back2.png", alt: "card2" },
+    ];
+
+    const onCardClickMock = vi.fn();
+    render(
+      <BackCard
+        type="regular"
+        deck={deck}
+        available={false}
+        onCardClick={onCardClickMock}
+      />
+    );
+
+    // Obtenemos la última carta
+    const imgs = screen.getAllByRole("img");
+    const lastCard = imgs[imgs.length - 1];
+
+    // Simulamos click
+    lastCard.click();
+
+    // Esperamos que la función no haya sido llamada
+    expect(onCardClickMock).not.toHaveBeenCalled();
+  });
+});

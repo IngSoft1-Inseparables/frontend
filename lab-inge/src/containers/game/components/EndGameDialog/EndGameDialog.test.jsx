@@ -94,3 +94,4 @@ describe("EndGameDialog", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/home"); // navega al home
   });
 });
+

@@ -1,18 +1,26 @@
-import './BackCard.css'
+import "./BackCard.css";
+import { useState } from "react";
 
-export default function BackCard({ type, deck }) {
+export default function BackCard({ type, deck, available, onCardClick }) {
+  console.log("BackCard available:", available);
   if (!deck || deck.length === 0) return null;
-
-  // Carta fija para el mazo regular (la del fondo)
-  const MURDER_CARD = {
+ 
+  const [selectedCardId, setSelectedCardId] = useState(null);
+ const MURDER_CARD = {
     src: '/cards/02-murder_escapes.png',
-    alt: 'MurderEscapes',
+    alt: 'MurderEscapes', 
+ }
+  const handleClick = (carta) => {
+    if (!available) return;
+    setSelectedCardId(carta.id);
+    console.log("click", carta.id);
+    if (onCardClick) onCardClick();
   };
 
   return (
     <div className="back-card-container relative">
       {deck.map((carta, index) => {
-        let src = carta.back || '/cards/01-card_back.png';
+   let src = carta.back || '/cards/01-card_back.png';
         let alt = carta.alt || 'Card Back';
 
         const isBottomRegular = type === 'regular' && index === 0;
@@ -21,24 +29,33 @@ export default function BackCard({ type, deck }) {
           alt = MURDER_CARD.alt;
         }
 
-        const isTopDiscard = type === 'discard' && index === deck.length - 1;
-        if (isTopDiscard && carta.face) {
-          src = carta.face;
-        }
 
-        return (
-          <img
-            key={carta.id}
-            className="back-card absolute transition-transform duration-300"
-            src={src}
-            alt={alt}
-            style={{
-              zIndex: index,
-              transform: `translateY(-${index * 2}px)`, // apila levemente
-            }}
-          />
-        );
-      })}
+    const isTopDiscard = type === "discard" && index === deck.length - 1;
+    if (isTopDiscard && carta.face) {
+      src = carta.face;
+    }
+
+    const isTopCard = index === deck.length - 1; // Solo la última carta
+
+    const className = `back-card ${isTopCard && available && carta.id != 0 ? "back-card-clickable" : ""}`;
+
+    const cardStyle = {
+      zIndex: index,
+      transform: `translateY(-${index * 2}px)`,
+      position: "absolute",
+    };
+
+    return (
+      <img
+        key={carta.id}
+        src={src}
+        alt={alt}
+        className={className}
+        style={cardStyle}
+        onClick={isTopCard && available && carta.id != 0 ? () => handleClick(carta) : undefined}
+      />
+    );
+  })}
     </div>
   );
 }
