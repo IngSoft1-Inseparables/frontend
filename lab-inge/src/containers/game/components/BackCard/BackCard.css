@@ -68,9 +68,21 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 16px; /* separación entre las tres cartas */
 }
 
+/* Evitar que cada carta se apile en el centro */
 .draft-container .back-card-container {
+  position: relative;
   width: 115px;
+  height: 170px;
 }
+
+/* En modo draft, la carta no debe ser absoluta */
+.back-card-draft {
+  position: static !important; /* forzar posición normal */
+  transform: none !important;
+  z-index: auto !important;
+}
+
 

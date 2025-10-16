@@ -47,8 +47,18 @@ function Game() {
 
             setPlayerData(fetchedPlayerData);
             setTurnData(fetchedTurnData);
+
+            console.log(fetchedTurnData);
             
             console.log("Draft recibido (GET):", fetchedTurnData?.draft);
+            const draft = fetchedTurnData?.draft;
+            if (draft) {
+            console.table([
+                { num: 1, img: draft.card_1_image },
+                { num: 2, img: draft.card_2_image },
+                { num: 3, img: draft.card_3_image },
+            ]);
+            }
 
             const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
             const myPlayerIndex = sortedByTurn.findIndex(player => player.id === parseInt(myPlayerId));

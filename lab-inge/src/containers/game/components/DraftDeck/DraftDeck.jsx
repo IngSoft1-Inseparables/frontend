@@ -31,6 +31,7 @@ export default function DraftDeck({ draft, isAvailable, onCardClick }) {
 
   return (
     <div className="draft-container">
+      
       {cards.map((card) => (
         <BackCard
           key={card.id}
