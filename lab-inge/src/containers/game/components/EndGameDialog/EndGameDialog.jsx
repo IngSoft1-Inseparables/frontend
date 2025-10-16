@@ -4,6 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import './EndGameDialog.css'
 
 export default function EndGameDialog({ onClose, winners }) {
+
+  const navigate = useNavigate()
+
+  const handleReturnHome = () => {
+    onClose?.();       
+    navigate("/home"); 
+  };
+
+
   if(!winners) return null;
 
   const winnersList = winners.winners || [];
@@ -34,6 +43,9 @@ export default function EndGameDialog({ onClose, winners }) {
             ))}
           </ul>
         </div>
+        <button type="button" className="dialog-button" onClick={handleReturnHome}>
+          Volver a Home
+        </button>
       </div>
     </div>
   )
