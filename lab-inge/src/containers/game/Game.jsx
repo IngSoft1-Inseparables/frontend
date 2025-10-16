@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx"; 
 
@@ -18,8 +20,6 @@ function Game() {
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
 
-  //debug
-  const [debugClicks, setDebugClicks] = useState(0);
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
@@ -29,9 +29,20 @@ function Game() {
     }
   }, [gameId, myPlayerId, navigate]);
 
-  const fetchGameData = async () => {
-    try {
-      setIsLoading(true);
+  const handleCardClick = async () => {
+  try {
+    const hand = await httpService.updateHand(
+      turnData.gameId,
+      turnData.turn_owner_id,
+    );
+    console.log("Update Hand:", hand);
+  } catch (error) {
+    console.error("Failed to update hand:", error);
+  }
+};
+    const fetchGameData = async () => {
+        try {
+            setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
       const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
@@ -60,13 +71,25 @@ function Game() {
 
     wsService.connect();
 
+    const handleEndGameEvent = (dataPublic) => {
+      if (dataPublic.end_game?.game_status === "Finished") {
+        console.log("Fin de la partida detectado:", dataPublic.end_game);
+
+        const winners = dataPublic.end_game.winners;
+        const regpileCount = dataPublic?.regpile?.count ?? 0;
+
+        setWinnerData({ winners, regpileCount });
+        setShowEndDialog(true);
+      }
+    };
+
     const handleGamePublicUpdate = (payload) => {
       const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
+
       setTurnData(dataPublic);
 
-      if (dataPublic.winners && dataPublic.winners.length > 0) {
-        setWinnerData(dataPublic.winners);
-      }
+      handleEndGameEvent(dataPublic);
+
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -77,27 +100,73 @@ function Game() {
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
 
-    return () => {
-      wsService.off("game_public_update", handleGamePublicUpdate);
-      wsService.off("player_private_update", handlePlayerPrivateUpdate);
-      wsService.disconnect();
+        // Cleanup exacto: eliminar los mismos handlers
+        return () => {
+            wsService.off("game_public_update", handleGamePublicUpdate);
+            wsService.off("player_private_update", handlePlayerPrivateUpdate);
+            wsService.disconnect();
+        };
+    }, []);
+
+
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+
+    // Handler para cuando se suelta una carta
+    const handleDragEnd = async (event) => {
+        const { active, over } = event;
+        if (!over || myPlayerId != turnData.turn_owner_id) return;
+
+        // Si se soltó sobre el mazo de descarte
+        if (over.id === 'discard-deck') {
+            const cardId = active.data.current?.cardId;
+            const cardName = active.data.current?.cardName;
+            const imageName = active.data.current?.imageName;
+
+            // Guardar el estado anterior para poder hacer rollback
+            const previousPlayerData = playerData;
+            const previousTurnData = turnData;
+
+            // Actualizar optimisticamente la mano del jugador
+            setPlayerData(prevData => {
+                if (!prevData) return prevData;
+
+                return {
+                    ...prevData,
+                    playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
+                };
+            });
+
+            // Actualizar optimisticamente el mazo de descarte
+            setTurnData(prevTurnData => {
+                return {
+                    ...prevTurnData,
+                    discardpile: {
+                        count: (prevTurnData.discardpile?.count || 0) + 1,
+                        last_card_name: cardName,
+                        last_card_image: imageName
+                    }
+                };
+            });
+
+            try {
+                await httpService.discardCard(myPlayerId, cardId);
+            } catch (error) {
+                console.error('Error al descartar carta:', error);
+                
+                // Revertir los cambios optimistas en caso de error
+                setPlayerData(previousPlayerData);
+                setTurnData(previousTurnData);
+            }
+        }
     };
-  }, []);
 
-  //implentación del debug
-  const handleTableClick = () => {
-    const newCount = debugClicks + 1;
-    setDebugClicks(newCount);
-
-    
-    if (newCount >= 3 && !showEndDialog) {
-      console.log("🧩 Debug: mostrando EndGameDialog");
-      
-      const mockWinners = winnerData || [{ id: 1, name: "Jugador Debug" }];
-      setWinnerData(mockWinners);
-      setShowEndDialog(true);
-    }
-  };
 
   if (isLoading || orderedPlayers.length === 0) {
     return (
@@ -109,16 +178,19 @@ function Game() {
 
   return (
     <div
-      className="h-screen w-screen relative"
-
-      //lo voy a tener que borrar, se usa para debug sin el WS
-      onClick={handleTableClick} 
-    >
+      className="h-screen w-screen relative overflow-hidden">
+             <DndContext
+                sensors={sensors}
+                onDragEnd={handleDragEnd}
+                modifiers={[restrictToWindowEdges]}
+            >
       <GameBoard
+                data-testid="game-board"
         orderedPlayers={orderedPlayers}
         playerData={playerData}
         turnData={turnData}
         myPlayerId={myPlayerId}
+                onCardClick = {handleCardClick}
       />
 
       {showEndDialog && winnerData && (
@@ -127,6 +199,7 @@ function Game() {
           onClose={() => setShowEndDialog(false)}
         />
       )}
+            </DndContext>
     </div>
   );
 }
