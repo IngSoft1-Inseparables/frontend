@@ -5,7 +5,7 @@ import { createWSService } from "../../services/WSService.js";
 import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
-import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx"; 
+import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 
 function Game() {
   const navigate = useNavigate();
@@ -19,30 +19,36 @@ function Game() {
   const [isLoading, setIsLoading] = useState(true);
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
-
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
-      console.error("Missing gameId or myPlayerId in navigation state");
-      navigate("/home", { replace: true });
+      console.error('Missing gameId or myPlayerId in navigation state');
+      navigate('/home', { replace: true });
     }
   }, [gameId, myPlayerId, navigate]);
 
-  const handleCardClick = async () => {
-  try {
-    const hand = await httpService.updateHand(
-      turnData.gameId,
-      turnData.turn_owner_id,
-    );
-    console.log("Update Hand:", hand);
-  } catch (error) {
-    console.error("Failed to update hand:", error);
+  const handlePlayerSelection = (playerId) => {
+    setSelectedPlayer(playerId);
+    setSelectionMode(null);
   }
-};
-    const fetchGameData = async () => {
-        try {
-            setIsLoading(true);
+
+  const handleCardClick = async () => {
+    try {
+      const hand = await httpService.updateHand(
+        turnData.gameId,
+        turnData.turn_owner_id,
+      );
+      console.log("Update Hand:", hand);
+    } catch (error) {
+      console.error("Failed to update hand:", error);
+    }
+  };
+  const fetchGameData = async () => {
+    try {
+      setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
       const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
@@ -100,72 +106,69 @@ function Game() {
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
 
-        // Cleanup exacto: eliminar los mismos handlers
-        return () => {
-            wsService.off("game_public_update", handleGamePublicUpdate);
-            wsService.off("player_private_update", handlePlayerPrivateUpdate);
-            wsService.disconnect();
-        };
-    }, []);
-
-
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        })
-    );
-
-    // Handler para cuando se suelta una carta
-    const handleDragEnd = async (event) => {
-        const { active, over } = event;
-        if (!over || myPlayerId != turnData.turn_owner_id) return;
-
-        // Si se soltó sobre el mazo de descarte
-        if (over.id === 'discard-deck') {
-            const cardId = active.data.current?.cardId;
-            const cardName = active.data.current?.cardName;
-            const imageName = active.data.current?.imageName;
-
-            // Guardar el estado anterior para poder hacer rollback
-            const previousPlayerData = playerData;
-            const previousTurnData = turnData;
-
-            // Actualizar optimisticamente la mano del jugador
-            setPlayerData(prevData => {
-                if (!prevData) return prevData;
-
-                return {
-                    ...prevData,
-                    playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
-                };
-            });
-
-            // Actualizar optimisticamente el mazo de descarte
-            setTurnData(prevTurnData => {
-                return {
-                    ...prevTurnData,
-                    discardpile: {
-                        count: (prevTurnData.discardpile?.count || 0) + 1,
-                        last_card_name: cardName,
-                        last_card_image: imageName
-                    }
-                };
-            });
-
-            try {
-                await httpService.discardCard(myPlayerId, cardId);
-            } catch (error) {
-                console.error('Error al descartar carta:', error);
-                
-                // Revertir los cambios optimistas en caso de error
-                setPlayerData(previousPlayerData);
-                setTurnData(previousTurnData);
-            }
-        }
+    // Cleanup exacto: eliminar los mismos handlers
+    return () => {
+      wsService.off("game_public_update", handleGamePublicUpdate);
+      wsService.off("player_private_update", handlePlayerPrivateUpdate);
+      wsService.disconnect();
     };
+  }, []);
+
+
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Handler para cuando se suelta una carta
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || myPlayerId != turnData.turn_owner_id) return;
+
+    // Si se soltó sobre el mazo de descarte
+    if (over.id === 'discard-deck') {
+      const cardId = active.data.current?.cardId;
+      const cardName = active.data.current?.cardName;
+      const imageName = active.data.current?.imageName;
+
+      // Guardar el estado anterior para poder hacer rollback
+      const previousPlayerData = playerData;
+      const previousTurnData = turnData;
+
+      // Actualizar optimisticamente la mano del jugador
+      setPlayerData(prevData => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
+        };
+      });
+
+      setTurnData(prevTurnData => {
+        return {
+          ...prevTurnData,
+          discardpile: {
+            count: (prevTurnData.discardpile?.count || 0) + 1,
+            last_card_name: cardName,
+            last_card_image: imageName
+          }
+        };
+      });
+
+      try {
+        await httpService.discardCard(myPlayerId, cardId);
+      } catch (error) {
+        console.error('Error al descartar carta:', error);
+        setPlayerData(previousPlayerData);
+        setTurnData(previousTurnData);
+      }
+    }
+  };
 
 
   if (isLoading || orderedPlayers.length === 0) {
@@ -179,27 +182,29 @@ function Game() {
   return (
     <div
       className="h-screen w-screen relative overflow-hidden">
-             <DndContext
-                sensors={sensors}
-                onDragEnd={handleDragEnd}
-                modifiers={[restrictToWindowEdges]}
-            >
-      <GameBoard
-                data-testid="game-board"
-        orderedPlayers={orderedPlayers}
-        playerData={playerData}
-        turnData={turnData}
-        myPlayerId={myPlayerId}
-                onCardClick = {handleCardClick}
-      />
-
-      {showEndDialog && winnerData && (
-        <EndGameDialog
-          winners={winnerData}
-          onClose={() => setShowEndDialog(false)}
+      <DndContext
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToWindowEdges]}
+      >
+        <GameBoard
+          orderedPlayers={orderedPlayers}
+          playerData={playerData}
+          turnData={turnData}
+          myPlayerId={myPlayerId}
+          onCardClick={handleCardClick}
+          onPlayerSelect={handlePlayerSelection}
+          selectedPlayer={selectedPlayer}
+          selectionMode={selectionMode}
         />
-      )}
-            </DndContext>
+
+        {showEndDialog && winnerData && (
+          <EndGameDialog
+            winners={winnerData}
+            onClose={() => setShowEndDialog(false)}
+          />
+        )}
+      </DndContext>
     </div>
   );
 }
