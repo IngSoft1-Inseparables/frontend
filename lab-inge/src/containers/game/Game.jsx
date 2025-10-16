@@ -20,7 +20,8 @@ function Game() {
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
+  const [selectedSecret, setSelectedSecret] = useState(null);
+  const [selectionMode, setSelectionMode] = useState("select-secret"); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
@@ -35,6 +36,12 @@ function Game() {
     setSelectionMode(null);
   }
 
+  const handleSecretSelection = (playerId, secretId) => {
+    setSelectedPlayer(playerId);
+    setSelectedSecret(secretId);
+    setSelectionMode(null);
+  }
+
   const handleCardClick = async () => {
     try {
       const hand = await httpService.updateHand(
@@ -46,6 +53,7 @@ function Game() {
       console.error("Failed to update hand:", error);
     }
   };
+
   const fetchGameData = async () => {
     try {
       setIsLoading(true);
@@ -65,6 +73,8 @@ function Game() {
 
       const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
       setOrderedPlayers(reorderedPlayers);
+      
+      console.log(fetchedTurnData);
     } catch (error) {
       console.error("Failed obtaining game data:", error);
     } finally {
@@ -195,6 +205,8 @@ function Game() {
           onCardClick={handleCardClick}
           onPlayerSelect={handlePlayerSelection}
           selectedPlayer={selectedPlayer}
+          onSecretSelect={handleSecretSelection}
+          selectedSecret={selectedSecret}
           selectionMode={selectionMode}
         />
 

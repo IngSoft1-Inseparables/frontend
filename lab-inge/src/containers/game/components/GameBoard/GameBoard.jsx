@@ -33,7 +33,7 @@ const PLAYER_POSITIONS = {
     },
 };
 
-function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode }) {
+function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, onSecretSelect, selectedSecret, selectionMode }) {
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
@@ -54,6 +54,8 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
                         myPlayerId={myPlayerId}
                         onPlayerSelect={onPlayerSelect}
                         selectedPlayer={selectedPlayer}
+                        onSecretSelect={onSecretSelect}
+                        selectedSecret={selectedSecret}
                         selectionMode={selectionMode}
                     />
                 ))}
@@ -71,6 +73,8 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
                             myPlayerId={myPlayerId}
                             onPlayerSelect={onPlayerSelect}
                             selectedPlayer={selectedPlayer}
+                            onSecretSelect={onSecretSelect}
+                            selectedSecret={selectedSecret}
                             selectionMode={selectionMode}
                         />
                     ))}
@@ -94,6 +98,8 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
                             myPlayerId={myPlayerId}
                             onPlayerSelect={onPlayerSelect}
                             selectedPlayer={selectedPlayer}
+                            onSecretSelect={onSecretSelect}
+                            selectedSecret={selectedSecret}
                             selectionMode={selectionMode}
                         />
                     ))}
@@ -103,11 +109,14 @@ function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardCli
             {/* Bloque inferior - Jugador actual y mano */}
             <div className="flex items-center px-4">
                 <PlayerCard
+                    key={0}
                     player={playerData}
                     turnData={turnData}
                     myPlayerId={myPlayerId}
                     onPlayerSelect={onPlayerSelect}
                     selectedPlayer={selectedPlayer}
+                    onSecretSelect={onSecretSelect}
+                    selectedSecret={selectedSecret}
                     selectionMode={selectionMode}
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>

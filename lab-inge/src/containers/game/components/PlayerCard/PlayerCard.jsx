@@ -1,4 +1,4 @@
-const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlayer, selectionMode }) => {
+const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlayer, onSecretSelect, selectedSecret, selectionMode }) => {
     if (!player || !turnData) return null;
 
     const handlePlayerClick = () => {
@@ -7,12 +7,22 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
         }
     };
 
+    const handleSecretClick = (secretId) => {
+        if(onSecretSelect) {
+            onSecretSelect(secretId)
+        }
+    }
+
+    let isSecretSelectable;
+
     let isPlayerSelectable;
 
     if(selectionMode === 'select-player'){
         isPlayerSelectable = !selectedPlayer;
     }else if (selectionMode === 'select-other-player'){
         isPlayerSelectable = myPlayerId != player.id && !selectedPlayer;
+    }else if (selectionMode === 'select-secret'){
+        isSecretSelectable = !selectedSecret;
     }
 
     const isThisPlayerSelected = selectedPlayer === player.id;
@@ -47,40 +57,27 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
             </div>
 
             {/* Secretos */}
-            <div className="flex justify-around items-center flex-1 w-full">
-                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[0]?.revealed ?
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                    :
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                }
-                    style={
-                        player.playerSecrets?.[0]?.revealed || player.id === myPlayerId
-                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_back_name}.png)` }
-                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_front_name}.png)` }
-                    }>
-                </div>
-                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[1]?.revealed ?
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                    :
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                }
-                    style={
-                        player.playerSecrets?.[1]?.revealed || player.id === parseInt(myPlayerId)
-                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_back_name}.png)` }
-                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_front_name}.png)` }
-                    }>
-                </div>
-                <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[2]?.revealed ?
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                    :
-                    "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                }
-                    style={
-                        player.playerSecrets?.[2]?.revealed || player.id === parseInt(myPlayerId)
-                            ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_back_name}.png)` }
-                            : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_front_name}.png)` }
-                    }>
-                </div>
+            <div className="flex justify-center items-center flex-1 w-full gap-1 p-2">
+                {player.playerSecrets?.map((secret, index) => {
+                    const secretCount = player.playerSecrets?.length || 1;
+                    return (
+                        <div 
+                            key={index}
+                            onClick={isSecretSelectable ? () => handleSecretClick(player.playerSecrets[index].secret_id) : null}
+                            className={`aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm flex-1 max-w-20 min-w-12 
+                                ${player.id === parseInt(myPlayerId) && !secret?.revealed ? 'opacity-30' : ''}
+                                ${isSecretSelectable ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all' : ''}
+                                ${selectedSecret === player.playerSecrets[index].secret_id ? 'border-2 border-solid rounded-xl border-yellow-400/80 scale-101' : ''}
+                                `}
+                            style={{
+                                maxWidth: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
+                                backgroundImage: secret?.revealed || player.id === parseInt(myPlayerId)
+                                    ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
+                                    : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`
+                            }}>
+                        </div>
+                    );
+                })}
             </div>
         </div >
     );
