@@ -18,8 +18,6 @@ function Game() {
     const [httpService] = useState(() => createHttpService());
     const [wsService] = useState(() => createWSService(gameId, myPlayerId));
 
-
-
     useEffect(() => {
         if (!gameId || !myPlayerId) {
             console.error('Missing gameId or myPlayerId in navigation state');
@@ -27,17 +25,17 @@ function Game() {
         }
     }, [gameId, myPlayerId, navigate]);
 
-  const handleCardClick = async () => {
-  try {
-    const hand = await httpService.updateHand(
-      turnData.gameId,
-      turnData.turn_owner_id,
-    );
-    console.log("Update Hand:", hand);
-  } catch (error) {
-    console.error("Failed to update hand:", error);
-  }
-};
+    const handleCardClick = async () => {
+    try {
+        const hand = await httpService.updateHand(
+        turnData.gameId,
+        turnData.turn_owner_id,
+        );
+        console.log("Update Hand:", hand);
+    } catch (error) {
+        console.error("Failed to update hand:", error);
+    }
+    };
     const fetchGameData = async () => {
         try {
             setIsLoading(true);
@@ -52,13 +50,6 @@ function Game() {
             
             console.log("Draft recibido (GET):", fetchedTurnData?.draft);
             const draft = fetchedTurnData?.draft;
-            if (draft) {
-            console.table([
-                { num: 1, img: draft.card_1_image },
-                { num: 2, img: draft.card_2_image },
-                { num: 3, img: draft.card_3_image },
-            ]);
-            }
 
             const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
             const myPlayerIndex = sortedByTurn.findIndex(player => player.id === parseInt(myPlayerId));
@@ -106,8 +97,6 @@ function Game() {
             wsService.disconnect();
         };
     }, []);
-
-
 
     const sensors = useSensors(
         useSensor(PointerSensor, {

@@ -75,7 +75,7 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                 <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
                     <div className="h-full flex justify-between items-center px-40">
                         {/* Grupo izquierdo: mazo regular + draft */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col items-center gap-2">
                             <RegularDeck regpile={turnData?.regpile} isAvailable={isRegpileAvailable} onCardClick={onCardClick}/>
                             <DraftDeck draft={turnData?.draft} isAvailable={turnData?.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6} onCardClick={onCardClick}/>
                         </div>
