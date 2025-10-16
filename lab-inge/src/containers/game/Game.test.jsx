@@ -1,7 +1,10 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
+import { within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import Game from "./Game";
+
 
 // Variable global para capturar el handler onDragEnd
 let capturedOnDragEnd = null;
@@ -437,106 +440,7 @@ it("handles player reordering when only 2 players", async () => {
         expect(screen.getByTestId("game-board")).toBeInTheDocument();
       });
     });
-
-    describe("WebSocket EndGame Event", () => {
-  it("renders EndGameDialog correctly when Assassin wins (regpile.count = 0)", async () => {
-    // --- Mock HTTP inicial ---
-    mockHttp.getPublicTurnData.mockResolvedValue({
-      ...mockTurnData,
-      regpile: { count: 0 },
-    });
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
-
-    renderGame({ gameId: 1, myPlayerId: 2 });
-
-    // Esperar render inicial y conexión WS
-    await waitFor(() => {
-      expect(screen.getByTestId("game-board")).toBeInTheDocument();
-      expect(mockWS.connect).toHaveBeenCalled();
-    });
-
-    // Recuperar handler del evento
-    const wsHandler = mockWS.on.mock.calls.find(c => c[0] === "game_public_update")?.[1];
-    expect(wsHandler).toBeDefined();
-
-    // Simular evento de fin de partida
-    const fakeEvent = {
-      end_game: {
-        game_id: 3,
-        game_status: "Finished",
-        turn: 1,
-        winners: [
-          { id: 5, name: "Jugador Asesino" },
-          { id: 6, name: "Jugador Cómplice" },
-        ],
-      },
-      regpile: { count: 0 },
-    };
-
-    wsHandler(fakeEvent);
-
-    // Verificar diálogo de fin de partida
-    await waitFor(() => {
-      const dialog = screen.getByText("PARTIDA FINALIZADA");
-      expect(dialog).toBeInTheDocument();
-
-      // Mensaje correcto (solo uno)
-      const msg = screen.getByText(/ha ganado la partida/i);
-      expect(msg).toHaveTextContent("El Asesino (y el Cómplice, si existe) ha ganado la partida.");
-
-      // Ganadores renderizados
-      expect(screen.getByText("Jugador Asesino")).toBeInTheDocument();
-      expect(screen.getByText("Jugador Cómplice")).toBeInTheDocument();
-    });
-  });
-
-  it("renders EndGameDialog correctly when Normal players win (regpile.count > 0)", async () => {
-    // --- Mock HTTP inicial ---
-    mockHttp.getPublicTurnData.mockResolvedValue({
-      ...mockTurnData,
-      regpile: { count: 3 },
-    });
-    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
-
-    renderGame({ gameId: 1, myPlayerId: 2 });
-
-    await waitFor(() => {
-      expect(screen.getByTestId("game-board")).toBeInTheDocument();
-      expect(mockWS.connect).toHaveBeenCalled();
-    });
-
-    const wsHandler = mockWS.on.mock.calls.find(c => c[0] === "game_public_update")?.[1];
-    expect(wsHandler).toBeDefined();
-
-    // Simular evento con ganadores normales
-    const fakeEvent = {
-      end_game: {
-        game_id: 4,
-        game_status: "Finished",
-        turn: 2,
-        winners: [
-          { id: 10, name: "Jugador Normal 1" },
-          { id: 11, name: "Jugador Normal 2" },
-        ],
-      },
-      regpile: { count: 3 }, // hay cartas => ganan los normales
-    };
-
-    wsHandler(fakeEvent);
-
-    await waitFor(() => {
-      expect(screen.getByText("PARTIDA FINALIZADA")).toBeInTheDocument();
-
-      const msg = screen.getByText(/descubrieron al Asesino/i);
-      expect(msg).toHaveTextContent("Los jugadores descubrieron al Asesino.");
-
-      expect(screen.getByText("Jugador Normal 1")).toBeInTheDocument();
-      expect(screen.getByText("Jugador Normal 2")).toBeInTheDocument();
-    });
-  });
-});
       
-
   });
 
   describe("Drag and Drop Functionality", () => {
@@ -1024,4 +928,93 @@ it("handles player reordering when only 2 players", async () => {
       });
     });
   });
+
+  describe("EndGameDialog Integration", () => {
+  it("shows EndGameDialog when end_game event with status Finished is received", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const endGamePayload = {
+      ...mockTurnData,
+      end_game: {
+        game_status: "Finished",
+        winners: [{ id: 1, name: "Jugador1" }],
+      },
+      regpile: { count: 0 }, // caso del Asesino
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(endGamePayload)));
+
+    const dialog = await screen.findByText("PARTIDA FINALIZADA");
+    expect(dialog).toBeInTheDocument();
+
+    const dialogElement = dialog.closest(".dialog");
+    const withinDialog = within(dialogElement);
+
+    expect(withinDialog.getByText("El Asesino (y el Cómplice, si existe) ha ganado la partida.")).toBeInTheDocument();
+    expect(withinDialog.getByText("Jugador1")).toBeInTheDocument();
+  });
+
+  it("shows correct message for detectives victory when regpileCount > 0", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const detectivesWinPayload = {
+      ...mockTurnData,
+      end_game: {
+        game_status: "Finished",
+        winners: [{ id: 2, name: "Jugador2" }],
+      },
+      regpile: { count: 5 }, // caso detectives
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(detectivesWinPayload)));
+
+    const dialog = await screen.findByText("PARTIDA FINALIZADA");
+    expect(dialog).toBeInTheDocument();
+
+    const dialogElement = dialog.closest(".dialog");
+    const withinDialog = within(dialogElement);
+
+    expect(withinDialog.getByText("Los Detectives descubrieron al Asesino.")).toBeInTheDocument();
+    expect(withinDialog.getByText("Jugador2")).toBeInTheDocument();
+  });
+
+  it("does not show EndGameDialog if game_status is not Finished", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const payload = {
+      ...mockTurnData,
+      end_game: { game_status: "Ongoing" }, // no Finished
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(payload)));
+
+    expect(screen.queryByText("PARTIDA FINALIZADA")).not.toBeInTheDocument();
+  });
+});
+
+
 });

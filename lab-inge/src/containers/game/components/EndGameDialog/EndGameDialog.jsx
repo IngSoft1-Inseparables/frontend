@@ -13,7 +13,7 @@ export default function EndGameDialog({ onClose, winners }) {
   if(regpileCount === 0) {
     victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";  
   } else {
-    victoryMessage = "Los jugadores descubrieron al Asesino.";
+    victoryMessage = "Los Detectives descubrieron al Asesino.";
   }
 
   return (
