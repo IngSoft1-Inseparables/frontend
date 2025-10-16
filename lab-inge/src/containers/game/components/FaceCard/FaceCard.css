@@ -22,7 +22,6 @@
 .face-card-selected {
   border: 5px solid #facc15;
   box-shadow: blackk;
-
   /* evité usar transform scale grande aquí */
   transform: translateY(-4px); /* solo la movemos un poquito, sin escalar */
 }

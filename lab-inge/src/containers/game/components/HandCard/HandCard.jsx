@@ -3,12 +3,15 @@ import FaceCard from "../FaceCard/FaceCard";
 import "./HandCard.css";
 import { useState, useEffect, useRef } from "react";
 
-function HandCard({ playerCards = [], onDragStart, availableToPlay, turnState}) {
+function HandCard({
+  playerCards = [],
+  onSetStateChange,
+  availableToPlay,
+  turnState,
+}) {
   const [selectedCards, setSelectedCards] = useState([]); // array donde se van guardando las cartas seleccionadas por el usuario.
   const [maxAllowed, setMaxAllowed] = useState(0);
   const handRef = useRef(null);
-
-
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -34,8 +37,8 @@ function HandCard({ playerCards = [], onDragStart, availableToPlay, turnState}) 
   };
 
   const handleSelect = (card) => {
-
-    if (!availableToPlay || turnState.toLowerCase() !== "None".toLowerCase() ) return; 
+    if (!availableToPlay || turnState.toLowerCase() !== "None".toLowerCase())
+      return;
     const cardName = card.card_name.toLowerCase();
     const selectedNames = selectedCards.map((c) => c.card_name.toLowerCase());
 
@@ -84,7 +87,7 @@ function HandCard({ playerCards = [], onDragStart, availableToPlay, turnState}) 
 
     const canAdd =
       selectedCards.length < currentMax &&
-      (selectedNames.every((name) => name === cardName) || // mismo detective                  // wildcard
+      (selectedNames.every((name) => name === cardName) || // mismo detective
         (beresfordGroup.includes(cardName) && // Beresford con otros Beresford o wildcard
           selectedNames.every((name) => beresfordGroup.includes(name))));
     if (
@@ -104,12 +107,23 @@ function HandCard({ playerCards = [], onDragStart, availableToPlay, turnState}) 
       setMaxAllowed(isDetective ? getSetSize(card.card_name) : 0);
     }
   };
-
-  //decide que cartas se arrastran
-  const handleDragStart = (card) => {
-    const cardsToDrag = selectedCards.includes(card) ? selectedCards : [card];
-    onDragStart(cardsToDrag); // esto viaja hasta Game
-  };
+  const isSetPlayable =
+    selectedCards.length > 0 && selectedCards.length === maxAllowed;
+    useEffect(() => {
+    if (onSetStateChange) {
+      onSetStateChange(isSetPlayable, selectedCards); 
+    }
+  }, [isSetPlayable, selectedCards, onSetStateChange]);
+   useEffect(() => {
+    const updatedSelected = selectedCards.filter((c) =>
+      playerCards.some((pc) => pc.card_id === c.card_id)
+    );
+    if (updatedSelected.length !== selectedCards.length) {
+      setSelectedCards(updatedSelected);
+      const isPlayable = updatedSelected.length === maxAllowed;
+      if (onSetStateChange) onSetStateChange(isPlayable, updatedSelected);
+    }
+  }, [playerCards]);
 
   return (
     <div className="hand-card" ref={handRef}>
@@ -122,7 +136,7 @@ function HandCard({ playerCards = [], onDragStart, availableToPlay, turnState}) 
           imageBackName={card.image_back_name}
           onSelect={() => handleSelect(card)}
           isSelected={selectedCards.some((c) => c.card_id === card.card_id)}
-          onDragInitiate={() => handleDragStart(card)} 
+          // onDragInitiate={() => handleDragStart(card)}
         />
       ))}
     </div>

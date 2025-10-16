@@ -7,10 +7,11 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay
+  DragOverlay,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
+import FaceCard from "./components/FaceCard/FaceCard.jsx";
 
 function Game() {
   const navigate = useNavigate();
@@ -121,25 +122,38 @@ function Game() {
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!over || myPlayerId != turnData.turn_owner_id) return;
+    const cardsToDrop = active.data.current?.cards || [active.data.current];
+    const card = cardsToDrop[0];
+    setDraggingCards([]);
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      const cardId = active.data.current?.cardId;
-      const cardName = active.data.current?.cardName;
-      const imageName = active.data.current?.imageName;
+      if (cardsToDrop.length > 1) {
+        console.warn(
+          "Regla de juego: Solo se permite descartar una carta a la vez."
+        );
+        return;
+      }
+
+      if (!card || !card.cardId) {
+        console.error("Intento de descarte sin datos de carta válidos.");
+        return;
+      }
+      const { cardId, cardName, imageName } = card;
 
       // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
 
-      // Actualizar optimisticamente la mano del jugador
+      // Actualizar optimísticamente la mano del jugador
       setPlayerData((prevData) => {
         if (!prevData) return prevData;
 
         return {
           ...prevData,
           playerCards: prevData.playerCards.filter(
-            (card) => card.card_id !== cardId
+            // Filtramos por cardId, que obtuvimos del objeto de arrastre
+            (c) => c.card_id !== cardId
           ),
         };
       });
@@ -167,9 +181,14 @@ function Game() {
       }
     }
   };
+
   const [draggingCards, setDraggingCards] = useState([]);
-  const handleDragFromHand = (cards) => {
-    setDraggingCards(cards); 
+  const handleDragFromHand = ({ cards }) => {
+    // Ahora 'cards' es el array de objetos carta.
+    // Solo se necesita una validación para asegurar que es un array.
+    const cardsArray = Array.isArray(cards) ? cards : [cards];
+
+    setDraggingCards(cardsArray);
   };
 
   if (isLoading || orderedPlayers.length === 0) {
@@ -197,16 +216,28 @@ function Game() {
           onDragStart={handleDragFromHand}
         />
         <DragOverlay>
-          {draggingCards.map((card) => (
-            <FaceCard
-              key={card.card_id}
-              cardId={card.card_id}
-              imageName={card.image_name}
-              cardName={card.card_name}
-              imageBackName={card.image_back_name}
-              isSelected={true}
-            />
-          ))}
+          {draggingCards.length > 0 && (
+            <div style={{ position: "relative" }}>
+              {" "}
+              {draggingCards.map((card, index) => (
+                <FaceCard
+                  key={card.card_id}
+                  cardId={card.card_id}
+                  imageName={card.image_name}
+                  cardName={card.card_name}
+                  imageBackName={card.image_back_name}
+                  isSelected={true}
+                  isOverlay={true} 
+                  // style={{
+                  //   position: "absolute", // 🔥 CRÍTICO: Para el apilamiento
+                  //   zIndex: index,
+                  //   // Pequeño desplazamiento para efecto de mazo
+                  //   transform: `translate(${index * 5}px, ${index * 5}px)`,
+                  // }}
+                />
+              ))}
+            </div>
+          )}
         </DragOverlay>
       </DndContext>
     </div>
