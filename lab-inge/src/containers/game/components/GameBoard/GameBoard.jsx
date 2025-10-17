@@ -34,11 +34,11 @@ const PLAYER_POSITIONS = {
     },
 };
 
-function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick}) {
+function GameBoard({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode }) {
     const playerCount = turnData.players_amount;
     const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
-const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
+    const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.playerCards?.length < 6;
 
 
     return (
@@ -53,6 +53,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                         player={orderedPlayers[index]}
                         turnData={turnData}
                         myPlayerId={myPlayerId}
+                        onPlayerSelect={onPlayerSelect}
+                        selectedPlayer={selectedPlayer}
+                        selectionMode={selectionMode}
                     />
                 ))}
             </div>
@@ -67,6 +70,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                             player={orderedPlayers[index]}
                             turnData={turnData}
                             myPlayerId={myPlayerId}
+                            onPlayerSelect={onPlayerSelect}
+                            selectedPlayer={selectedPlayer}
+                            selectionMode={selectionMode}
                         />
                     ))}
                 </div>
@@ -93,6 +99,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                             player={orderedPlayers[index]}
                             turnData={turnData}
                             myPlayerId={myPlayerId}
+                            onPlayerSelect={onPlayerSelect}
+                            selectedPlayer={selectedPlayer}
+                            selectionMode={selectionMode}
                         />
                     ))}
                 </div>
@@ -104,6 +113,9 @@ const isRegpileAvailable = turnData.turn_owner_id === myPlayerId && playerData?.
                     player={playerData}
                     turnData={turnData}
                     myPlayerId={myPlayerId}
+                    onPlayerSelect={onPlayerSelect}
+                    selectedPlayer={selectedPlayer}
+                    selectionMode={selectionMode}
                 />
                 <div className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? 'z-20' : ''}`}>
                     <HandCard playerCards={playerData?.playerCards || []} />
