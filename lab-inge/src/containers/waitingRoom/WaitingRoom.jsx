@@ -85,6 +85,19 @@ function WaitingRoom() {
         }
     };
 
+    const handleLeaveGame = async () => {
+        if (playersCount <= 1) return;
+
+        try {
+            await httpService.leaveGame(gameId, myPlayerId);
+            navigate('/home', {
+                replace: true
+            });
+        } catch (error) {
+            console.error('Failed leaving game:', error);
+        }
+    };
+
     useEffect(() => {
         fetchGameData();
 
@@ -112,6 +125,36 @@ function WaitingRoom() {
                     {playersCount}/{maxPlayers}
                 </div>
             </div>
+
+            {!isHost &&
+                (
+                    <div className="flex flex-col items-center gap-6 justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-20 mt-auto relative z-10">
+                        {playersCount < minPlayers && (
+                            <p className="text-white">
+                                Se necesitan al menos {minPlayers} jugadores para iniciar la partida
+                            </p>
+                        )}
+                        <button
+                            disabled={isStartingGame}
+                            onClick={handleLeaveGame}
+                            type="button"
+                            aria-label="Abandonar Partida"
+                            name="Abandonar Partida"
+                            className={"w-48 sm:w-56 md:w-64 lg:w-72 text-lg sm:text-xl md:text-2xl lg:text-2xl p-3 sm:p-4 lg:p-5 bg-gradient-to-r from-red-700/70 to-red-800/70 text-white rounded-xl lg:rounded-2xl font-bold hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 active:scale-95"}
+                        >
+                            {isStartingGame ? (
+                                <>
+                                    Iniciando...<br />
+                                    <span className="text-sm">Por favor espera</span>
+                                </>
+                            ) : (
+                                <>
+                                    Abandonar<br />
+                                    Partida
+                                </>
+                            )}
+                        </button>
+                    </div>)}
 
             {isHost &&
                 (
@@ -145,7 +188,6 @@ function WaitingRoom() {
                                 </>
                             )}
                         </button>
-
                     </div>
                 )}
 
