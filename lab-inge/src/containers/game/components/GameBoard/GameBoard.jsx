@@ -3,6 +3,7 @@ import DiscardDeck from "../DiscardDeck/DiscardDeck.jsx";
 import RegularDeck from "../RegularDeck/RegularDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
+import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
 import { useState } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
@@ -53,14 +54,15 @@ function GameBoard({
   const [currentSetCards, setCurrentSetCards] = useState([]);
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
-    setCurrentSetCards(cards); // Guardamos las cartas que HandCard seleccionó
+    setCurrentSetCards(cards);
   };
 
   const handlePlaySetClick = () => {
     if (setCards) {
-      setCards(currentSetCards); // Llama a la función de Game.jsx con las cartas
+      setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
   };
+
   return (
     <div
       className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
@@ -93,23 +95,42 @@ function GameBoard({
         </div>
 
         {/* Mesa central - Mazos */}
-        <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-          <div className="h-full flex justify-evenly items-center">
-            <RegularDeck
-              regpile={turnData?.regpile}
-              isAvailable={isRegpileAvailable}
-              onCardClick={onCardClick}
-            />
-            <DiscardDeck
-              discardpile={turnData?.discardpile}
-              turnData={turnData}
-              myPlayerId={myPlayerId}
-            />
-            
-          </div>
-        <div className="flex justify-center w-full mt-4">
-              <SetDeck setsPlayed={currentSetCards} /> 
+
+        <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl ">
+          <div className="h-full grid grid-rows-[70%_30%] items-center">
+            <div className="h-full grid grid-cols-[40%_20%_40%]">
+              {/* Grupo izquierdo: mazo regular + draft */}
+
+              <div className="flex flex-col justify-center items-center gap-2">
+                <RegularDeck
+                  regpile={turnData?.regpile}
+                  isAvailable={isRegpileAvailable}
+                  onCardClick={onCardClick}
+                />
+                {/* <DraftDeck/> */}
+              </div>
+
+              <div className="flex justify-center items-end gap-2 mb-10">
+                <EventDeck />
+              </div>
+
+              {/* Grupo derecho: mazo de descarte */}
+              <div className="flex justify-center items-center gap-2">
+                <DiscardDeck
+                  discardpile={turnData?.discardpile}
+                  turnData={turnData}
+                  myPlayerId={myPlayerId}
+                />
+              </div>
             </div>
+
+            <div className="flex h-full w-full flex-wrap">
+                {/* <SetDeck setsPlayed={turnData?.players.playerSet} /> */}
+                {console.log("datos antes de entrar en setdeck:", currentSetCards)}
+                <SetDeck setPlayed={currentSetCards} />
+                
+            </div>
+          </div>
         </div>
 
         {/* Jugador derecho */}
@@ -160,12 +181,12 @@ function GameBoard({
           {isSetReady && availableToPlay && (
             <button
               onClick={handlePlaySetClick}
-              className="bg-red-500 hover:bg-red-700 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
             >
               BAJAR SET DE{" "}
-              {currentSetCards[0].card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1].card_name.toUpperCase()
-                : currentSetCards[0].card_name.toUpperCase()}
+              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                ? currentSetCards[1]?.card_name.toUpperCase()
+                : currentSetCards[0]?.card_name.toUpperCase()}
             </button>
           )}
         </div>

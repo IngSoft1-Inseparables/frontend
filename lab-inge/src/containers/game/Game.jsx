@@ -52,6 +52,7 @@ function Game() {
         gameId,
         myPlayerId
       );
+       console.log("datos:", fetchedPlayerData )
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
@@ -82,6 +83,7 @@ function Game() {
 
   useEffect(() => {
     fetchGameData();
+   
 
     wsService.connect();
 
@@ -118,42 +120,28 @@ function Game() {
     })
   );
 
-  // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!over || myPlayerId != turnData.turn_owner_id) return;
-    const cardsToDrop = active.data.current?.cards || [active.data.current];
-    const card = cardsToDrop[0];
-    setDraggingCards([]);
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      if (cardsToDrop.length > 1) {
-        console.warn(
-          "Regla de juego: Solo se permite descartar una carta a la vez."
-        );
-        return;
-      }
-
-      if (!card || !card.cardId) {
-        console.error("Intento de descarte sin datos de carta válidos.");
-        return;
-      }
-      const { cardId, cardName, imageName } = card;
+      const cardId = active.data.current?.cardId;
+      const cardName = active.data.current?.cardName;
+      const imageName = active.data.current?.imageName;
 
       // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
 
-      // Actualizar optimísticamente la mano del jugador
+      // Actualizar optimisticamente la mano del jugador
       setPlayerData((prevData) => {
         if (!prevData) return prevData;
 
         return {
           ...prevData,
           playerCards: prevData.playerCards.filter(
-            // Filtramos por cardId, que obtuvimos del objeto de arrastre
-            (c) => c.card_id !== cardId
+            (card) => card.card_id !== cardId
           ),
         };
       });
@@ -182,14 +170,13 @@ function Game() {
     }
   };
 
-  const [draggingCards, setDraggingCards] = useState([]);
-  const handleDragFromHand = ({ cards }) => {
-    // Ahora 'cards' es el array de objetos carta.
-    // Solo se necesita una validación para asegurar que es un array.
-    const cardsArray = Array.isArray(cards) ? cards : [cards];
-
-    setDraggingCards(cardsArray);
-  };
+  // const [draggingCards, setDraggingCards] = useState([]);
+  // const handleDragFromHand = ({ cards }) => {
+  //   // Ahora 'cards' es el array de objetos carta.
+  //   // Solo se necesita una validación para asegurar que es un array.
+  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
+  //   setDraggingCards(cardsArray);
+  // };
 
   if (isLoading || orderedPlayers.length === 0) {
     return (
@@ -198,9 +185,32 @@ function Game() {
       </div>
     );
   }
+ const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+  if (!currentSetCards || currentSetCards.length === 0) return;
+
+  const cardIds = currentSetCards.map((card) => card.card_id);
+
+  try {
+    const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+
+    setPlayerData((prevData) => {
+      if (!prevData) return prevData;
+
+      return {
+        ...prevData,
+        playerCards: prevData.playerCards.filter(
+          (card) => !cardIds.includes(card.card_id)
+        ),
+      };
+    });
+
+  } catch (error) {
+    console.error("Error al cargar los sets:", error);
+  }
+};
 
   return (
-    <div className="h-screen w-screen overflow-hidden">
+    <div className="h-screen w-screen relative overflow-hidden">
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
@@ -213,32 +223,8 @@ function Game() {
           turnData={turnData}
           myPlayerId={myPlayerId}
           onCardClick={handleCardClick}
-          onDragStart={handleDragFromHand}
+          setCards={handlePlaySetAction}
         />
-        <DragOverlay>
-          {draggingCards.length > 0 && (
-            <div style={{ position: "relative" }}>
-              {" "}
-              {draggingCards.map((card, index) => (
-                <FaceCard
-                  key={card.card_id}
-                  cardId={card.card_id}
-                  imageName={card.image_name}
-                  cardName={card.card_name}
-                  imageBackName={card.image_back_name}
-                  isSelected={true}
-                  isOverlay={true} 
-                  // style={{
-                  //   position: "absolute", // 🔥 CRÍTICO: Para el apilamiento
-                  //   zIndex: index,
-                  //   // Pequeño desplazamiento para efecto de mazo
-                  //   transform: `translate(${index * 5}px, ${index * 5}px)`,
-                  // }}
-                />
-              ))}
-            </div>
-          )}
-        </DragOverlay>
       </DndContext>
     </div>
   );

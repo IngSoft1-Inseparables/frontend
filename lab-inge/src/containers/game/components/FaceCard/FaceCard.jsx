@@ -9,15 +9,10 @@ export default function FaceCard({
   imageBackName,
   onSelect,
   isSelected = false,
-  onDragInitiate,
-  isOverlay = false,
-  // style: externalStyle,
+  isStatic = false, // <-- nuevo prop
 }) {
-  if (!imageName) {
-    return null;
-  }
+  if (!imageName) return null;
 
-  // Determinar qué imagen mostrar
   const imageToShow = showBack && imageBackName ? imageBackName : imageName;
   const imageSrc = `/cards/${imageToShow}.png`;
   const altText = cardName || imageName;
@@ -26,44 +21,28 @@ export default function FaceCard({
     useDraggable({
       id: `card-${cardId}`,
       data: { cardId, cardName, imageName },
-      disabled: isOverlay,
+      disabled: isStatic, // si es estática, deshabilita drag
     });
 
-  const handleDragStart = (event) => {
-    event.preventDefault();
-    if (onDragInitiate) onDragInitiate(); //  llama al padre
-  };
-
-  // Aplicar transform cuando se arrastra
-  const style =
-    transform && !isOverlay
-      ? {
-          transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-          opacity: isDragging ? 0.5 : 1,
-          cursor: isDragging ? "grabbing" : "grab",
-          transition: "none",
-        }
-      : {
-          cursor: "grab",
-          transition: "none",
-        };
-  // const finalStyle = externalStyle
-  //   ? { ...internalStyle, ...externalStyle }
-  //   : internalStyle;
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+        opacity: isDragging ? 0.5 : 1,
+        cursor: isStatic ? "default" : isDragging ? "grabbing" : "grab",
+        transition: "none",
+      }
+    : { cursor: isStatic ? "default" : "grab", transition: "none" };
 
   return (
-  <img
+    <img
       ref={setNodeRef}
-      className={`face-card ${
-        isSelected && !isOverlay ? "face-card-selected" : ""
-      } ${isOverlay ? 'face-card-overlay' : ''} `} 
-      onClick={onSelect}
+      className={`face-card ${isSelected ? "face-card-selected" : ""}`}
+      onClick={!isStatic ? onSelect : undefined} // solo click si no es estática
       src={imageSrc}
       alt={altText}
-      style={style} // Solo aplica el transform de dnd-kit o el cursor/transition
-      onDragStart={!isOverlay ? handleDragStart : undefined}
-      {...(!isOverlay ? listeners : {})}
-      {...(!isOverlay ? attributes : {})}
+      style={style}
+      {...(!isStatic ? listeners : {})}
+      {...(!isStatic ? attributes : {})}
     />
   );
 }
