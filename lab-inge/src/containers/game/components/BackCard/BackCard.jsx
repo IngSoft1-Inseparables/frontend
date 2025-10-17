@@ -53,7 +53,6 @@ export default function BackCard({
         }
 
         const isTopCard = index === deck.length - 1; // Solo la última carta
-        const isTopCard = index === deck.length - 1; // Solo la última carta
 
         const className = `back-card ${
           type === "draft"

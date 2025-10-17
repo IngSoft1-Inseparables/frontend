@@ -57,46 +57,28 @@ function Game() {
       setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
-      const fetchedPlayerData = await httpService.getPrivatePlayerData(
-        gameId,
-        myPlayerId
-      );
+      const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
-      console.log(fetchedTurnData);
-
-      console.log("Draft recibido (GET):", fetchedTurnData?.draft);
-      const draft = fetchedTurnData?.draft;
-
-      const sortedByTurn = fetchedTurnData.players.sort(
-        (a, b) => a.turn - b.turn
-      );
-      const myPlayerIndex = sortedByTurn.findIndex(
-        (player) => player.id === parseInt(myPlayerId)
-      );
+      const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
+      const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
 
       const myPlayer = sortedByTurn[myPlayerIndex];
       const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
       const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
-      const myPlayer = sortedByTurn[myPlayerIndex];
-      const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
-      const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
 
-      const reorderedPlayers = [
-        myPlayer,
-        ...playersAfterMe,
-        ...playersBeforeMe,
-      ];
+      const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
       setOrderedPlayers(reorderedPlayers);
+      
+      console.log(fetchedTurnData);
     } catch (error) {
       console.error("Failed obtaining game data:", error);
     } finally {
       setIsLoading(false);
     }
   };
-
   useEffect(() => {
     fetchGameData();
 
