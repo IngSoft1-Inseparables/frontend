@@ -37,7 +37,8 @@ function HandCard({
   };
 
   const handleSelect = (card) => {
-    if (!availableToPlay || turnState.toLowerCase() !== "None".toLowerCase())
+    if (!availableToPlay )
+    // if (!availableToPlay || turnState.toLowerCase() !== "None".toLowerCase())
       return;
     const cardName = card.card_name.toLowerCase();
     const selectedNames = selectedCards.map((c) => c.card_name.toLowerCase());

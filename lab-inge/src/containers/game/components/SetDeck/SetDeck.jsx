@@ -1,7 +1,7 @@
 import BackCard from "../BackCard/BackCard";
 import { useRef, useEffect, useState } from "react";
 
-export default function SetDeck({ setPlayed1 = [] }) {
+export default function SetDeck({ setPlayed = [] }) {
   // const setPlayed = [
   //   {
   //     cards: [

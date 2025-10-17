@@ -4,7 +4,7 @@ import RegularDeck from "../RegularDeck/RegularDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -50,8 +50,10 @@ function GameBoard({
     turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
   const availableToPlay = turnData.turn_owner_id === myPlayerId;
   const currentTurnState = turnData?.turn_state || "None".toLowerCase();
+  const [playedSets, setPlayedSets] = useState([]);
   const [isSetReady, setIsSetReady] = useState(false);
   const [currentSetCards, setCurrentSetCards] = useState([]);
+
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
     setCurrentSetCards(cards);
@@ -61,6 +63,8 @@ function GameBoard({
     if (setCards) {
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
+    setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
+    setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
 
   return (
@@ -125,10 +129,9 @@ function GameBoard({
             </div>
 
             <div className="flex h-full w-full flex-wrap">
-                {/* <SetDeck setsPlayed={turnData?.players.playerSet} /> */}
-                {console.log("datos antes de entrar en setdeck:", currentSetCards)}
-                <SetDeck setPlayed={currentSetCards} />
-                
+              {/* <SetDeck setPlayed={turnData.players.player.playerSet || []} /> //CONEXION CON WEBSOCKET */}
+              <SetDeck setPlayed={playedSets} />{" "}
+              {/* ELIMINAR: cuando se conecte con websokcet eliminar esat linea y la  */}
             </div>
           </div>
         </div>
