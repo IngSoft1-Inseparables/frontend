@@ -79,7 +79,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     try {
       const httpService = createHttpService()
       console.log("Payload enviado al backend:", payload);
-      const data = await httpService.joinLobby(
+      const data = await httpService.joinGame(
         payload.partida_id,
         payload.nombre_usuario,
         payload.fecha_nacimiento,
