@@ -1,6 +1,17 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import EndGameDialog from "./EndGameDialog";
+import { vi } from "vitest";
+
+// --- Mock de react-router-dom ---
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe("EndGameDialog", () => {
   const mockAsesinoGana = {
@@ -8,7 +19,7 @@ describe("EndGameDialog", () => {
       { id: 1, name: "Jugador Asesino" },
       { id: 2, name: "Jugador Cómplice" },
     ],
-    regpileCount: 0, // Mazo vacío => gana el asesino
+    regpileCount: 0,
   };
 
   const mockDetectivesGanan = {
@@ -16,8 +27,12 @@ describe("EndGameDialog", () => {
       { id: 3, name: "Jugador Normal 1" },
       { id: 4, name: "Jugador Normal 2" },
     ],
-    regpileCount: 5, // Mazo con cartas => ganan los detectives
+    regpileCount: 5,
   };
+
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
 
   it("renderiza correctamente cuando gana el asesino", () => {
     render(<EndGameDialog winners={mockAsesinoGana} onClose={() => {}} />);
@@ -67,4 +82,16 @@ describe("EndGameDialog", () => {
     const items = screen.queryAllByRole("listitem");
     expect(items).toHaveLength(0);
   });
+
+  it("navega al home al hacer clic en el botón", () => {
+    const onCloseMock = vi.fn();
+    render(<EndGameDialog winners={mockDetectivesGanan} onClose={onCloseMock} />);
+
+    const button = screen.getByRole("button", { name: /volver a home/i });
+    fireEvent.click(button);
+
+    expect(onCloseMock).toHaveBeenCalledTimes(1); // cierra el diálogo
+    expect(mockNavigate).toHaveBeenCalledWith("/home"); // navega al home
+  });
 });
+
