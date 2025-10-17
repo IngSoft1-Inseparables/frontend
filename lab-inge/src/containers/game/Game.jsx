@@ -53,8 +53,13 @@ function Game() {
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
       const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
 
-      setPlayerData(fetchedPlayerData);
-      setTurnData(fetchedTurnData);
+            setPlayerData(fetchedPlayerData);
+            setTurnData(fetchedTurnData);
+
+            console.log(fetchedTurnData);
+            
+            console.log("Draft recibido (GET):", fetchedTurnData?.draft);
+            const draft = fetchedTurnData?.draft;
 
       const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
       const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
@@ -96,6 +101,7 @@ function Game() {
 
       handleEndGameEvent(dataPublic);
 
+      console.log("Draft recibido:", dataPublic?.draft);
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
