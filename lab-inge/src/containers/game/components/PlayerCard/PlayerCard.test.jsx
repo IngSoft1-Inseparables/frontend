@@ -401,7 +401,7 @@ describe("PlayerCard component", () => {
       const secrets = container.querySelectorAll('div[class*="aspect-[734"]');
       const myUnrevealedSecret = secrets[0]; // First secret is not revealed
       
-      expect(myUnrevealedSecret.className).toContain("opacity-30");
+      expect(myUnrevealedSecret.className).toContain("opacity-45");
     });
 
     it("adapts secret size when there are many secrets", () => {

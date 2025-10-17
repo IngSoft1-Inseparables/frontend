@@ -86,8 +86,8 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
                             key={index}
                             onClick={isSecretSelectable(player.playerSecrets[index]) ? () => handleSecretClick(player.playerSecrets[index].secret_id) : null}
                             className={`aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm flex-1 max-w-20 min-w-12 
-                                ${player.id === parseInt(myPlayerId) && !secret?.revealed ? 'opacity-30' : ''}
-                                ${isSecretSelectable(player.playerSecrets[index]) ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all' : ''}
+                                ${player.id === parseInt(myPlayerId) && !secret?.revealed ? 'opacity-45' : 'transition-all'}
+                                ${isSecretSelectable(player.playerSecrets[index]) ? 'border-2 border-gray-500 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all opacity-100' : 'transition-all'}
                                 ${selectedSecret === player.playerSecrets[index].secret_id ? 'border-2 border-solid rounded-sm border-yellow-400/80 scale-101' : ''}
                                 `}
                             style={{
@@ -96,6 +96,13 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
                                     ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
                                     : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`
                             }}>
+                            {
+                                (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
+                                    <div className="flex w-full h-full items-start justify-end">
+                                        <img src="public/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" />
+                                    </div>
+                                )
+                            }
                         </div>
                     );
                 })}
