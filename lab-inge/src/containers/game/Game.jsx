@@ -21,7 +21,7 @@ function Game() {
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);
-  const [selectionMode, setSelectionMode] = useState("select-secret"); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
+  const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
@@ -33,13 +33,14 @@ function Game() {
 
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
-    setSelectionMode(null);
+    console.log(playerId);
   }
 
   const handleSecretSelection = (playerId, secretId) => {
     setSelectedPlayer(playerId);
+    console.log(`Jugador seleccionado: "${playerId}`);
     setSelectedSecret(secretId);
-    setSelectionMode(null);
+    console.log(`Secreto seleccionado: "${secretId}`);
   }
 
   const handleCardClick = async () => {

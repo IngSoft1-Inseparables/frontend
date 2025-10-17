@@ -8,36 +8,60 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
     };
 
     const handleSecretClick = (secretId) => {
-        if(onSecretSelect) {
-            onSecretSelect(secretId)
+        if (onSecretSelect) {
+            onSecretSelect(player.id, secretId);
         }
     }
 
-    let isSecretSelectable;
+    const isSecretSelectable = (secret) => {
+        const revealed = secret.revealed;
+        const isThisPlayerSecret = player.id === parseInt(myPlayerId);
+        
+        console.log(`revealed: ${revealed}`);
+        console.log(`isThisPlayerSecret: ${isThisPlayerSecret}`);
 
-    let isPlayerSelectable;
+        switch (selectionMode) {
+            case 'select-revealed-secret':
+                return (revealed ? !selectedSecret : false);
+            case 'select-not-revealed-secret':
+                return (!revealed ? !selectedSecret : false);
+            case 'select-other-revealed-secret':
+                return (revealed && !isThisPlayerSecret ? !selectedSecret : false);
+            case 'select-other-not-revealed-secret':
+                return (!revealed && !isThisPlayerSecret ? !selectedSecret : false);
+            case 'select-my-revealed-secret':
+                return (revealed && isThisPlayerSecret ? !selectedSecret : false);
+            case 'select-my-not-revealed-secret':
+                return (!revealed && isThisPlayerSecret ? !selectedSecret : false);
+            default:
+                return (false);
+        }
+    };
 
-    if(selectionMode === 'select-player'){
-        isPlayerSelectable = !selectedPlayer;
-    }else if (selectionMode === 'select-other-player'){
-        isPlayerSelectable = myPlayerId != player.id && !selectedPlayer;
-    }else if (selectionMode === 'select-secret'){
-        isSecretSelectable = !selectedSecret;
-    }
+    const isPlayerSelectable = () => {
+        switch (selectionMode) {
+            case 'select-player':
+                return (!selectedPlayer);
+            case 'select-other-player':
+                return (myPlayerId != player.id && !selectedPlayer)
+            default:
+                return (false);
+        }
+    };
 
-    const isThisPlayerSelected = selectedPlayer === player.id;
+    const isThisPlayerSelected = selectedPlayer === player.id && selectionMode?.includes("player");
     const isOtherPlayerSelected = selectedPlayer && selectedPlayer !== player.id;
 
     return (
         <div
-            onClick={isPlayerSelectable ? handlePlayerClick : null}
+            onClick={isPlayerSelectable() ? handlePlayerClick : null}
             className={`
                 ${player.id === turnData.turn_owner_id ?
                     "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
                     :
                     "w-72 h-48 flex flex-col items-center flex-shrink-0"
                 }
-                ${isPlayerSelectable ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid rounded-xl hover:border-yellow-400/80 hover:scale-101 transition-all' : ''}
+                ${isPlayerSelectable() ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid rounded-xl hover:border-yellow-400/80 hover:scale-101 transition-all' : ''}
                 ${isThisPlayerSelected ? 'border-2 border-solid rounded-xl border-yellow-400/80 scale-101' : ''}
                 ${isOtherPlayerSelected ? '' : ''}
                 `}>
@@ -61,13 +85,13 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
                 {player.playerSecrets?.map((secret, index) => {
                     const secretCount = player.playerSecrets?.length || 1;
                     return (
-                        <div 
+                        <div
                             key={index}
-                            onClick={isSecretSelectable ? () => handleSecretClick(player.playerSecrets[index].secret_id) : null}
+                            onClick={isSecretSelectable(player.playerSecrets[index]) ? () => handleSecretClick(player.playerSecrets[index].secret_id) : null}
                             className={`aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm flex-1 max-w-20 min-w-12 
                                 ${player.id === parseInt(myPlayerId) && !secret?.revealed ? 'opacity-30' : ''}
-                                ${isSecretSelectable ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all' : ''}
-                                ${selectedSecret === player.playerSecrets[index].secret_id ? 'border-2 border-solid rounded-xl border-yellow-400/80 scale-101' : ''}
+                                ${isSecretSelectable(player.playerSecrets[index]) ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all' : ''}
+                                ${selectedSecret === player.playerSecrets[index].secret_id ? 'border-2 border-solid rounded-sm border-yellow-400/80 scale-101' : ''}
                                 `}
                             style={{
                                 maxWidth: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
