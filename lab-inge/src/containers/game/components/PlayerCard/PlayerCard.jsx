@@ -1,12 +1,36 @@
-const PlayerCard = ({ player, turnData, myPlayerId }) => {
+const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlayer, selectionMode }) => {
     if (!player || !turnData) return null;
 
+    const handlePlayerClick = () => {
+        if (onPlayerSelect) {
+            onPlayerSelect(player.id);
+        }
+    };
+
+    let isPlayerSelectable;
+
+    if(selectionMode === 'select-player'){
+        isPlayerSelectable = !selectedPlayer;
+    }else if (selectionMode === 'select-other-player'){
+        isPlayerSelectable = myPlayerId != player.id && !selectedPlayer;
+    }
+
+    const isThisPlayerSelected = selectedPlayer === player.id;
+    const isOtherPlayerSelected = selectedPlayer && selectedPlayer !== player.id;
+
     return (
-        <div className={player.id === turnData.turn_owner_id ?
-            "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
-            :
-            "w-72 h-48 flex flex-col items-center flex-shrink-0"
-        }>
+        <div
+            onClick={isPlayerSelectable ? handlePlayerClick : null}
+            className={`
+                ${player.id === turnData.turn_owner_id ?
+                    "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
+                    :
+                    "w-72 h-48 flex flex-col items-center flex-shrink-0"
+                }
+                ${isPlayerSelectable ? 'border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid rounded-xl hover:border-yellow-400/80 hover:scale-101 transition-all' : ''}
+                ${isThisPlayerSelected ? 'border-2 border-solid rounded-xl border-yellow-400/80 scale-101' : ''}
+                ${isOtherPlayerSelected ? '' : ''}
+                `}>
             {/* Avatar y Nombre */}
             <div className="flex items-center justify-center h-16 w-full gap-2">
                 <div className={player.id === turnData.turn_owner_id ?

@@ -1,7 +1,10 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { act } from "react-dom/test-utils";
+import { within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import Game from "./Game";
+
 
 // Variable global para capturar el handler onDragEnd
 let capturedOnDragEnd = null;
@@ -55,9 +58,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode };
     
     return (
       <div data-testid="game-board">
@@ -74,6 +77,7 @@ vi.mock("./components/GameBoard/GameBoard", () => ({
     );
   },
 }));
+
 
 describe("Game Container", () => {
   const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
@@ -270,7 +274,10 @@ it("handles player reordering when only 2 players", async () => {
       expect(mockWS.off).toHaveBeenCalled();
       expect(mockWS.disconnect).toHaveBeenCalled();
     });
+
+
   });
+
 
   describe("Navigation Validation", () => {
     it("logs error if gameId or myPlayerId missing", async () => {
@@ -433,6 +440,7 @@ it("handles player reordering when only 2 players", async () => {
         expect(screen.getByTestId("game-board")).toBeInTheDocument();
       });
     });
+      
   });
 
   describe("Drag and Drop Functionality", () => {
@@ -918,6 +926,216 @@ it("handles player reordering when only 2 players", async () => {
       await waitFor(() => {
         expect(mockHttp.discardCard).toHaveBeenCalledWith(2, 1);
       });
+    });
+  });
+
+  describe("EndGameDialog Integration", () => {
+  it("shows EndGameDialog when end_game event with status Finished is received", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const endGamePayload = {
+      ...mockTurnData,
+      end_game: {
+        game_status: "Finished",
+        winners: [{ id: 1, name: "Jugador1" }],
+      },
+      regpile: { count: 0 }, // caso del Asesino
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(endGamePayload)));
+
+    const dialog = await screen.findByText("PARTIDA FINALIZADA");
+    expect(dialog).toBeInTheDocument();
+
+    const dialogElement = dialog.closest(".dialog");
+    const withinDialog = within(dialogElement);
+
+    expect(withinDialog.getByText("El Asesino (y el Cómplice, si existe) ha ganado la partida.")).toBeInTheDocument();
+    expect(withinDialog.getByText("Jugador1")).toBeInTheDocument();
+  });
+
+  it("shows correct message for detectives victory when regpileCount > 0", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const detectivesWinPayload = {
+      ...mockTurnData,
+      end_game: {
+        game_status: "Finished",
+        winners: [{ id: 2, name: "Jugador2" }],
+      },
+      regpile: { count: 5 }, // caso detectives
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(detectivesWinPayload)));
+
+    const dialog = await screen.findByText("PARTIDA FINALIZADA");
+    expect(dialog).toBeInTheDocument();
+
+    const dialogElement = dialog.closest(".dialog");
+    const withinDialog = within(dialogElement);
+
+    expect(withinDialog.getByText("Los Detectives descubrieron al Asesino.")).toBeInTheDocument();
+    expect(withinDialog.getByText("Jugador2")).toBeInTheDocument();
+  });
+
+  it("does not show EndGameDialog if game_status is not Finished", async () => {
+    mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+    mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+    renderGame({ gameId: 1, myPlayerId: 2 });
+
+    await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+    const onCalls = mockWS.on.mock.calls;
+    const gamePublicUpdateHandler = onCalls.find(call => call[0] === "game_public_update")?.[1];
+
+    const payload = {
+      ...mockTurnData,
+      end_game: { game_status: "Ongoing" }, // no Finished
+    };
+
+    await act(async () => gamePublicUpdateHandler(JSON.stringify(payload)));
+
+    expect(screen.queryByText("PARTIDA FINALIZADA")).not.toBeInTheDocument();
+  });
+});
+
+  describe("Seleccionar Jugador", () => {
+    it("pasa selectionMode y selectedPlayer a GameBoard correctamente", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Verificar que los props iniciales son correctos
+      expect(gameBoardProps.selectionMode).toBeNull();
+      expect(gameBoardProps.selectedPlayer).toBeNull();
+    });
+
+    it("actualiza selectedPlayer cuando se llama a handlePlayerSelection", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Obtener el callback onPlayerSelect del GameBoard
+      const onPlayerSelect = gameBoardProps.onPlayerSelect;
+      expect(onPlayerSelect).toBeDefined();
+
+      // Simular la selección de un jugador
+      await act(async () => {
+        onPlayerSelect(3);
+      });
+
+      // Verificar que selectedPlayer se actualizó
+      await waitFor(() => {
+        expect(gameBoardProps.selectedPlayer).toBe(3);
+      });
+    });
+
+    it("limpia selectionMode cuando se selecciona un jugador", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const onPlayerSelect = gameBoardProps.onPlayerSelect;
+
+      // Simular selección de jugador
+      await act(async () => {
+        onPlayerSelect(3);
+      });
+
+      // Verificar que selectionMode se pone en null después de la selección
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBeNull();
+      });
+    });
+
+    it("mantiene selectedPlayer después de la selección", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const onPlayerSelect = gameBoardProps.onPlayerSelect;
+
+      // Seleccionar jugador 3
+      await act(async () => {
+        onPlayerSelect(3);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectedPlayer).toBe(3);
+      });
+
+      // Verificar que sigue seleccionado
+      expect(gameBoardProps.selectedPlayer).toBe(3);
+    });
+
+    it("puede cambiar de jugador seleccionado", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const onPlayerSelect = gameBoardProps.onPlayerSelect;
+
+      // Seleccionar jugador 3
+      await act(async () => {
+        onPlayerSelect(3);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectedPlayer).toBe(3);
+      });
+
+      // Cambiar a jugador 4
+      await act(async () => {
+        onPlayerSelect(4);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectedPlayer).toBe(4);
+      });
+    });
+
+    it("pasa onPlayerSelect correctamente a GameBoard", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      expect(gameBoardProps.onPlayerSelect).toBeDefined();
+      expect(typeof gameBoardProps.onPlayerSelect).toBe('function');
     });
   });
 });

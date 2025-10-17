@@ -54,7 +54,7 @@ describe("GameBoard component", () => {
     orderedPlayers: mockPlayers,
     playerData: mockPlayerData,
     turnData: mockTurnData,
-    myPlayerId: "2",
+    myPlayerId: 2,
   };
 
   it("renders game background", () => {
@@ -201,14 +201,14 @@ describe("GameBoard component", () => {
     expect(bg).toBeInTheDocument();
   });
   it("renders RegularDeck with clickable BackCard when available", () => {
-    const regpileMock = [
-      { id: 1, back: "/carta1.png", alt: "Carta1" },
-      { id: 2, back: "/carta2.png", alt: "Carta2" },
-    ];
+    const regpileMock = {
+      count: 10,
+      image_back_name: '01-card_back'
+    };
 
     const turnDataWithDeck = {
       players_amount: 4,
-      turn_owner_id: "2", // coincide con myPlayerId
+      turn_owner_id: 2, // debe ser número para coincidir con myPlayerId
       regpile: regpileMock,
     };
 
@@ -380,4 +380,53 @@ describe("GameBoard component", () => {
     expect(screen.getByText("P4")).toBeInTheDocument();
     expect(screen.getByText("P5")).toBeInTheDocument();
   });
+
+  it("renders DraftDeck correctly and allows click when available", () => {
+  const draftMock = {
+    count: 3,
+    card_1_image: "01-card1",
+    card_2_image: "02-card2",
+    card_3_image: "03-card3",
+  };
+
+  const turnDataWithDraft = {
+    ...mockTurnData,
+    turn_owner_id: 2, // mi turno
+    draft: draftMock,
+  };
+
+  const playerDataFewCards = {
+    ...mockPlayerData,
+    playerCards: [{ card_id: 1 }, { card_id: 2 }], // menos de 6 cartas → disponible
+  };
+
+  const mockOnCardClick = vi.fn();
+
+  const { container } = render(
+    <GameBoard
+      {...defaultProps}
+      turnData={turnDataWithDraft}
+      playerData={playerDataFewCards}
+      onCardClick={mockOnCardClick}
+    />
+  );
+
+  // Debe renderizar 3 imágenes del draft
+  const draftImages = container.querySelectorAll('.draft-container img');
+  expect(draftImages.length).toBe(3);
+
+  // Cada carta debe tener clase "back-card-draft"
+  draftImages.forEach((img) => {
+    expect(img.className).toContain('back-card-draft');
+  });
+
+  // Si el turno es mío y tengo menos de 6 cartas → debe ser clickeable
+  const clickableCards = container.querySelectorAll('.back-card-clickable');
+  expect(clickableCards.length).toBeGreaterThan(0);
+
+  // Simulamos click en una carta del draft
+  clickableCards[0].click();
+  expect(mockOnCardClick).toHaveBeenCalled();
+});
+
 });

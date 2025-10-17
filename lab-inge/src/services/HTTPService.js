@@ -53,13 +53,14 @@ const createHttpService = () => {
     });
   };
 
-  const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento) =>
+  const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento, avatar) =>
     request(`/players/join`, {
       method: "POST",
       body: JSON.stringify({
         partida_id,
         nombre_usuario,
         fecha_nacimiento,
+        avatar,
       }),
     });
 

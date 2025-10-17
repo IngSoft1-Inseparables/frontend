@@ -11,7 +11,7 @@ import {
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
-import FaceCard from "./components/FaceCard/FaceCard.jsx";
+import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 
 function Game() {
   const navigate = useNavigate();
@@ -19,11 +19,15 @@ function Game() {
 
   const { gameId, myPlayerId } = location.state || {};
   const [turnData, setTurnData] = useState(null);
+  const [winnerData, setWinnerData] = useState(null);
   const [orderedPlayers, setOrderedPlayers] = useState([]);
   const [playerData, setPlayerData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
+  const [showEndDialog, setShowEndDialog] = useState(false);
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -31,6 +35,11 @@ function Game() {
       navigate("/home", { replace: true });
     }
   }, [gameId, myPlayerId, navigate]);
+
+  const handlePlayerSelection = (playerId) => {
+    setSelectedPlayer(playerId);
+    setSelectionMode(null);
+  };
 
   const handleCardClick = async () => {
     try {
@@ -52,10 +61,14 @@ function Game() {
         gameId,
         myPlayerId
       );
-       console.log("datos:", fetchedPlayerData )
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
+
+      console.log(fetchedTurnData);
+
+      console.log("Draft recibido (GET):", fetchedTurnData?.draft);
+      const draft = fetchedTurnData?.draft;
 
       const sortedByTurn = fetchedTurnData.players.sort(
         (a, b) => a.turn - b.turn
@@ -64,6 +77,9 @@ function Game() {
         (player) => player.id === parseInt(myPlayerId)
       );
 
+      const myPlayer = sortedByTurn[myPlayerIndex];
+      const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+      const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
       const myPlayer = sortedByTurn[myPlayerIndex];
       const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
       const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
@@ -83,15 +99,30 @@ function Game() {
 
   useEffect(() => {
     fetchGameData();
-   
 
     wsService.connect();
 
-    // Handlers definidos como funciones estables
+    const handleEndGameEvent = (dataPublic) => {
+      if (dataPublic.end_game?.game_status === "Finished") {
+        console.log("Fin de la partida detectado:", dataPublic.end_game);
+
+        const winners = dataPublic.end_game.winners;
+        const regpileCount = dataPublic?.regpile?.count ?? 0;
+
+        setWinnerData({ winners, regpileCount });
+        setShowEndDialog(true);
+      }
+    };
+
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =
         typeof payload === "string" ? JSON.parse(payload) : payload;
+
       setTurnData(dataPublic);
+
+      handleEndGameEvent(dataPublic);
+
+      console.log("Draft recibido:", dataPublic?.draft);
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -100,7 +131,6 @@ function Game() {
       setPlayerData(dataPlayer);
     };
 
-    // Registrar listeners una sola vez
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
 
@@ -120,6 +150,7 @@ function Game() {
     })
   );
 
+  // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (!over || myPlayerId != turnData.turn_owner_id) return;
@@ -162,8 +193,6 @@ function Game() {
         await httpService.discardCard(myPlayerId, cardId);
       } catch (error) {
         console.error("Error al descartar carta:", error);
-
-        // Revertir los cambios optimistas en caso de error
         setPlayerData(previousPlayerData);
         setTurnData(previousTurnData);
       }
@@ -185,29 +214,28 @@ function Game() {
       </div>
     );
   }
- const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
-  if (!currentSetCards || currentSetCards.length === 0) return;
+  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+    if (!currentSetCards || currentSetCards.length === 0) return;
 
-  const cardIds = currentSetCards.map((card) => card.card_id);
+    const cardIds = currentSetCards.map((card) => card.card_id);
 
-  try {
-    const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+    try {
+      const response = await httpService.playSets(gameId, myPlayerId, cardIds);
 
-    setPlayerData((prevData) => {
-      if (!prevData) return prevData;
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
 
-      return {
-        ...prevData,
-        playerCards: prevData.playerCards.filter(
-          (card) => !cardIds.includes(card.card_id)
-        ),
-      };
-    });
-
-  } catch (error) {
-    console.error("Error al cargar los sets:", error);
-  }
-};
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => !cardIds.includes(card.card_id)
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Error al cargar los sets:", error);
+    }
+  };
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
@@ -217,14 +245,23 @@ function Game() {
         modifiers={[restrictToWindowEdges]}
       >
         <GameBoard
-          data-testid="game-board"
           orderedPlayers={orderedPlayers}
           playerData={playerData}
           turnData={turnData}
           myPlayerId={myPlayerId}
           onCardClick={handleCardClick}
+          onPlayerSelect={handlePlayerSelection}
+          selectedPlayer={selectedPlayer}
+          selectionMode={selectionMode}
           setCards={handlePlaySetAction}
         />
+
+        {showEndDialog && winnerData && (
+          <EndGameDialog
+            winners={winnerData}
+            onClose={() => setShowEndDialog(false)}
+          />
+        )}
       </DndContext>
     </div>
   );

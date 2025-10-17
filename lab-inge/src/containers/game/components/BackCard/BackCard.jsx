@@ -8,6 +8,7 @@ export default function BackCard({
   onCardClick,
 }) {
   // console.log("BackCard available:", available);
+
   if (!deck || deck.length === 0) return null;
 
   const [selectedCardId, setSelectedCardId] = useState(null);
@@ -23,10 +24,17 @@ export default function BackCard({
   };
 
   return (
-    <div className="back-card-container relative">
+    <div
+      className={`back-card-container relative ${
+        type === "draft" ? "draft-container" : ""
+      } ${available && type === "draft" ? "draft-available" : ""}`}
+    >
       {deck.map((carta, index) => {
-        let src = carta.back || "/cards/01-card_back.png";
-        let alt = carta.alt || "Card Back";
+        let src =
+          type === "draft"
+            ? carta.face
+            : carta.back || '/cards/01-card_back.png';
+        let alt = carta.alt || 'Card Back';
 
         const isBottomRegular = type === "regular" && index === 0;
         if (isBottomRegular) {
@@ -45,18 +53,33 @@ export default function BackCard({
         }
 
         const isTopCard = index === deck.length - 1; // Solo la última carta
+        const isTopCard = index === deck.length - 1; // Solo la última carta
 
         const className = `back-card ${
-          isTopCard && available && carta.id != 0 ? "back-card-clickable" : ""
+          type === "draft"
+          ? available
+          ? "back-card-draft back-card-clickable"
+          : "back-card-draft"
+          : isTopCard && available && carta.id != 0
+          ? "back-card-clickable"
+          : ""
         }`;
 
-        const cardStyle = {
-          zIndex: index,
-          transform: isSet
+    
+        const cardStyle =
+          type === "draft"
+            ? {
+                position: "static",
+                transform: "none",
+                zIndex: "auto",
+              }
+            : {
+                    zIndex: index,
+                    transform: isSet
             ? `translateY(-${index * 5}px)` // más separación para sets
             : `translateY(-${index * 2}px)`,
-          position: "absolute",
-        };
+                    position: "absolute",
+                  };
 
         return (
       
@@ -67,9 +90,17 @@ export default function BackCard({
             className={className}
             style={cardStyle}
             onClick={
-              isTopCard && available && carta.id != 0 && !isSet
+              
+              type === "draft"
+                ? available
+                  ? () => handleClick(carta)
+                  : undefined
+                : isTopCard && available && carta.id != 0
+                && !isSet
                 ? () => handleClick(carta)
+               
                 : undefined
+            
             }
           />
         );

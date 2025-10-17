@@ -5,13 +5,15 @@ import { createHttpService } from '../../services/HTTPService.js'
 import './JoinGameDialog.css'
 
 const AVATARS = [
-  { id: 1, src: '/1.png', alt: 'Avatar 1' },
-  { id: 2, src: '/2.png', alt: 'Avatar 2' },
-  { id: 3, src: '/3.png', alt: 'Avatar 3' },
-  { id: 4, src: '/4.png', alt: 'Avatar 4' },
-  { id: 5, src: '/5.png', alt: 'Avatar 5' },
-  { id: 6, src: '/6.png', alt: 'Avatar 6' },
-]
+  { id: 1, src: '/avatar/avatar1.png', value: 'avatar/avatar1.png', alt: 'Avatar 1' },
+  { id: 2, src: '/avatar/avatar2.png', value: 'avatar/avatar2.png', alt: 'Avatar 2' },
+  { id: 3, src: '/avatar/avatar3.png', value: 'avatar/avatar3.png', alt: 'Avatar 3' },
+  { id: 4, src: '/avatar/avatar4.png', value: 'avatar/avatar4.png', alt: 'Avatar 4' },
+  { id: 5, src: '/avatar/avatar5.png', value: 'avatar/avatar5.png', alt: 'Avatar 5' },
+  { id: 6, src: '/avatar/avatar6.png', value: 'avatar/avatar6.png', alt: 'Avatar 6' },
+];
+
+
 
 export default function JoinGameDialog({ onClose, partidaId }) {
   const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '', idAvatar: null })
@@ -62,23 +64,31 @@ export default function JoinGameDialog({ onClose, partidaId }) {
       return
     }
 
+    const selectedAvatar = AVATARS.find(a => a.id === form.idAvatar);
+
     const payload = {
-      partidaId,
+      partida_id: partidaId,
       nombre_usuario: form.nombreUsuario,
       fecha_nacimiento: form.fechaNacimiento,
-      idAvatar: form.idAvatar,
-    }
+      avatar: selectedAvatar?.value || 'avatar/avatar1.png', // 👈 valor exacto del backend
+    };
+
+    console.log("Payload enviado al backend:", payload)
+    console.log("Avatar seleccionado:", selectedAvatar)
 
     try {
       const httpService = createHttpService()
+      console.log("Payload enviado al backend:", payload);
       const data = await httpService.joinLobby(
-        payload.partidaId,
+        payload.partida_id,
         payload.nombre_usuario,
-        payload.fecha_nacimiento
+        payload.fecha_nacimiento,
+        payload.avatar
       )
 
       // Si llegamos aquí, la request fue exitosa (200)
       console.log('Unido exitosamente:', data)
+      
       navigate('/waiting', {
         state: {
           gameId: data.partida_id,

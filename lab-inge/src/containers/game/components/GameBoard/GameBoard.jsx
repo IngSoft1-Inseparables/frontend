@@ -1,6 +1,7 @@
 import HandCard from "../HandCard/HandCard.jsx";
 import DiscardDeck from "../DiscardDeck/DiscardDeck.jsx";
 import RegularDeck from "../RegularDeck/RegularDeck.jsx";
+import DraftDeck from "../DraftDeck/DraftDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
@@ -42,6 +43,9 @@ function GameBoard({
   myPlayerId,
   onCardClick,
   setCards,
+  onPlayerSelect,
+  selectedPlayer,
+  selectionMode,
 }) {
   const playerCount = turnData.players_amount;
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
@@ -80,6 +84,9 @@ function GameBoard({
             player={orderedPlayers[index]}
             turnData={turnData}
             myPlayerId={myPlayerId}
+            onPlayerSelect={onPlayerSelect}
+            selectedPlayer={selectedPlayer}
+            selectionMode={selectionMode}
           />
         ))}
       </div>
@@ -94,6 +101,9 @@ function GameBoard({
               player={orderedPlayers[index]}
               turnData={turnData}
               myPlayerId={myPlayerId}
+              onPlayerSelect={onPlayerSelect}
+              selectedPlayer={selectedPlayer}
+              selectionMode={selectionMode}
             />
           ))}
         </div>
@@ -111,7 +121,14 @@ function GameBoard({
                   isAvailable={isRegpileAvailable}
                   onCardClick={onCardClick}
                 />
-                {/* <DraftDeck/> */}
+                <DraftDeck
+                  draft={turnData?.draft}
+                  isAvailable={
+                    turnData?.turn_owner_id === myPlayerId &&
+                    playerData?.playerCards?.length < 6
+                  }
+                  onCardClick={onCardClick}
+                />
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
@@ -148,6 +165,21 @@ function GameBoard({
           ))}
         </div>
       </div>
+                {/* Jugador derecho */}
+                <div className="flex items-center justify-center px-2">
+                    {positions.right.map((index) => (
+                        <PlayerCard
+                            key={index}
+                            player={orderedPlayers[index]}
+                            turnData={turnData}
+                            myPlayerId={myPlayerId}
+                            onPlayerSelect={onPlayerSelect}
+                            selectedPlayer={selectedPlayer}
+                            selectionMode={selectionMode}
+                        />
+                    ))}
+                </div>
+            </div>
 
       {/* Bloque inferior - Jugador actual y mano */}
       <div className="flex items-end justify-between px-6 ">
@@ -155,6 +187,9 @@ function GameBoard({
           player={playerData}
           turnData={turnData}
           myPlayerId={myPlayerId}
+                    onPlayerSelect={onPlayerSelect}
+                    selectedPlayer={selectedPlayer}
+                    selectionMode={selectionMode}
         />
         <div
           className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
