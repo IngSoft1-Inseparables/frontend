@@ -16,9 +16,6 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
     const isSecretSelectable = (secret) => {
         const revealed = secret.revealed;
         const isThisPlayerSecret = player.id === parseInt(myPlayerId);
-        
-        console.log(`revealed: ${revealed}`);
-        console.log(`isThisPlayerSecret: ${isThisPlayerSecret}`);
 
         switch (selectionMode) {
             case 'select-revealed-secret':
