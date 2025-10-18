@@ -155,7 +155,7 @@ const createHttpService = () => {
       throw new Error("Player ID is required");
     }
 
-    return request(`/games/${gameId}/reveal/${playerId}`, {
+    return request(`/games/${gameId}/forceReveal/${playerId}`, {
       method: "PATCH",
     });
   };
