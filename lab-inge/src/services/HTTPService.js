@@ -53,7 +53,7 @@ const createHttpService = () => {
     });
   };
 
-  const joinLobby = (partida_id, nombre_usuario, fecha_nacimiento, avatar) =>
+  const joinGame = (partida_id, nombre_usuario, fecha_nacimiento, avatar) =>
     request(`/players/join`, {
       method: "POST",
       body: JSON.stringify({
@@ -61,6 +61,15 @@ const createHttpService = () => {
         nombre_usuario,
         fecha_nacimiento,
         avatar,
+      }),
+    });
+
+  const leaveGame = (game_id, player_id) =>
+    request(`/players/leave`, {
+      method: "DELETE",
+      body: JSON.stringify({
+        game_id,
+        player_id,
       }),
     });
 
@@ -142,14 +151,14 @@ const createHttpService = () => {
     getGame,
     getGames,
     startGame,
-    joinLobby,
+    joinGame,
     getPublicTurnData,
     getPrivatePlayerData,
     createGame,
     updateHand,
     discardCard,
     playSets
-
+    leaveGame
   };
 };
 

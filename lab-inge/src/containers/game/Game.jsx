@@ -26,6 +26,7 @@ function Game() {
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedSecret, setSelectedSecret] = useState(null);
   const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
 
@@ -38,8 +39,15 @@ function Game() {
 
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
-    setSelectionMode(null);
-  };
+    console.log(playerId);
+  }
+
+  const handleSecretSelection = (playerId, secretId) => {
+    setSelectedPlayer(playerId);
+    console.log(`Player selected: "${playerId}`);
+    setSelectedSecret(secretId);
+    console.log(`Secret selected: "${secretId}`);
+  }
 
   const handleCardClick = async () => {
     try {
@@ -52,6 +60,7 @@ function Game() {
       console.error("Failed to update hand:", error);
     }
   };
+
   const fetchGameData = async () => {
     try {
       setIsLoading(true);
@@ -104,7 +113,6 @@ function Game() {
 
       handleEndGameEvent(dataPublic);
 
-      console.log("Draft recibido:", dataPublic?.draft);
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -234,6 +242,8 @@ function Game() {
           onCardClick={handleCardClick}
           onPlayerSelect={handlePlayerSelection}
           selectedPlayer={selectedPlayer}
+          onSecretSelect={handleSecretSelection}
+          selectedSecret={selectedSecret}
           selectionMode={selectionMode}
           setCards={handlePlaySetAction}
         />

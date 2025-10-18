@@ -5,12 +5,12 @@ import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
 
-const joinLobbyMock = vi.fn()
+const joinGameMock = vi.fn()
 
 vi.mock('../../services/HTTPService.js', () => {
   return {
     createHttpService: () => ({
-      joinLobby: joinLobbyMock,
+      joinGame: joinGameMock,
     }),
   }
 })
@@ -57,7 +57,7 @@ test('submit con datos correctos navega al waiting', async () => {
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
   const user = userEvent.setup()
 
-  joinLobbyMock.mockResolvedValueOnce({
+  joinGameMock.mockResolvedValueOnce({
     partida_id: 123,
     jugador_id: 999,
   })
@@ -97,7 +97,7 @@ test('submit con datos correctos pero el servidor responde error muestra alert',
   const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
   const errorResponse = new Error('400 badRequest')
   errorResponse.status = 400
-  joinLobbyMock.mockRejectedValueOnce(errorResponse)
+  joinGameMock.mockRejectedValueOnce(errorResponse)
 
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
   const user = userEvent.setup()
@@ -114,7 +114,7 @@ test('submit con datos correctos pero el servidor responde error muestra alert',
 
 test('submit cuando el backend no está disponible', async () => {
   const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
-  joinLobbyMock.mockRejectedValueOnce(new Error('Network error'))
+  joinGameMock.mockRejectedValueOnce(new Error('Network error'))
 
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
   const user = userEvent.setup()
@@ -147,7 +147,7 @@ test('envía el avatar correcto al backend al unirse', async () => {
   render(<JoinGameDialog onClose={() => {}} partidaId={321} />)
   const user = userEvent.setup()
 
-  joinLobbyMock.mockResolvedValueOnce({
+  joinGameMock.mockResolvedValueOnce({
     partida_id: 321,
     jugador_id: 777,
   })
@@ -158,9 +158,9 @@ test('envía el avatar correcto al backend al unirse', async () => {
   await user.click(screen.getByRole('button', { name: 'Unirse' }))
 
 
-  expect(joinLobbyMock).toHaveBeenCalledTimes(1)
+  expect(joinGameMock).toHaveBeenCalledTimes(1)
 
-  const [partida_id, nombre_usuario, fecha_nacimiento, avatar] = joinLobbyMock.mock.calls[0]
+  const [partida_id, nombre_usuario, fecha_nacimiento, avatar] = joinGameMock.mock.calls[0]
 
   expect(partida_id).toBe(321)
   expect(nombre_usuario).toBe('CandeAvatar')
