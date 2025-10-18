@@ -212,16 +212,16 @@ function Game() {
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
 
-      setPlayerData((prevData) => {
-        if (!prevData) return prevData;
+      // setPlayerData((prevData) => {
+      //   if (!prevData) return prevData;
 
-        return {
-          ...prevData,
-          playerCards: prevData.playerCards.filter(
-            (card) => !cardIds.includes(card.card_id)
-          ),
-        };
-      });
+      //   return {
+      //     ...prevData,
+      //     playerCards: prevData.playerCards.filter(
+      //       (card) => !cardIds.includes(card.card_id)
+      //     ),
+      //   };
+      // });
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }

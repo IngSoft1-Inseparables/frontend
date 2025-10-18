@@ -66,11 +66,15 @@ function GameBoard({
   };
 
   const handlePlaySetClick = () => {
+    const player = turnData.players.find((p) => p.id === myPlayerId);
+    const setPlayed = player?.setPlayed || [];
+    console.log("Cartas del set jugado:", setPlayed);
     if (setCards) {
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
-    setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
-    setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
+    // console.log("datos obtenidos:", turnData.player.{myPlayerId}.setPlayed);
+    // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
+    // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
   const isDraftAvailable =
     turnData.turn_owner_id === myPlayerId &&
@@ -117,50 +121,52 @@ function GameBoard({
           ))}
         </div>
 
-                {/* Mesa central - Mazos */}
+        {/* Mesa central - Mazos */}
 
-                <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl ">
-                    <div className="h-full grid grid-rows-[70%_30%] items-center">
-                        <div className="h-full grid grid-cols-[40%_20%_40%]">
-                            {/* Grupo izquierdo: mazo regular + draft */}
+        <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl ">
+          <div className="h-full grid grid-rows-[70%_30%] items-center">
+            <div className="h-full grid grid-cols-[40%_20%_40%]">
+              {/* Grupo izquierdo: mazo regular + draft */}
 
-                            <div className="flex flex-col justify-center items-center gap-2">
-                                <RegularDeck
-                                    regpile={turnData?.regpile}
-                                    isAvailable={isRegpileAvailable}
-                                    onCardClick={onCardClick}
-                                />
-                                <DraftDeck
-                                    draft={turnData?.draft}
-                                    isAvailable={
-                                        turnData?.turn_owner_id === myPlayerId &&
-                                        playerData?.playerCards?.length < 6
-                                    }
-                                    onCardClick={onCardClick}
-                                />
-                            </div>
+              <div className="flex flex-col justify-center items-center gap-2">
+                <RegularDeck
+                  regpile={turnData?.regpile}
+                  isAvailable={isRegpileAvailable}
+                  onCardClick={onCardClick}
+                />
+                <DraftDeck
+                  draft={turnData?.draft}
+                  isAvailable={
+                    turnData?.turn_owner_id === myPlayerId &&
+                    playerData?.playerCards?.length < 6
+                  }
+                  onCardClick={onCardClick}
+                />
+              </div>
 
-                            <div className="flex justify-center items-end gap-2 mb-10">
-                                <EventDeck />
-                            </div>
+              <div className="flex justify-center items-end gap-2 mb-10">
+                <EventDeck />
+              </div>
 
-                            {/* Grupo derecho: mazo de descarte */}
-                            <div className="flex justify-center items-center gap-2">
-                                <DiscardDeck
-                                    discardpile={turnData?.discardpile}
-                                    turnData={turnData}
-                                    myPlayerId={myPlayerId}
-                                />
-                            </div>
-                        </div>
+              {/* Grupo derecho: mazo de descarte */}
+              <div className="flex justify-center items-center gap-2">
+                <DiscardDeck
+                  discardpile={turnData?.discardpile}
+                  turnData={turnData}
+                  myPlayerId={myPlayerId}
+                />
+              </div>
+            </div>
 
-                        <div className="flex h-full w-full flex-wrap">
-                            {/* <SetDeck setPlayed={turnData.players.player.playerSet || []} /> //CONEXION CON WEBSOCKET */}
-                            <SetDeck setPlayed={playedSets} />{" "}
-                            {/* ELIMINAR: cuando se conecte con websokcet eliminar esat linea y la  */}
-                        </div>
-                    </div>
-                </div>
+            <div className="flex h-full w-full flex-wrap">
+              {/* //CONEXION CON WEBSOCKET */}
+
+              <SetDeck setPlayed={ turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []} />
+              {/* <SetDeck setPlayed={playedSets} />{" "} */}
+              {/* ELIMINAR: cuando se conecte con websokcet eliminar esat linea y la  */}
+            </div>
+          </div>
+        </div>
 
         {/* Jugador derecho */}
         <div className="flex items-center justify-center px-2">

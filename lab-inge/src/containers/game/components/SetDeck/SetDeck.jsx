@@ -114,7 +114,7 @@ export default function SetDeck({ setPlayed = [] }) {
     <div ref={containerRef} className="w-full">
       {/* wrapper allows horizontal scrolling prevention and forces shrinking */}
       <div className="flex gap-2 overflow-hidden justify-center">
-        {setPlayed.map((set, index) => (
+        {setPlayed.filter((set) => set.cards && set.cards.length > 0).map((set, index) => (
           <div
             key={index}
             className="relative"

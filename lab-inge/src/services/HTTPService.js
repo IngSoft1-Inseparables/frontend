@@ -157,7 +157,7 @@ const createHttpService = () => {
     createGame,
     updateHand,
     discardCard,
-    playSets
+    playSets,
     leaveGame
   };
 };
