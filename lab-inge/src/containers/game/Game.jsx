@@ -13,6 +13,21 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 
+const reorderPlayers = (playersArray, myPlayerId) => {
+    // Aseguramos que la entrada sea un array y no mutamos el original
+    const mutableArray = [...playersArray];
+    const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
+    const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+
+    if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
+
+    const myPlayer = sortedByTurn[myPlayerIndex];
+    const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+    const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+
+    return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
+};
+
 function Game() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -61,6 +76,7 @@ function Game() {
     }
   };
 
+
   const fetchGameData = async () => {
     try {
       setIsLoading(true);
@@ -71,15 +87,9 @@ function Game() {
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
-      const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
-      const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
-
-      const myPlayer = sortedByTurn[myPlayerIndex];
-      const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
-      const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
-
-      const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
-      setOrderedPlayers(reorderedPlayers);
+      // ARREGLO: Usamos la función reorderPlayers para limpiar el código
+      const reorderedPlayersData = reorderPlayers(fetchedTurnData.players, myPlayerId);
+      setOrderedPlayers(reorderedPlayersData);
       
       console.log(fetchedTurnData);
     } catch (error) {
@@ -110,6 +120,10 @@ function Game() {
         typeof payload === "string" ? JSON.parse(payload) : payload;
 
       setTurnData(dataPublic);
+       if (dataPublic.players) {
+        const reorderedPlayersData = reorderPlayers(dataPublic.players, myPlayerId);
+        setOrderedPlayers(reorderedPlayersData);
+      }
 
       handleEndGameEvent(dataPublic);
 

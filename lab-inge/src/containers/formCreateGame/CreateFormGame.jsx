@@ -144,7 +144,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         minPlayers: "",
       });
       alert(
-        "Failed to create the game. Please check your input and try again."
+        "Ya existe una partida con el mismo nombre."
       );
     } finally {
       setIsSubmitting(false);

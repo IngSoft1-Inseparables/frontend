@@ -298,13 +298,56 @@ describe("GameBoard component", () => {
     expect(handContainer?.className).not.toContain("z-20");
   });
 
-  it("handles empty orderedPlayers array", () => {
-    render(<GameBoard {...defaultProps} orderedPlayers={[]} />);
+  // CORRECCIÓN: Este test ahora verifica que la renderización sea nula/vacía,
+  // ya que el Canvas devuelve 'null' si los datos iniciales faltan o están vacíos.
+  it("handles empty orderedPlayers array without crashing", () => {
+    const { container } = render(<GameBoard {...defaultProps} orderedPlayers={[]} />);
+    
+    // Si orderedPlayers.length === 0, el componente devuelve null.
+    // Esto significa que el container.firstChild será null.
+    expect(container.firstChild).toBeNull();
+    
+    // Si la aserción anterior es null, el componente no crasheó, simplemente devolvió nada.
+    // Para ser consistente con el test original que buscaba un elemento
+    // del fondo, busquemos el fondo global:
+    // El fondo se renderiza dentro del div principal, si el componente
+    // no crashea, la estructura de renderizado sigue funcionando.
+    // Pero como la condición de retorno en GameBoard es:
+    // if (!turnData || !playerData || orderedPlayers.length === 0) { return ... }
+    // si orderedPlayers es [], DEBE DEVOLVER NULL (o undefined de la console.log).
+    
+    // Dado que el componente debería devolver null/undefined en este caso, 
+    // la forma correcta de probar que "no crasheó" y se manejó la condición 
+    // es verificar que no se renderizó el DOM interno.
+    
+    // Para simplificar, si orderedPlayers es [], y turnData y playerData NO lo son, 
+    // el componente intenta leer turnData.players_amount (que está en turnData), 
+    // pero luego falla en el bloque de retorno temprano.
 
-    // No debe crashear, solo renderizar la estructura base
-    const bg = document.querySelector('[style*="game_bg.png"]');
-    expect(bg).toBeInTheDocument();
+    // La prueba más simple y robusta es: si orderedPlayers es [], NO renderiza nada.
+    // Para que este test pase, debemos asegurar que turnData y playerData 
+    // sean válidos, pero orderedPlayers sea [].
+    
+    // Dado el cambio de código en GameBoard que usted hizo:
+    // if (!turnData || !playerData || orderedPlayers.length === 0) { return (console.log(...)); }
+    // Si solo pasamos orderedPlayers: [], el componente devuelve undefined/null.
+
+    const { container: containerRendered } = render(
+        <GameBoard 
+            {...defaultProps} 
+            orderedPlayers={[]} 
+            // Mockeamos turnData y playerData como si fueran válidos 
+            // para aislar el error de orderedPlayers.length === 0
+            turnData={{ ...defaultProps.turnData, players_amount: 4, players: [] }}
+            playerData={{ ...mockPlayerData }}
+        />
+    );
+    
+    // Debería devolver null (o undefined)
+    expect(containerRendered.firstChild).toBeNull();
   });
+  
+  // Test 20
   it("renders RegularDeck with clickable BackCard when available", () => {
     const regpileMock = {
       count: 10,
@@ -346,6 +389,8 @@ describe("GameBoard component", () => {
     fireEvent.click(topCardImg);
     expect(mockOnCardClick).toHaveBeenCalled();
   });
+  
+  // Test 21
   it("renders RegularDeck with non-clickable BackCard when not available", () => {
     const regpileMock = [
       { id: 1, back: "/carta1.png", alt: "Carta1" },
@@ -395,6 +440,8 @@ describe("GameBoard component", () => {
     fireEvent.click(topCardImg);
     expect(mockOnCardClick).not.toHaveBeenCalled();
   });
+  
+  // Test 22
   it("renders RegularDeck BackCard with empty deck without crashing", () => {
     const turnDataEmptyDeck = {
       players_amount: 4,
@@ -417,6 +464,8 @@ describe("GameBoard component", () => {
     const topCardImg = container.querySelector(".back-card-container img");
     expect(topCardImg).toBeInTheDocument();
   });
+  
+  // Test 23
   it("does not allow BackCard click when it's not the player's turn", () => {
     const regpileMock = [
       { id: 1, back: "/carta1.png", alt: "Carta1" },
@@ -451,6 +500,8 @@ describe("GameBoard component", () => {
     topCardImg.click();
     expect(mockOnCardClick).not.toHaveBeenCalled();
   });
+  
+  // Test 24
   it("renders correctly with 3 players", () => {
     const threePlayers = [
       { id: 1, name: "P1", avatar: "a1.png", turn: 1, playerSecrets: [{}], playerCards: [] },
