@@ -99,7 +99,7 @@ const PlayerCard = ({ player, turnData, myPlayerId, onPlayerSelect, selectedPlay
                             {
                                 (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
                                     <div className="flex w-full h-full items-start justify-end">
-                                        <img src="public/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" />
+                                        <img src="public/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
                                     </div>
                                 )
                             }

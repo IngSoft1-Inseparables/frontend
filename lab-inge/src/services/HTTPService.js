@@ -126,6 +126,39 @@ const createHttpService = () => {
     });
   };
 
+  const playSets = (game_Id, player_Id, cardIds) => {
+    if (!game_Id) {
+      throw new Error("Game ID is required");
+    }
+    if (!player_Id) {
+      throw new Error("Player ID is required");
+    }
+    if (!cardIds || !Array.isArray(cardIds) || cardIds.length === 0) {
+      throw new Error("Card IDs array is required and must not be empty");
+    }
+
+    return request("/sets/set", {
+      method: "POST",
+      body: JSON.stringify({
+        game_id: game_Id,
+        player_id: player_Id,
+        cards: cardIds,
+      }),
+    });
+  };
+
+  const playEvent = (gameId, playerId, cardId, cardName) => {
+    return request("/players/play/event", {
+      method: "POST",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId,
+        cardName
+      })
+    });
+  };
+
   return {
     getGame,
     getGames,
@@ -136,7 +169,9 @@ const createHttpService = () => {
     createGame,
     updateHand,
     discardCard,
-    leaveGame
+    playSets,
+    leaveGame,
+    playEvent
   };
 };
 

@@ -1,16 +1,19 @@
 .back-card-container {
+  --backcard-container-width: 120px;
+  --backcard-container-height: 180px;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 120px;
-  height: 180px;
+  width: var(--backcard-container-width);
+  height: var(--backcard-container-height);
   position: relative;
   perspective: 1000px;
 }
 
 .back-card {
-  width: 100px;
-  height: 150px;
+  /* take size from parent container so parent can scale via width/height */
+  width: 83%; /* ~100/120 */
+  height: 83%;
   border-radius: 2px;
   border: 1px solid #8a0000;
   background: linear-gradient(135deg, #fdfdfd, #e3e3e3);

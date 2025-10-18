@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
-import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
@@ -23,13 +29,54 @@ function Game() {
   const [selectedSecret, setSelectedSecret] = useState(null);
   const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [playedActionCard, setPlayedActionCard] = useState(null);
+  const [message, setMessage] = useState(" ");
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
-      console.error('Missing gameId or myPlayerId in navigation state');
-      navigate('/home', { replace: true });
+      console.error("Missing gameId or myPlayerId in navigation state");
+      navigate("/home", { replace: true });
     }
   }, [gameId, myPlayerId, navigate]);
+
+  const getPlayerNameById = (playerId) => {
+    const player = orderedPlayers.find(p => p.id === parseInt(playerId));
+    return player?.name || "Jugador";
+  };
+
+  useEffect(() => {
+    if (!turnData) return;
+
+    if (turnData.turn_owner_id !== myPlayerId) {
+      const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+      setMessage(`${currentPlayerName} está jugando su turno.`);
+      return;
+    }
+
+    switch (turnData.turn_state) {
+      case "None":
+        setMessage(`¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`);
+        break;
+      case "Playing":
+        setMessage("Seguí las indicaciones para continuar el turno.");
+        break;
+      case "Waiting":
+        setMessage("Esperá para continuar tu turno.");
+        break;
+      case "Discarding":
+        setMessage("Podés reponer o seguir descartando.");
+        break;
+      case "Replenish":
+        setMessage("Debés tener seis cartas en mano para terminar el turno.");
+        break;
+      case "Complete":
+        setMessage("Siguiente turno...");
+        break;
+      default:
+        setMessage(" ");
+        break;
+    }
+  }, [turnData?.turn_state, turnData?.turn_owner_id, myPlayerId, orderedPlayers]);
 
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
@@ -41,13 +88,13 @@ function Game() {
     console.log(`Player selected: "${playerId}`);
     setSelectedSecret(secretId);
     console.log(`Secret selected: "${secretId}`);
-  }
+  };
 
   const handleCardClick = async () => {
     try {
       const hand = await httpService.updateHand(
         turnData.gameId,
-        turnData.turn_owner_id,
+        turnData.turn_owner_id
       );
       console.log("Update Hand:", hand);
     } catch (error) {
@@ -65,6 +112,8 @@ function Game() {
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
+      console.log("Info privada:", fetchedPlayerData);
+
       const sortedByTurn = fetchedTurnData.players.sort((a, b) => a.turn - b.turn);
       const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
 
@@ -74,7 +123,7 @@ function Game() {
 
       const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
       setOrderedPlayers(reorderedPlayers);
-      
+
       console.log(fetchedTurnData);
     } catch (error) {
       console.error("Failed obtaining game data:", error);
@@ -101,7 +150,8 @@ function Game() {
     };
 
     const handleGamePublicUpdate = (payload) => {
-      const dataPublic = typeof payload === "string" ? JSON.parse(payload) : payload;
+      const dataPublic =
+        typeof payload === "string" ? JSON.parse(payload) : payload;
 
       setTurnData(dataPublic);
 
@@ -110,7 +160,8 @@ function Game() {
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
-      const dataPlayer = typeof payload === "string" ? JSON.parse(payload) : payload;
+      const dataPlayer =
+        typeof payload === "string" ? JSON.parse(payload) : payload;
       setPlayerData(dataPlayer);
     };
 
@@ -125,8 +176,6 @@ function Game() {
     };
   }, []);
 
-
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -140,47 +189,107 @@ function Game() {
     const { active, over } = event;
     if (!over || myPlayerId != turnData.turn_owner_id) return;
 
+    const cardId = active.data.current?.cardId;
+    const cardName = active.data.current?.cardName;
+    const imageName = active.data.current?.imageName;
+
     // Si se soltó sobre el mazo de descarte
-    if (over.id === 'discard-deck') {
-      const cardId = active.data.current?.cardId;
-      const cardName = active.data.current?.cardName;
-      const imageName = active.data.current?.imageName;
+    if (over.id === "discard-deck") {
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding") return;
 
       // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
 
       // Actualizar optimisticamente la mano del jugador
-      setPlayerData(prevData => {
+      setPlayerData((prevData) => {
         if (!prevData) return prevData;
 
         return {
           ...prevData,
-          playerCards: prevData.playerCards.filter(card => card.card_id !== cardId)
+          playerCards: prevData.playerCards.filter(
+            (card) => card.card_id !== cardId
+          ),
         };
       });
 
-      setTurnData(prevTurnData => {
+      // Actualizar optimisticamente el mazo de descarte
+      setTurnData((prevTurnData) => {
         return {
           ...prevTurnData,
           discardpile: {
             count: (prevTurnData.discardpile?.count || 0) + 1,
             last_card_name: cardName,
-            last_card_image: imageName
-          }
+            last_card_image: imageName,
+          },
         };
       });
 
       try {
         await httpService.discardCard(myPlayerId, cardId);
       } catch (error) {
-        console.error('Error al descartar carta:', error);
+        console.error("Error al descartar carta:", error);
         setPlayerData(previousPlayerData);
         setTurnData(previousTurnData);
       }
     }
+
+    // Si se soltó sobre la zona de eventos
+    if (over.id === "play-card-zone") {
+      if (turnData.turn_state != "None") return;
+
+      if (playedActionCard) {
+        return;
+      }
+      // Encontrar la carta completa desde playerData
+      const droppedCard = playerData?.playerCards?.find(
+        (card) => card.card_id === cardId
+      );
+
+      if (!droppedCard) {
+        console.error("Card not found in player's hand");
+        return;
+      }
+
+      if (droppedCard.type != "Event") {
+        console.log("Card played not valid.");
+        return;
+      }
+
+      // Guardar el estado anterior para rollback
+      const previousPlayerData = playerData;
+
+      // Actualizar optimisticamente: remover de la mano y agregar a zona de eventos
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => card.card_id !== cardId
+          ),
+        };
+      });
+
+      setPlayedActionCard(droppedCard);
+
+      try {
+        await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+      } catch (error) {
+        console.error("Failed playing event card:", error);
+        setPlayerData(previousPlayerData);
+        setPlayedActionCard(null);
+      }
+    }
   };
 
+  // const [draggingCards, setDraggingCards] = useState([]);
+  // const handleDragFromHand = ({ cards }) => {
+  //   // Ahora 'cards' es el array de objetos carta.
+  //   // Solo se necesita una validación para asegurar que es un array.
+  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
+  //   setDraggingCards(cardsArray);
+  // };
 
   if (isLoading || orderedPlayers.length === 0) {
     return (
@@ -189,10 +298,31 @@ function Game() {
       </div>
     );
   }
+  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+    if (!currentSetCards || currentSetCards.length === 0) return;
+
+    const cardIds = currentSetCards.map((card) => card.card_id);
+
+    try {
+      const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => !cardIds.includes(card.card_id)
+          ),
+        };
+      });
+    } catch (error) {
+      console.error("Error al cargar los sets:", error);
+    }
+  };
 
   return (
-    <div
-      className="h-screen w-screen relative overflow-hidden">
+    <div className="h-screen w-screen relative overflow-hidden">
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
@@ -209,6 +339,9 @@ function Game() {
           onSecretSelect={handleSecretSelection}
           selectedSecret={selectedSecret}
           selectionMode={selectionMode}
+          setCards={handlePlaySetAction}
+          playedActionCard={playedActionCard}
+          message={message}
         />
 
         {showEndDialog && winnerData && (
