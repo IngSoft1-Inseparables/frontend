@@ -126,6 +126,28 @@ const createHttpService = () => {
     });
   };
 
+  const hideSecret = ({ gameId, playerId, secretId }) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+    if (!secretId) {
+      throw new Error("Secret ID is required");
+    }
+
+    return request("/secrets/hide", {
+      method: "PATCH",
+      body: JSON.stringify({
+        game_id: gameId,
+        player_id: playerId,
+        secret_id: secretId,
+      }),
+    });
+  };
+
+
   return {
     getGame,
     getGames,
@@ -136,7 +158,8 @@ const createHttpService = () => {
     createGame,
     updateHand,
     discardCard,
-    leaveGame
+    leaveGame,
+    hideSecret,
   };
 };
 
