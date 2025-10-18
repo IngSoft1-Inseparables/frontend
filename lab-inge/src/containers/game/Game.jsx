@@ -67,6 +67,8 @@ function Game() {
         secretId,
       });
 
+      console.log("Respuesta hideSecret:", response);
+
       await fetchGameData();
     } catch (err) {
       console.log("error al ocultar secreto propio:", err);  
@@ -82,6 +84,8 @@ function Game() {
         playerId,
         secretId,
       });
+
+      console.log("Respuesta hideSecret:", response);
 
       await fetchGameData();
     } catch (err) {
