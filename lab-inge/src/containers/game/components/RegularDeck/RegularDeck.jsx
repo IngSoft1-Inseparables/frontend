@@ -28,6 +28,5 @@ export default function RegularDeck({ regpile, isAvailable, onCardClick }) {
   }))
 
   const fullDeck = [murderCard, ...backCards]
-
   return <BackCard type="regular" deck={fullDeck} available = {isAvailable} onCardClick={onCardClick}/>
 }

@@ -1,18 +1,21 @@
 import "./BackCard.css";
 import { useState } from "react";
 
-export default function BackCard({ type, deck, available, onCardClick }) {
-  console.log("BackCard available:", available);
+export default function BackCard({
+  type,
+  deck,
+  available = false,
+  onCardClick,
+}) {
+  // console.log("BackCard available:", available);
 
   if (!deck || deck.length === 0) return null;
- 
-  const [selectedCardId, setSelectedCardId] = useState(null);
- 
-  const MURDER_CARD = {
-    src: '/cards/02-murder_escapes.png',
-    alt: 'MurderEscapes', 
-  }
 
+  const [selectedCardId, setSelectedCardId] = useState(null);
+  const MURDER_CARD = {
+    src: "/cards/02-murder_escapes.png",
+    alt: "MurderEscapes",
+  };
   const handleClick = (carta) => {
     if (!available) return;
     setSelectedCardId(carta.id);
@@ -33,16 +36,20 @@ export default function BackCard({ type, deck, available, onCardClick }) {
             : carta.back || '/cards/01-card_back.png';
         let alt = carta.alt || 'Card Back';
 
-        const isBottomRegular = type === 'regular' && index === 0;
+        const isBottomRegular = type === "regular" && index === 0;
         if (isBottomRegular) {
           src = MURDER_CARD.src;
           alt = MURDER_CARD.alt;
         }
 
-
         const isTopDiscard = type === "discard" && index === deck.length - 1;
         if (isTopDiscard && carta.face) {
           src = carta.face;
+        }
+
+        const isSet = type === "set";
+         if (isSet && carta.back) {
+          src = carta.back || `/cards/${carta.image_name}.png`; 
         }
 
         const isTopCard = index === deck.length - 1; // Solo la última carta
@@ -57,7 +64,7 @@ export default function BackCard({ type, deck, available, onCardClick }) {
           : ""
         }`;
 
-
+    
         const cardStyle =
           type === "draft"
             ? {
@@ -66,30 +73,37 @@ export default function BackCard({ type, deck, available, onCardClick }) {
                 zIndex: "auto",
               }
             : {
-                zIndex: index,
-                transform: `translateY(-${index * 2}px)`,
-                position: "absolute",
-              };
+                    zIndex: index,
+                    transform: isSet
+            ? `translateY(-${index * 5}px)` // más separación para sets
+            : `translateY(-${index * 2}px)`,
+                    position: "absolute",
+                  };
 
-    return (
-      <img
-        key={carta.id}
-        src={src}
-        alt={alt}
-        className={className}
-        style={cardStyle}
-        onClick={
+        return (
+      
+          <img
+            key={carta.id}
+            src={src}
+            alt={alt}
+            className={className}
+            style={cardStyle}
+            onClick={
+              
               type === "draft"
                 ? available
                   ? () => handleClick(carta)
                   : undefined
                 : isTopCard && available && carta.id != 0
+                && !isSet
                 ? () => handleClick(carta)
+               
                 : undefined
+            
             }
-      />
-    );
-  })}
+          />
+        );
+      })}
     </div>
   );
 }
