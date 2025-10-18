@@ -40,7 +40,8 @@ function Game() {
   }, [gameId, myPlayerId, navigate]);
 
   const getPlayerNameById = (playerId) => {
-    const player = orderedPlayers.find(p => p.id === parseInt(playerId));
+    if (!orderedPlayers || orderedPlayers.length === 0) return "Jugador";
+    const player = orderedPlayers.find(p => p?.id === parseInt(playerId));
     return player?.name || "Jugador";
   };
 

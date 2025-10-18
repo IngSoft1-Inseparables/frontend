@@ -11,7 +11,7 @@ export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
 
   // Si no hay cartas descartadas
   if (discardpile.count === 0) {
-    const canDiscard = turnData && turnData.turn_owner_id === myPlayerId && turnData.turn_state === "None" || turnData.turn_state === "Discarding";
+    const canDiscard = turnData && turnData.turn_owner_id === myPlayerId && (turnData.turn_state === "None" || turnData.turn_state === "Discarding");
     console.log("can discard dds:", canDiscard);
     return (
       <div className="back-card-container relative" ref={setNodeRef}>
