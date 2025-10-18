@@ -55,6 +55,56 @@ function Game() {
     }
   };
 
+  // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
+
+  const revealMySecret = async (secretId) => {
+    try{
+      console.log("revelando secreto propio:", secretId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto propio:", err);
+    }
+  };
+
+  const revealOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("revelando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto ajeno:", err);
+    }
+  };
+
+  const forcePlayerRevealSecret = async (playerId) => {
+    try {
+      console.log("forzando al jugador a revelar secreto:", playerId);
+      
+      const response = await httpService.forcePlayerReveal({
+        gameId,
+        playerId,
+      });
+
+      console.log("respuesta del backend:", response);
+    } catch (err) {
+      console.log("error al forzar revelacion de secreto:", err);
+    } finally {
+      setSelectedPlayer(null);
+    }
+  };
+
   const fetchGameData = async () => {
     try {
       setIsLoading(true);
@@ -116,16 +166,59 @@ function Game() {
 
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
+    wsService.on("hasToReveal", (payload) => {
+      console.log("evento WS: hasToReveal recibido", payload);
+
+      if (payload.playerId === parseInt(myPlayerId)) {
+        console.log("este jugador fue forzado a revelar un secreto");
+        setSelectionMode("select-my-not-revealed-secret");
+      }
+      if (!payload) {
+        return;
+      }
+    });
 
     // Cleanup exacto: eliminar los mismos handlers
     return () => {
       wsService.off("game_public_update", handleGamePublicUpdate);
       wsService.off("player_private_update", handlePlayerPrivateUpdate);
+      wsService.off("hasToReveal");
       wsService.disconnect();
     };
   }, []);
 
+  
+  useEffect(() => {
+    if (selectionMode === "select-my-not-revealed-secret" && selectedSecret) {
+      console.log("revelando secreto propio:", selectedSecret);
+      revealMySecret(selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret]);
 
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-not-revealed-secret" && selectedSecret && selectedPlayer) {
+      console.log("revelando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+      revealOtherPlayerSecret(selectedPlayer, selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
+
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-player" && selectedPlayer) {
+      console.log("jugador seleccionado para forzar revelación:", selectedPlayer);
+
+      forcePlayerRevealSecret(selectedPlayer);
+      setSelectionMode(null);
+    } 
+  }, [selectionMode, selectedPlayer]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
