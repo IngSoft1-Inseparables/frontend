@@ -133,8 +133,18 @@ export default function CreateFormGame({ onSubmit, onClose }) {
       // setIsOpen(false);
     } catch (error) {
       console.error("Error submitting form:", error);
+       setPlayerData({
+        name: "",
+        birthday: "",
+        avatar: null,
+      });
+      setFormDataGame({
+        nameGame: "",
+        maxPlayers: "",
+        minPlayers: "",
+      });
       alert(
-        "Failed to create the game. Please check your input and try again."
+        "Ya existe una partida con el mismo nombre."
       );
     } finally {
       setIsSubmitting(false);
