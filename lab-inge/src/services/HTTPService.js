@@ -228,7 +228,7 @@ const createHttpService = () => {
     playSets,
     leaveGame,
     playEvent,
-    hideSecret,,
+    hideSecret,
     revealSecret,
     forcePlayerReveal,
   };
