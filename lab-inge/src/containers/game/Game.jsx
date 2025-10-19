@@ -166,6 +166,43 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
+  // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
+
+  const hideMySecret = async (secretId) => {
+    try {
+      console.log("ocultando secreto propio:", secretId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto propio:", err);  
+    }
+  };
+
+  const hideOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("ocultando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto ajeno:", err);
+    }
+  };
 
   const fetchGameData = async () => {
     try {
@@ -280,6 +317,31 @@ function Game() {
       setSelectionMode(null);
     } 
   }, [selectionMode, selectedPlayer]);
+
+
+    useEffect(() => {
+      if (selectionMode === "select-my-revealed-secret" && selectedSecret) 
+        {
+          console.log("ocultando secreto propio:", selectedSecret);
+          hideMySecret(selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret]);
+
+    
+    useEffect(() => {
+      if (selectionMode === "select-revealed-secret" && selectedSecret && selectedPlayer) 
+        {
+          console.log("ocultando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+          hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret, selectedPlayer]);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
