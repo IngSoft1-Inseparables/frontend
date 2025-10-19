@@ -6,6 +6,8 @@ import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
+import { createHttpService } from "../../../../services/HTTPService";
+
 import { useState, useEffect } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
@@ -51,6 +53,9 @@ function GameBoard({
   selectionMode,
 }) {
   const playerCount = turnData.players_amount;
+
+  const httpService = createHttpService();
+
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
@@ -86,6 +91,41 @@ function GameBoard({
     // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
     // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
+
+
+
+  const handleReplenishFromDraft = async (carta) => {
+    try {
+      console.log("→ Robando carta del mazo de draft...");
+
+      const res = await httpService.replenishFromDraft(turnData.game_id, myPlayerId, carta);
+
+      // Agregar la carta nueva a la mano del jugador (solo visual)
+     
+      if (playerData && res.newCard) {
+        playerData.playerCards = [...playerData.playerCards, res.newCard];
+      }
+
+      // Actualizar el draft visible (solo visual)
+      if (res.newDraft) {
+        turnData.draft = {
+          count: res.newDraft.length,
+          card_1_image: res.newDraft[0]?.image_name,
+          card_2_image: res.newDraft[1]?.image_name,
+          card_3_image: res.newDraft[2]?.image_name,
+        };
+      }
+
+      console.log("Draft y mano actualizados visualmente.");
+
+    } catch (error) {
+      console.error("Error al mockear replenish draft:", error);
+    }
+  };
+
+
+
+
   const isDraftAvailable =
     turnData.turn_owner_id === myPlayerId &&
     playerData?.playerCards?.length < 6;
@@ -152,8 +192,9 @@ function GameBoard({
                     turnData?.turn_owner_id === myPlayerId &&
                     playerData?.playerCards?.length < 6
                   }
-                  onCardClick={onCardClick}
+                  onCardClick={handleReplenishFromDraft}
                 />
+
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
