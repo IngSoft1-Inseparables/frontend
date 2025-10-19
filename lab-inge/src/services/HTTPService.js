@@ -147,6 +147,18 @@ const createHttpService = () => {
     });
   };
 
+  const playEvent = (gameId, playerId, cardId, cardName) => {
+    return request("/players/play/event", {
+      method: "POST",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId,
+        cardName
+      })
+    });
+  };
+
   const revealSecret = ({ gameId, playerId, secretId }) => {
     if (!gameId) {
       throw new Error("Game ID is required");
@@ -193,6 +205,7 @@ const createHttpService = () => {
     discardCard,
     playSets,
     leaveGame,
+    playEvent,
     revealSecret,
     forcePlayerReveal,
   };

@@ -9,7 +9,7 @@ export default function FaceCard({
   imageBackName,
   onSelect,
   isSelected = false,
-  isStatic = false, // <-- nuevo prop
+  isStatic = false
 }) {
   if (!imageName) return null;
 
