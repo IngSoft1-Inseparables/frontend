@@ -169,6 +169,18 @@ const createHttpService = () => {
     });
   };
 
+  const playEvent = (gameId, playerId, cardId, cardName) => {
+    return request("/players/play/event", {
+      method: "POST",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId,
+        cardName
+      })
+    });
+  };
+
   return {
     getGame,
     getGames,
@@ -181,6 +193,7 @@ const createHttpService = () => {
     discardCard,
     playSets,
     leaveGame,
+    playEvent,
     hideSecret,
   };
 };
