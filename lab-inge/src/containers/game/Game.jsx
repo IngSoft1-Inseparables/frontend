@@ -1,312 +1,525 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { createHttpService } from "../../services/HTTPService.js"
-import HandCard from "../../components/HandCard/HandCard.jsx"
-import DiscardDeck from "../../components/DiscardDeck/DiscardDeck.jsx"
-import RegularDeck from "../../components/RegularDeck/RegularDeck.jsx"
+import { useLocation, useNavigate } from "react-router-dom";
+import { createHttpService } from "../../services/HTTPService.js";
+import { createWSService } from "../../services/WSService.js";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+} from "@dnd-kit/core";
+import { restrictToWindowEdges } from "@dnd-kit/modifiers";
+import GameBoard from "./components/GameBoard/GameBoard.jsx";
+import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
+
+const reorderPlayers = (playersArray, myPlayerId) => {
+  const mutableArray = [...playersArray];
+  const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
+  const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+
+  if (myPlayerIndex === -1) return sortedByTurn;
+
+  const myPlayer = sortedByTurn[myPlayerIndex];
+  const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+  const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+
+  return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
+};
 
 function Game() {
-    const location = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-    const { gameId, myPlayerId } = location.state || {};
+  const { gameId, myPlayerId } = location.state || {};
+  const [turnData, setTurnData] = useState(null);
+  const [winnerData, setWinnerData] = useState(null);
+  const [orderedPlayers, setOrderedPlayers] = useState([]);
+  const [playerData, setPlayerData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [httpService] = useState(() => createHttpService());
+  const [wsService] = useState(() => createWSService(gameId, myPlayerId));
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedSecret, setSelectedSecret] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [playedActionCard, setPlayedActionCard] = useState(null);
+  const [message, setMessage] = useState(" ");
 
-    const [turnData, setTurnData] = useState(null);
-    const [orderedPlayers, setOrderedPlayers] = useState([]);
-    const [playerData, setPlayerData] = useState(null);
-    const [httpService] = useState(() => createHttpService());
+  useEffect(() => {
+    if (!gameId || !myPlayerId) {
+      console.error("Missing gameId or myPlayerId in navigation state");
+      navigate("/home", { replace: true });
+    }
+  }, [gameId, myPlayerId, navigate]);
 
-    const fetchTurnData = async () => {
+  const getPlayerNameById = (playerId) => {
+    if (!orderedPlayers || orderedPlayers.length === 0) return "Jugador";
+    const player = orderedPlayers.find(p => p?.id === parseInt(playerId));
+    return player?.name || "Jugador";
+  };
 
-        try {
-            const turnData = await httpService.getPublicTurnData(gameId);
-            const playerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+  useEffect(() => {
+    if (!turnData) return;
 
-            setPlayerData(playerData);
-            setTurnData(turnData);
+    if (turnData.turn_owner_id !== myPlayerId) {
+      const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+      setMessage(`${currentPlayerName} está jugando su turno.`);
+      return;
+    }
 
-            const sortedByTurn = turnData.players.sort((a, b) => a.turn - b.turn);
-            const myPlayerIndex = sortedByTurn.findIndex(player => player.id === parseInt(myPlayerId));
+    switch (turnData.turn_state) {
+      case "None":
+        setMessage(`¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`);
+        break;
+      case "Playing":
+        setMessage("Seguí las indicaciones para continuar el turno.");
+        break;
+      case "Waiting":
+        setMessage("Esperá para continuar tu turno.");
+        break;
+      case "Discarding":
+        setMessage("Podés reponer o seguir descartando.");
+        break;
+      case "Replenish":
+        setMessage("Debés tener seis cartas en mano para terminar el turno.");
+        break;
+      case "Complete":
+        setMessage("Siguiente turno...");
+        break;
+      default:
+        setMessage(" ");
+        break;
+    }
+  }, [turnData?.turn_state, turnData?.turn_owner_id, myPlayerId, orderedPlayers]);
 
-            const myPlayer = sortedByTurn[myPlayerIndex];
-            const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
-            const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+  const handlePlayerSelection = (playerId) => {
+    setSelectedPlayer(playerId);
+    console.log(playerId);
+  }
 
-            const reorderedPlayers = [myPlayer, ...playersAfterMe, ...playersBeforeMe];
-            setOrderedPlayers(reorderedPlayers);
+  const handleSecretSelection = (playerId, secretId) => {
+    setSelectedPlayer(playerId);
+    console.log(`Player selected: "${playerId}`);
+    setSelectedSecret(secretId);
+    console.log(`Secret selected: "${secretId}`);
+  };
 
-        } catch (error) {
-            console.error("Failed obtaining game data:", error);
-        }
+  const handleCardClick = async () => {
+    try {
+      const hand = await httpService.updateHand(
+        turnData.gameId,
+        turnData.turn_owner_id
+      );
+      console.log("Update Hand:", hand);
+    } catch (error) {
+      console.error("Failed to update hand:", error);
+    }
+  };
+
+  // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
+
+  const revealMySecret = async (secretId) => {
+    try{
+      console.log("revelando secreto propio:", secretId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto propio:", err);
+    }
+  };
+
+  const revealOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("revelando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto ajeno:", err);
+    }
+  };
+
+  const forcePlayerRevealSecret = async (playerId) => {
+    try {
+      console.log("forzando al jugador a revelar secreto:", playerId);
+      
+      const response = await httpService.forcePlayerReveal({
+        gameId,
+        playerId,
+      });
+
+      console.log("respuesta del backend:", response);
+    } catch (err) {
+      console.log("error al forzar revelacion de secreto:", err);
+    } finally {
+      setSelectedPlayer(null);
+    }
+  };
+  // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
+
+  const hideMySecret = async (secretId) => {
+    try {
+      console.log("ocultando secreto propio:", secretId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto propio:", err);  
+    }
+  };
+
+  const hideOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("ocultando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto ajeno:", err);
+    }
+  };
+
+  const fetchGameData = async () => {
+    try {
+      setIsLoading(true);
+
+      const fetchedTurnData = await httpService.getPublicTurnData(gameId);
+      const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+
+      setPlayerData(fetchedPlayerData);
+      setTurnData(fetchedTurnData);
+
+      const reorderedPlayersData = reorderPlayers(fetchedTurnData.players, myPlayerId);
+      setOrderedPlayers(reorderedPlayersData);
+
+      console.log(fetchedTurnData);
+    } catch (error) {
+      console.error("Failed obtaining game data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchGameData();
+
+    wsService.connect();
+
+    const handleEndGameEvent = (dataPublic) => {
+      if (dataPublic.end_game?.game_status === "Finished") {
+        console.log("Fin de la partida detectado:", dataPublic.end_game);
+
+        const winners = dataPublic.end_game.winners;
+        const regpileCount = dataPublic?.regpile?.count ?? 0;
+
+        setWinnerData({ winners, regpileCount });
+        setShowEndDialog(true);
+      }
     };
+
+    const handleGamePublicUpdate = (payload) => {
+      const dataPublic =
+        typeof payload === "string" ? JSON.parse(payload) : payload;
+
+      setTurnData(dataPublic);
+      if (dataPublic.players) {
+        const reorderedPlayersData = reorderPlayers(dataPublic.players, myPlayerId);
+        setOrderedPlayers(reorderedPlayersData);
+      }
+
+      handleEndGameEvent(dataPublic);
+
+    };
+
+    const handlePlayerPrivateUpdate = (payload) => {
+      const dataPlayer =
+        typeof payload === "string" ? JSON.parse(payload) : payload;
+      setPlayerData(dataPlayer);
+    };
+
+    wsService.on("game_public_update", handleGamePublicUpdate);
+    wsService.on("player_private_update", handlePlayerPrivateUpdate);
+    wsService.on("hasToReveal", (payload) => {
+      console.log("evento WS: hasToReveal recibido", payload);
+
+      if (payload.playerId === parseInt(myPlayerId)) {
+        console.log("este jugador fue forzado a revelar un secreto");
+        setSelectionMode("select-my-not-revealed-secret");
+      }
+      if (!payload) {
+        return;
+      }
+    });
+
+    // Cleanup exacto: eliminar los mismos handlers
+    return () => {
+      wsService.off("game_public_update", handleGamePublicUpdate);
+      wsService.off("player_private_update", handlePlayerPrivateUpdate);
+      wsService.off("hasToReveal");
+      wsService.disconnect();
+    };
+  }, []);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-my-not-revealed-secret" && selectedSecret) {
+      console.log("revelando secreto propio:", selectedSecret);
+      revealMySecret(selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret]);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-not-revealed-secret" && selectedSecret && selectedPlayer) {
+      console.log("revelando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+      revealOtherPlayerSecret(selectedPlayer, selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
+
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-player" && selectedPlayer) {
+      console.log("jugador seleccionado para forzar revelación:", selectedPlayer);
+
+      forcePlayerRevealSecret(selectedPlayer);
+      setSelectionMode(null);
+    } 
+  }, [selectionMode, selectedPlayer]);
+
 
     useEffect(() => {
-        fetchTurnData();
-
-    }, []);
-
-
-
-    const PlayerCard = ({ player }) => {
-        if (!player || !turnData) return null;
-
-        return (
-            <div className={player.id === turnData.turn_owner_id ?
-                "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
-                :
-                "w-72 h-48 flex flex-col items-center flex-shrink-0"
-            }>
-                {/* Avatar y Nombre */}
-                <div className="flex items-center justify-center h-16 w-full gap-2">
-                    <div className={player.id === turnData.turn_owner_id ?
-                        "rounded-full bg-cover border-2 border-yellow-400 w-10 h-10 scale-110 transition-all duration-300 transform flex-shrink-0"
-                        :
-                        "rounded-full bg-cover border-2 border-gray-400 w-10 h-10 flex-shrink-0"}
-                        style={{ backgroundImage: `url(public/${player.avatar})` }}></div>
-                    <p className={
-                        player.id === turnData.turn_owner_id ?
-                            "text-white text-sm font-bold truncate"
-                            :
-                            "text-white text-sm truncate"
-                    }>{player.name}</p>
-                </div>
-
-                {/* Secretos */}
-                <div className="flex justify-around items-center flex-1 w-full">
-                    <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[0]?.revealed ?
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                        :
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                    }
-                        style={
-                            player.playerSecrets?.[0]?.revealed || player.id === myPlayerId
-                                ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_back_name}.png)` }
-                                : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[0]?.image_front_name}.png)` }
-                        }>
-                    </div>
-                    <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[1]?.revealed ?
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                        :
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                    }
-                        style={
-                            player.playerSecrets?.[1]?.revealed || player.id === parseInt(myPlayerId)
-                                ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_back_name}.png)` }
-                                : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[1]?.image_front_name}.png)` }
-                        }>
-                    </div>
-                    <div className={player.id === parseInt(myPlayerId) && !player.playerSecrets?.[2]?.revealed ?
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0 opacity-30"
-                        :
-                        "aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm w-20 flex-shrink-0"
-                    }
-                        style={
-                            player.playerSecrets?.[2]?.revealed || player.id === parseInt(myPlayerId)
-                                ? { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_back_name}.png)` }
-                                : { backgroundImage: `url(/src/assets/game/secrets/${player.playerSecrets?.[2]?.image_front_name}.png)` }
-                        }>
-                    </div>
-                </div>
-            </div >
-        );
-    };
-
-    const Players = () => {
-        const playerCount = turnData.players_amount;
-        switch (playerCount) {
-            case 2:
-                return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
-                        {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center px-4">
-                            {<PlayerCard player={orderedPlayers[1]} />}
-                        </div>
-
-                        <div className="grid grid-cols-[20%_60%_20%]">
-                            {/* bloque izquierdo */}
-                            <div className="flex items-center px-2">
-                            </div>
-                            {/* bloque central (mesa)*/}
-                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                                <div className="h-full flex justify-evenly items-center">
-                                    <RegularDeck />
-                                    <DiscardDeck />
-                                </div>
-                            </div>
-                            {/* bloque derecho */}
-                            <div className="flex items-center px-2">
-                            </div>
-                        </div>
-
-                        {/* bloque inferior */}
-                        <div className="flex items-center px-4">
-                            {<PlayerCard player={playerData} />}
-                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard playerCards={playerData?.playerCards || []} />
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 3:
-                return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
-                        {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center px-4">
-                            {<PlayerCard player={orderedPlayers[1]} />}
-                            {<PlayerCard player={orderedPlayers[2]} />}
-                        </div>
-
-                        <div className="grid grid-cols-[20%_60%_20%]">
-                            {/* bloque izquierdo */}
-                            <div className="flex items-center px-2">
-                            </div>
-                            {/* bloque central (mesa)*/}
-                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                                <div className="h-full flex justify-evenly items-center">
-                                    <RegularDeck />
-                                    <DiscardDeck />
-                                </div>
-                            </div>
-                            {/* bloque derecho */}
-                            <div className="flex items-center px-2">
-                            </div>
-                        </div>
-
-                        {/* bloque inferior */}
-                        <div className="flex items-center px-4">
-                            {<PlayerCard player={playerData} />}
-                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard playerCards={playerData?.playerCards || []} />
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 4:
-                return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
-                        {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center px-4">
-                            {<PlayerCard player={orderedPlayers[2]} />}
-                        </div>
-
-                        <div className="grid grid-cols-[20%_60%_20%]">
-                            {/* bloque izquierdo */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[1]} />}
-                            </div>
-                            {/* bloque central (mesa)*/}
-                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                                <div className="h-full flex justify-evenly items-center">
-                                    <RegularDeck />
-                                    <DiscardDeck />
-                                </div>
-                            </div>
-                            {/* bloque derecho */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[3]} />}
-                            </div>
-                        </div>
-
-                        {/* bloque inferior */}
-                        <div className="flex items-center px-4">
-                            {<PlayerCard player={playerData} />}
-                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard playerCards={playerData?.playerCards || []} />
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 5:
-                return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
-                        {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center px-4">
-                            {<PlayerCard player={orderedPlayers[2]} />}
-                            {<PlayerCard player={orderedPlayers[3]} />}
-                        </div>
-
-                        <div className="grid grid-cols-[20%_60%_20%]">
-                            {/* bloque izquierdo */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[1]} />}
-                            </div>
-                            {/* bloque central (mesa)*/}
-                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                                <div className="h-full flex justify-evenly items-center">
-                                    <RegularDeck />
-                                    <DiscardDeck />
-                                </div>
-                            </div>
-                            {/* bloque derecho */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[4]} />}
-                            </div>
-                        </div>
-
-                        {/* bloque inferior */}
-                        <div className="flex items-center px-4">
-                            {<PlayerCard player={playerData} />}
-                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
-                                <HandCard playerCards={playerData?.playerCards || []} />
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 6:
-                return (
-                    <div className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-                        style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}>
-                        {/* bloque superior (players cards)*/}
-                        <div className="flex justify-evenly items-center px-4">
-                            {<PlayerCard player={orderedPlayers[2]} />}
-                            {<PlayerCard player={orderedPlayers[3]} />}
-                            {<PlayerCard player={orderedPlayers[4]} />}
-                        </div>
-
-                        <div className="grid grid-cols-[20%_60%_20%]">
-                            {/* bloque izquierdo */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[1]} />}
-                            </div>
-                            {/* bloque central (mesa)*/}
-                            <div className="bg-orange-950/90 border-4 border-amber-950 rounded-2xl shadow-2xl m-5">
-                                <div className="h-full flex justify-evenly items-center">
-                                    <RegularDeck />
-                                    <DiscardDeck />
-                                </div>
-                            </div>
-                            {/* bloque derecho */}
-                            <div className="flex items-center px-2">
-                                {<PlayerCard player={orderedPlayers[5]} />}
-                            </div>
-                        </div>
-
-                        {/* bloque inferior */}
-                        <div className="flex items-center px-4">
-                            {<PlayerCard player={playerData} />}
-                            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-                                <HandCard playerCards={playerData?.playerCards || []} />
-                            </div>
-                        </div>
-                    </div>
-                );
+      if (selectionMode === "select-my-revealed-secret" && selectedSecret) 
+        {
+          console.log("ocultando secreto propio:", selectedSecret);
+          hideMySecret(selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
         }
-    };
+    }, [selectionMode, selectedSecret]);
 
+    
+    useEffect(() => {
+      if (selectionMode === "select-revealed-secret" && selectedSecret && selectedPlayer) 
+        {
+          console.log("ocultando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+          hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret, selectedPlayer]);
+
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  // Handler para cuando se suelta una carta
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || myPlayerId != turnData.turn_owner_id) return;
+
+    const cardId = active.data.current?.cardId;
+    const cardName = active.data.current?.cardName;
+    const imageName = active.data.current?.imageName;
+
+    // Si se soltó sobre el mazo de descarte
+    if (over.id === "discard-deck") {
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding") return;
+
+      // Guardar el estado anterior para poder hacer rollback
+      const previousPlayerData = playerData;
+      const previousTurnData = turnData;
+
+      // Actualizar optimisticamente la mano del jugador
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => card.card_id !== cardId
+          ),
+        };
+      });
+
+      // Actualizar optimisticamente el mazo de descarte
+      setTurnData((prevTurnData) => {
+        return {
+          ...prevTurnData,
+          discardpile: {
+            count: (prevTurnData.discardpile?.count || 0) + 1,
+            last_card_name: cardName,
+            last_card_image: imageName,
+          },
+        };
+      });
+
+      try {
+        await httpService.discardCard(myPlayerId, cardId);
+      } catch (error) {
+        console.error("Error al descartar carta:", error);
+        setPlayerData(previousPlayerData);
+        setTurnData(previousTurnData);
+      }
+    }
+
+    // Si se soltó sobre la zona de eventos
+    if (over.id === "play-card-zone") {
+      if (turnData.turn_state != "None") return;
+
+      if (playedActionCard) {
+        return;
+      }
+      // Encontrar la carta completa desde playerData
+      const droppedCard = playerData?.playerCards?.find(
+        (card) => card.card_id === cardId
+      );
+
+      if (!droppedCard) {
+        console.error("Card not found in player's hand");
+        return;
+      }
+
+      if (droppedCard.type != "Event") {
+        console.log("Card played not valid.");
+        return;
+      }
+
+      // Guardar el estado anterior para rollback
+      const previousPlayerData = playerData;
+
+      // Actualizar optimisticamente: remover de la mano y agregar a zona de eventos
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => card.card_id !== cardId
+          ),
+        };
+      });
+
+      setPlayedActionCard(droppedCard);
+
+      try {
+        await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+      } catch (error) {
+        console.error("Failed playing event card:", error);
+        setPlayerData(previousPlayerData);
+        setPlayedActionCard(null);
+      }
+    }
+  };
+
+  // const [draggingCards, setDraggingCards] = useState([]);
+  // const handleDragFromHand = ({ cards }) => {
+  //   // Ahora 'cards' es el array de objetos carta.
+  //   // Solo se necesita una validación para asegurar que es un array.
+  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
+  //   setDraggingCards(cardsArray);
+  // };
+
+  if (isLoading || orderedPlayers.length === 0) {
     return (
-        <div className="h-screen w-screen">
-            {orderedPlayers.length > 0 ? (
-                <Players />
-            ) : (
-                <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
-                    <p className="text-white text-xl">Cargando jugadores...</p>
-                </div>
-            )}
-        </div>
-    )
+      <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
+        <p className="text-white text-xl">Cargando jugadores...</p>
+      </div>
+    );
+  }
+  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+    if (!currentSetCards || currentSetCards.length === 0) return;
+
+    const cardIds = currentSetCards.map((card) => card.card_id);
+
+    try {
+      const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+
+      // setPlayerData((prevData) => {
+      //   if (!prevData) return prevData;
+
+      //   return {
+      //     ...prevData,
+      //     playerCards: prevData.playerCards.filter(
+      //       (card) => !cardIds.includes(card.card_id)
+      //     ),
+      //   };
+      // });
+    } catch (error) {
+      console.error("Error al cargar los sets:", error);
+    }
+  };
+
+  return (
+    <div className="h-screen w-screen relative overflow-hidden">
+      <DndContext
+        sensors={sensors}
+        onDragEnd={handleDragEnd}
+        modifiers={[restrictToWindowEdges]}
+      >
+        <GameBoard
+          orderedPlayers={orderedPlayers}
+          playerData={playerData}
+          turnData={turnData}
+          myPlayerId={myPlayerId}
+          onCardClick={handleCardClick}
+          onPlayerSelect={handlePlayerSelection}
+          selectedPlayer={selectedPlayer}
+          onSecretSelect={handleSecretSelection}
+          selectedSecret={selectedSecret}
+          selectionMode={selectionMode}
+          setCards={handlePlaySetAction}
+          playedActionCard={playedActionCard}
+          message={message}
+        />
+
+        {showEndDialog && winnerData && (
+          <EndGameDialog
+            winners={winnerData}
+            onClose={() => setShowEndDialog(false)}
+          />
+        )}
+      </DndContext>
+    </div>
+  );
 }
 
 export default Game;

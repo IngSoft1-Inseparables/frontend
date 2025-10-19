@@ -3,6 +3,9 @@ import background from "../../assets/background.png";
 import JoinGameDialog from "../../components/JoinGameDialog/JoinGameDialog";
 import { createHttpService } from "../../services/HTTPService";
 import { createWSService } from "../../services/WSService";
+import { ChevronLeft } from "lucide-react";
+
+import { useNavigate } from "react-router-dom";
 
 function GameList() {
   const [open, setOpen] = useState(false);
@@ -11,6 +14,8 @@ function GameList() {
   const [selectedGameId, setSelectedGameId] = useState(null);
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService());
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
 
   const fetchGames = async () => {
@@ -43,6 +48,10 @@ function GameList() {
   }, []);
   const availableGames = games.filter((game) => game.available);
 
+  const goBackHome = async () => {
+    navigate("/home");
+  };
+
   return (
     <div
       className="min-h-screen w-full bg-cover bg-center"
@@ -53,9 +62,38 @@ function GameList() {
       }} // cerrar con Escape
     >
       <div className="p-6">
+        <div className="flex justify-left">
+          <button onClick={goBackHome} className="group flex items-center gap-2 px-4 py-2  text-white text-lg font-bold transition-transform transform hover:scale-105 active:scale-95 ">
+            <ChevronLeft
+              size={35}
+              strokeWidth={3}
+              className="transition-transform group-hover:-translate-x-1"
+            />
+            <span className="transition-transform group-hover:-translate-x-1">
+              Volver
+            </span>
+          </button>
+        </div>
         <h2 className="flex justify-center text-xl text-white font-bold mb-4 ">
           Partidas disponibles
         </h2>
+        <div></div>
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={fetchGames}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#CA8747] to-[#A56A30] text-white font-semibold hover:bg-blue-700 active:scale-95 transition disabled:opacity-50"
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></span>
+                Actualizando...
+              </>
+            ) : (
+              "Actualizar partidas"
+            )}
+          </button>
+        </div>
 
         {loading ? (
           <p className="text-white font-semibold text-xl text-center">

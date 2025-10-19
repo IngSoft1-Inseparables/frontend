@@ -1,0 +1,91 @@
+.back-card-container {
+  --backcard-container-width: 120px;
+  --backcard-container-height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--backcard-container-width);
+  height: var(--backcard-container-height);
+  position: relative;
+  perspective: 1000px;
+}
+
+.back-card {
+  /* take size from parent container so parent can scale via width/height */
+  width: 83%; /* ~100/120 */
+  height: 83%;
+  border-radius: 2px;
+  border: 1px solid #8a0000;
+  background: linear-gradient(135deg, #fdfdfd, #e3e3e3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.back-card-clickable {
+  box-shadow: 0 0 15px #facc15;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-card-clickable:hover {
+  box-shadow: 0 0 25px #facc15, 0 0 10px rgba(250, 204, 21, 0.5);
+  filter: brightness(1.1);
+}
+
+/* .back-card:nth-child(1) {
+  transform: rotate(-2deg) translate(2px, -3px);
+}
+.back-card:nth-child(2) {
+  transform: rotate(1deg) translate(2px, -2px);
+}
+.back-card:nth-child(3) {
+  transform: rotate(-1deg) translate(-1px, 2px);
+}
+.back-card:nth-child(4) {
+  transform: rotate(3deg) translate(3px, 1px);
+}
+.back-card:nth-child(5) {
+  transform: rotate(-4deg) translate(-2px, 4px);
+}
+.back-card:nth-child(6) {
+  transform: rotate(2deg) translate(-2px, -1px);
+}
+.back-card:nth-child(7) {
+  transform: rotate(1.5deg) translate(2px, 3px);
+}
+.back-card:nth-child(8) {
+  transform: rotate(-2.5deg) translate(-3px, 1px);
+}
+.back-card:nth-child(9) {
+  transform: rotate(0.5deg) translate(1px, -3px);
+} */
+
+.back-card-container:hover .back-card:last-child {
+  transform: scale(1.03) translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10;
+}
+
+.draft-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px; /* separación entre las tres cartas */
+}
+
+/* Evitar que cada carta se apile en el centro */
+.draft-container .back-card-container {
+  position: relative;
+  width: 115px;
+  height: 170px;
+}
+
+/* En modo draft, la carta no debe ser absoluta */
+.back-card-draft {
+  position: static !important; /* forzar posición normal */
+  transform: none !important;
+  z-index: auto !important;
+}
+
+

@@ -5,13 +5,15 @@ import { createHttpService } from '../../services/HTTPService.js'
 import './JoinGameDialog.css'
 
 const AVATARS = [
-  { id: 1, src: '/1.png', alt: 'Avatar 1' },
-  { id: 2, src: '/2.png', alt: 'Avatar 2' },
-  { id: 3, src: '/3.png', alt: 'Avatar 3' },
-  { id: 4, src: '/4.png', alt: 'Avatar 4' },
-  { id: 5, src: '/5.png', alt: 'Avatar 5' },
-  { id: 6, src: '/6.png', alt: 'Avatar 6' },
-]
+  { id: 1, src: '/avatar/avatar1.png', value: 'avatar/avatar1.png', alt: 'Avatar 1' },
+  { id: 2, src: '/avatar/avatar2.png', value: 'avatar/avatar2.png', alt: 'Avatar 2' },
+  { id: 3, src: '/avatar/avatar3.png', value: 'avatar/avatar3.png', alt: 'Avatar 3' },
+  { id: 4, src: '/avatar/avatar4.png', value: 'avatar/avatar4.png', alt: 'Avatar 4' },
+  { id: 5, src: '/avatar/avatar5.png', value: 'avatar/avatar5.png', alt: 'Avatar 5' },
+  { id: 6, src: '/avatar/avatar6.png', value: 'avatar/avatar6.png', alt: 'Avatar 6' },
+];
+
+
 
 export default function JoinGameDialog({ onClose, partidaId }) {
   const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '', idAvatar: null })
@@ -33,36 +35,60 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   })()
 
+  const minDate = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 115)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+  const maxDate = (() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 18)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  })()
+
+
+
   const isFormValid =
     form.nombreUsuario.trim() !== '' &&
     form.fechaNacimiento !== '' &&
     form.fechaNacimiento <= today &&
     form.idAvatar !== null
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault()
     if (!isFormValid) {
       setAvatarError(!form.idAvatar)
       return
     }
 
+    const selectedAvatar = AVATARS.find(a => a.id === form.idAvatar);
+
     const payload = {
-      partidaId,
+      partida_id: partidaId,
       nombre_usuario: form.nombreUsuario,
       fecha_nacimiento: form.fechaNacimiento,
-      idAvatar: form.idAvatar,
-    }
+      avatar: selectedAvatar?.value || 'avatar/avatar1.png', // 👈 valor exacto del backend
+    };
+
+    console.log("Payload enviado al backend:", payload)
+    console.log("Avatar seleccionado:", selectedAvatar)
 
     try {
       const httpService = createHttpService()
-      const data = await httpService.joinLobby(
-        payload.partidaId,
+      console.log("Payload enviado al backend:", payload);
+      const data = await httpService.joinGame(
+        payload.partida_id,
         payload.nombre_usuario,
-        payload.fecha_nacimiento
+        payload.fecha_nacimiento,
+        payload.avatar
       )
 
       // Si llegamos aquí, la request fue exitosa (200)
       console.log('Unido exitosamente:', data)
+      
       navigate('/waiting', {
         state: {
           gameId: data.partida_id,
@@ -100,24 +126,29 @@ export default function JoinGameDialog({ onClose, partidaId }) {
               name="nombreUsuario"
               value={form.nombreUsuario}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2 "
+              className="input-uniform"
+              placeholder="Ingresar nombre de usuario"
               data-testid="input-username"
               required
+              maxLength={35}
             />
+
           </label>
 
           <label className="grid gap-1">
             Fecha de nacimiento
             <input
               type="date"
-              max={today}
               name="fechaNacimiento"
               value={form.fechaNacimiento}
               onChange={handleChange}
-              className="border border-gray-300 rounded-lg px-4 py-2"
+              className="input-uniform"
               data-testid="input-fechaNacimiento"
+              min={minDate}
+              max={maxDate}
               required
             />
+
           </label>
 
           {/* Selección de Avatar */}

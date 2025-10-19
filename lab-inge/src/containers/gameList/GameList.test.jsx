@@ -1,6 +1,10 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import { vi } from "vitest";
 import { BrowserRouter } from "react-router-dom";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import GameList from "./GameList";
+import { it, vi } from "vitest";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 const mockGames = [
   {
@@ -44,6 +48,15 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 import GameList from "./GameList";
+const mockNavigate = vi.fn();
+
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 describe("GameList - pruebas básicas sin JoinGameDialog", () => {
   it("renderiza partidas correctamente", async () => {
@@ -63,6 +76,7 @@ describe("GameList - pruebas básicas sin JoinGameDialog", () => {
     // Simular click
     fireEvent.click(screen.getAllByTestId("GameCard")[0]);
   });
+  
 
   it("muestra 'No hay partidas disponibles' si no hay juegos válidos", async () => {
     // Vaciar el mock manualmente
@@ -79,6 +93,23 @@ describe("GameList - pruebas básicas sin JoinGameDialog", () => {
         screen.getByText(/No hay partidas disponibles/i)
       ).toBeInTheDocument()
     );
+  });
+   it("se renderiza correctamente y navega al hacer clic", () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    // Verificamos que el botón "Volver" se renderiza
+    const volverBtn = screen.getByRole("button", { name: /Volver/i });
+    expect(volverBtn).toBeInTheDocument();
+
+    // Simulamos el clic
+    fireEvent.click(volverBtn);
+
+    // Verificamos que navega a "/home"
+    expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 });
 // vi.mock("../../components/JoinGameDialog/JoinGameDialog", () => ({
