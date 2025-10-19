@@ -14,18 +14,20 @@ import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 
 const reorderPlayers = (playersArray, myPlayerId) => {
-    // Aseguramos que la entrada sea un array y no mutamos el original
-    const mutableArray = [...playersArray];
-    const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
-    const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+  // Aseguramos que la entrada sea un array y no mutamos el original
+  const mutableArray = [...playersArray];
+  const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
+  const myPlayerIndex = sortedByTurn.findIndex(
+    (player) => player.id === parseInt(myPlayerId)
+  );
 
-    if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
+  if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
 
-    const myPlayer = sortedByTurn[myPlayerIndex];
-    const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
-    const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+  const myPlayer = sortedByTurn[myPlayerIndex];
+  const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+  const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
 
-    return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
+  return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
 };
 
 function Game() {
@@ -44,6 +46,7 @@ function Game() {
   const [selectedSecret, setSelectedSecret] = useState(null);
   const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [prevTurnData, setPrevTurnData] = useState(null);
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -55,14 +58,14 @@ function Game() {
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
     console.log(playerId);
-  }
+  };
 
   const handleSecretSelection = (playerId, secretId) => {
     setSelectedPlayer(playerId);
     console.log(`Player selected: "${playerId}`);
     setSelectedSecret(secretId);
     console.log(`Secret selected: "${secretId}`);
-  }
+  };
 
   const handleCardClick = async () => {
     try {
@@ -76,21 +79,26 @@ function Game() {
     }
   };
 
-
   const fetchGameData = async () => {
     try {
       setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
-      const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+      const fetchedPlayerData = await httpService.getPrivatePlayerData(
+        gameId,
+        myPlayerId
+      );
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
       // ARREGLO: Usamos la función reorderPlayers para limpiar el código
-      const reorderedPlayersData = reorderPlayers(fetchedTurnData.players, myPlayerId);
+      const reorderedPlayersData = reorderPlayers(
+        fetchedTurnData.players,
+        myPlayerId
+      );
       setOrderedPlayers(reorderedPlayersData);
-      
+
       console.log(fetchedTurnData);
     } catch (error) {
       console.error("Failed obtaining game data:", error);
@@ -120,13 +128,15 @@ function Game() {
         typeof payload === "string" ? JSON.parse(payload) : payload;
 
       setTurnData(dataPublic);
-       if (dataPublic.players) {
-        const reorderedPlayersData = reorderPlayers(dataPublic.players, myPlayerId);
+      if (dataPublic.players) {
+        const reorderedPlayersData = reorderPlayers(
+          dataPublic.players,
+          myPlayerId
+        );
         setOrderedPlayers(reorderedPlayersData);
       }
 
       handleEndGameEvent(dataPublic);
-
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -153,6 +163,65 @@ function Game() {
       },
     })
   );
+ useEffect(() => {
+  // Si aún no hay datos de turno, no hacemos nada
+  if (!turnData) return;
+
+  // Si es la primera vez que recibimos datos, solo inicializamos
+  if (!prevTurnData) {
+    setPrevTurnData(turnData);
+    return;
+  }
+
+  // --- Detección de sets nuevos ---
+  const myPlayer = turnData.players.find((p) => p.id === myPlayerId);
+  const prevPlayer = prevTurnData.players.find((p) => p.id === myPlayerId);
+
+  const prevSets = prevPlayer?.setPlayed || [];
+  const newSets = myPlayer?.setPlayed || [];
+
+  const setsToTrigger = newSets.filter(
+    (newSet) => !prevSets.some((prevSet) => prevSet.id === newSet.id)
+  );
+
+  if (setsToTrigger.length > 0) {
+    console.log("Sets nuevos confirmados:", setsToTrigger);
+  }
+
+  // --- Disparo de efectos según tipo de set ---
+  setsToTrigger.forEach((set) => {
+    console.log("Ejecutando efecto para set:", set.set_type);
+
+    switch (set.set_type?.toLowerCase()) {
+      case "poirot":
+      case "marple":
+        setSelectionMode("select-not-revealed-secret");
+        break;
+
+      case "ladybrent":
+      case "tommyberestford":
+      case "tuppenceberestbord":
+      case "satterthwaite":
+      case "tommytuppence":
+        setSelectionMode("select-other-not-revealed-secret");
+        break;
+
+      case "special_satterthwaite":
+        console.log("Efecto de 'special_satterthwaite' aún no implementado");
+        break;
+
+      case "pyne":
+        setSelectionMode("select-revealed-secret");
+        break;
+
+      default:
+        console.log("Set sin efecto:", set.set_type);
+    }
+  });
+
+  // Actualizamos el estado previo para el próximo cambio
+  setPrevTurnData(turnData);
+}, [turnData]);
 
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
@@ -203,14 +272,6 @@ function Game() {
     }
   };
 
-  // const [draggingCards, setDraggingCards] = useState([]);
-  // const handleDragFromHand = ({ cards }) => {
-  //   // Ahora 'cards' es el array de objetos carta.
-  //   // Solo se necesita una validación para asegurar que es un array.
-  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
-  //   setDraggingCards(cardsArray);
-  // };
-
   if (isLoading || orderedPlayers.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
@@ -225,22 +286,10 @@ function Game() {
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
-
-      // setPlayerData((prevData) => {
-      //   if (!prevData) return prevData;
-
-      //   return {
-      //     ...prevData,
-      //     playerCards: prevData.playerCards.filter(
-      //       (card) => !cardIds.includes(card.card_id)
-      //     ),
-      //   };
-      // });
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
   };
-
   return (
     <div className="h-screen w-screen relative overflow-hidden">
       <DndContext
