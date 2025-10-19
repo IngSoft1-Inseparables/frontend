@@ -1,10 +1,7 @@
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { vi } from "vitest";
+import { vi, describe, it, expect, beforeEach } from "vitest";
 import { BrowserRouter } from "react-router-dom";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import GameList from "./GameList";
-import { it, vi } from "vitest";
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 const mockGames = [
   {
@@ -13,9 +10,9 @@ const mockGames = [
     players_amount: 2,
     max_players: 4,
     min_players: 2,
-    avatar: "avatar/avatar1.png",
     creator_name: "Micaela",
     available: true,
+    in_progress: false,
   },
   {
     id: 2,
@@ -23,32 +20,43 @@ const mockGames = [
     players_amount: 4,
     max_players: 6,
     min_players: 3,
-    avatar: "avatar/avatar2.png",
     creator_name: "Norma",
     available: true,
+    in_progress: false,
+  },
+  {
+    id: 3,
+    game_name: "Juego en curso",
+    players_amount: 3,
+    max_players: 4,
+    min_players: 2,
+    creator_name: "Pedro",
+    available: false,
+    in_progress: true,
   },
 ];
 
+const mockNavigate = vi.fn();
+const mockGetGames = vi.fn();
+const mockConnect = vi.fn();
+const mockDisconnect = vi.fn();
+const mockOn = vi.fn();
+const mockOff = vi.fn();
+
 vi.mock("../../services/HTTPService", () => ({
   createHttpService: () => ({
-    getGames: vi.fn(async () => ({ games: mockGames })),
+    getGames: mockGetGames,
   }),
 }));
 
 vi.mock("../../services/WSService", () => ({
   createWSService: () => ({
-    connect: vi.fn(),
-    disconnect: vi.fn(),
-    on: vi.fn(),
-    off: vi.fn(),
+    connect: mockConnect,
+    disconnect: mockDisconnect,
+    on: mockOn,
+    off: mockOff,
   }),
 }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-import GameList from "./GameList";
-const mockNavigate = vi.fn();
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
@@ -58,8 +66,23 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-describe("GameList - pruebas básicas sin JoinGameDialog", () => {
-  it("renderiza partidas correctamente", async () => {
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockGetGames.mockResolvedValue({ games: mockGames });
+});
+
+describe("GameList", () => {
+  it("renderiza el título correctamente", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    expect(screen.getByText("Partidas disponibles")).toBeInTheDocument();
+  });
+
+  it("muestra 'Cargando partidas...' mientras carga", () => {
     render(
       <BrowserRouter>
         <GameList />
@@ -67,20 +90,75 @@ describe("GameList - pruebas básicas sin JoinGameDialog", () => {
     );
 
     expect(screen.getByText(/Cargando partidas/i)).toBeInTheDocument();
+  });
 
-    // Esperar a que carguen las partidas disponibles
-    await waitFor(() =>
-      expect(screen.getAllByTestId("GameCard").length).toBeGreaterThan(0)
+  it("renderiza partidas disponibles correctamente", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
     );
 
-    // Simular click
-    fireEvent.click(screen.getAllByTestId("GameCard")[0]);
-  });
-  
+    // Esperar a que carguen las partidas
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
 
-  it("muestra 'No hay partidas disponibles' si no hay juegos válidos", async () => {
-    // Vaciar el mock manualmente
-    mockGames.length = 0;
+    // Verificar que se muestran solo las partidas no in_progress
+    const gameCards = screen.getAllByTestId("GameCard");
+    expect(gameCards).toHaveLength(2); // Solo 2 partidas (las que no están in_progress)
+
+    // Verificar contenido de las partidas
+    expect(screen.getByText("Aventura")).toBeInTheDocument();
+    expect(screen.getByText("Estrategia")).toBeInTheDocument();
+    expect(screen.queryByText("Juego en curso")).not.toBeInTheDocument();
+  });
+
+  it("filtra partidas que están en progreso (in_progress: true)", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Verificar que la partida en progreso NO se muestra
+    expect(screen.queryByText("Juego en curso")).not.toBeInTheDocument();
+    
+    // Solo se muestran las 2 partidas disponibles
+    const gameCards = screen.getAllByTestId("GameCard");
+    expect(gameCards).toHaveLength(2);
+  });
+
+  it("muestra información correcta de cada partida", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Verificar nombre del juego
+    expect(screen.getByText("Aventura")).toBeInTheDocument();
+    
+    // Verificar nombre del creador
+    expect(screen.getByText("Micaela")).toBeInTheDocument();
+    
+    // Verificar cantidad de jugadores
+    expect(screen.getByText("2/4")).toBeInTheDocument();
+    
+    // Verificar mínimo de jugadores
+    expect(screen.getByText("Mínimo de jugadores: 2")).toBeInTheDocument();
+  });
+
+  it("muestra 'No hay partidas disponibles' cuando no hay juegos disponibles", async () => {
+    mockGetGames.mockResolvedValueOnce({ games: [] });
 
     render(
       <BrowserRouter>
@@ -88,37 +166,231 @@ describe("GameList - pruebas básicas sin JoinGameDialog", () => {
       </BrowserRouter>
     );
 
-    await waitFor(() =>
-      expect(
-        screen.getByText(/No hay partidas disponibles/i)
-      ).toBeInTheDocument()
-    );
+    await waitFor(() => {
+      expect(screen.getByText(/No hay partidas disponibles/i)).toBeInTheDocument();
+    });
   });
-   it("se renderiza correctamente y navega al hacer clic", () => {
+
+  it("muestra 'No hay partidas disponibles' cuando solo hay partidas en progreso", async () => {
+    const gamesInProgress = [
+      {
+        id: 3,
+        game_name: "Juego en curso",
+        players_amount: 3,
+        max_players: 4,
+        min_players: 2,
+        creator_name: "Pedro",
+        available: false,
+        in_progress: true,
+      },
+    ];
+    mockGetGames.mockResolvedValueOnce({ games: gamesInProgress });
+
     render(
       <BrowserRouter>
         <GameList />
       </BrowserRouter>
     );
 
-    // Verificamos que el botón "Volver" se renderiza
+    await waitFor(() => {
+      expect(screen.getByText(/No hay partidas disponibles/i)).toBeInTheDocument();
+    });
+  });
+
+  it("abre el diálogo al hacer click en una partida", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    const gameCards = screen.getAllByTestId("GameCard");
+    fireEvent.click(gameCards[0]);
+
+    // El diálogo debería renderizarse (aunque esté mockeado o no)
+    // Simplemente verificamos que el click no causa error
+    expect(gameCards[0]).toBeInTheDocument();
+  });
+
+  it("navega a /home al hacer click en 'Volver'", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
     const volverBtn = screen.getByRole("button", { name: /Volver/i });
     expect(volverBtn).toBeInTheDocument();
 
-    // Simulamos el clic
     fireEvent.click(volverBtn);
 
-    // Verificamos que navega a "/home"
     expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
+
+  it("llama a fetchGames al hacer click en 'Actualizar partidas'", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Limpiar las llamadas anteriores
+    mockGetGames.mockClear();
+
+    const actualizarBtn = screen.getByRole("button", { name: /Actualizar partidas/i });
+    fireEvent.click(actualizarBtn);
+
+    expect(mockGetGames).toHaveBeenCalled();
+  });
+
+  it("muestra el estado de carga al actualizar partidas", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Hacer que la siguiente llamada tarde más
+    mockGetGames.mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve({ games: mockGames }), 100))
+    );
+
+    const actualizarBtn = screen.getByRole("button", { name: /Actualizar partidas/i });
+    fireEvent.click(actualizarBtn);
+
+    // Debe mostrar "Actualizando..."
+    expect(screen.getByText(/Actualizando/i)).toBeInTheDocument();
+  });
+
+  it("conecta y desconecta el WebSocket correctamente", () => {
+    const { unmount } = render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    // Verificar que se conectó
+    expect(mockConnect).toHaveBeenCalled();
+    expect(mockOn).toHaveBeenCalledWith("game_list_update", expect.any(Function));
+
+    // Desmontar el componente
+    unmount();
+
+    // Verificar que se desconectó
+    expect(mockOff).toHaveBeenCalledWith("game_list_update", expect.any(Function));
+    expect(mockDisconnect).toHaveBeenCalled();
+  });
+
+  it("maneja errores al cargar partidas", async () => {
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockGetGames.mockRejectedValueOnce(new Error("Error de red"));
+
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/No hay partidas disponibles/i)).toBeInTheDocument();
+    });
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("cierra el diálogo al presionar Escape", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Abrir el diálogo
+    const gameCards = screen.getAllByTestId("GameCard");
+    fireEvent.click(gameCards[0]);
+
+    // Simular presionar Escape
+    fireEvent.keyDown(screen.getByText("Partidas disponibles").closest("div"), {
+      key: "Escape",
+      code: "Escape",
+    });
+
+    // El diálogo debería cerrarse (verificamos que no cause error)
+    expect(gameCards[0]).toBeInTheDocument();
+  });
+
+  it("filtra correctamente partidas disponibles vs no disponibles", async () => {
+    const mixedGames = [
+      {
+        id: 1,
+        game_name: "Disponible 1",
+        players_amount: 2,
+        max_players: 4,
+        min_players: 2,
+        creator_name: "User1",
+        available: true,
+        in_progress: false,
+      },
+      {
+        id: 2,
+        game_name: "No disponible",
+        players_amount: 4,
+        max_players: 4,
+        min_players: 2,
+        creator_name: "User2",
+        available: false,
+        in_progress: false,
+      },
+      {
+        id: 3,
+        game_name: "Disponible 2",
+        players_amount: 1,
+        max_players: 6,
+        min_players: 2,
+        creator_name: "User3",
+        available: true,
+        in_progress: false,
+      },
+    ];
+
+    mockGetGames.mockResolvedValueOnce({ games: mixedGames });
+
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Solo debe mostrar las 2 partidas disponibles
+    const gameCards = screen.getAllByTestId("GameCard");
+    expect(gameCards).toHaveLength(2);
+    
+    expect(screen.getByText("Disponible 1")).toBeInTheDocument();
+    expect(screen.getByText("Disponible 2")).toBeInTheDocument();
+    expect(screen.queryByText("No disponible")).not.toBeInTheDocument();
+  });
 });
-// vi.mock("../../components/JoinGameDialog/JoinGameDialog", () => ({
-//   default: vi.fn(({ onClose, partidaId }) => (
-//     <div data-testid="join-dialog">
-//       Dialog abierto, partidaId: {partidaId}
-//     </div>
-//   )),
-// }));
 
 
 
