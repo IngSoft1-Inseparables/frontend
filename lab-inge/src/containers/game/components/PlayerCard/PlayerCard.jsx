@@ -185,31 +185,25 @@ const PlayerCard = ({
                                     : ""
                                 }
                                 `}
-              style={{
-                maxWidth: `calc((100% - ${
-                  Math.max(0, secretCount - 1) * 0.25
-                }rem) / ${secretCount})`,
-                backgroundImage:
-                  secret?.revealed || player.id === parseInt(myPlayerId)
-                    ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
-                    : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`,
-              }}
-            >
-              {player.id === parseInt(myPlayerId) && !secret?.revealed && (
-                <div className="flex w-full h-full items-start justify-end">
-                  <img
-                    src="public/icons/eye-closed.svg"
-                    alt="eye-closed"
-                    className="w-[1.5em]"
-                  />
-                </div>
-              )}
+                            style={{
+                                maxWidth: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
+                                backgroundImage: secret?.revealed || player.id === parseInt(myPlayerId)
+                                    ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
+                                    : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`
+                            }}>
+                            {
+                                (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
+                                    <div className="flex w-full h-full items-start justify-end">
+                                        <img src="public/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
+                                    </div>
+                                )
+                            }
+                        </div>
+                    );
+                })}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+        </div >
+    );
 };
 
 export default PlayerCard;

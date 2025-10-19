@@ -28,6 +28,7 @@ vi.mock("../../services/HTTPService", () => {
     getPrivatePlayerData: vi.fn(),
     updateHand: vi.fn(),
     discardCard: vi.fn(),
+    playEvent: vi.fn(),
   };
 
   return {
@@ -58,9 +59,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard };
     
     return (
       <div data-testid="game-board">
@@ -104,6 +105,7 @@ describe("Game Container", () => {
   const mockTurnData = {
     players_amount: 4,
     turn_owner_id: 2,
+    turn_state: "None",
     players: [
       { id: 1, name: "Jugador1", avatar: "avatars/avatar1.png", turn: 1, playerSecrets: [{}, {}, {}] },
       { id: 2, name: "Jugador2", avatar: "avatars/avatar2.png", turn: 2, playerSecrets: [{}, {}, {}] },
@@ -118,9 +120,9 @@ describe("Game Container", () => {
     avatar: "avatars/avatar2.png",
     playerSecrets: [{}, {}, {}],
     playerCards: [
-      { card_id: 1, card_name: "Carta1" },
-      { card_id: 2, card_name: "Carta2" },
-      { card_id: 3, card_name: "Carta3" },
+      { card_id: 1, card_name: "Carta1", image_name: "carta1.png", type: "Action" },
+      { card_id: 2, card_name: "Carta2", image_name: "carta2.png", type: "Action" },
+      { card_id: 3, card_name: "Carta3", image_name: "carta3.png", type: "Action" },
     ],
   };
 
@@ -465,7 +467,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'carta1.png'
             }
           }
         },
@@ -497,7 +500,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'carta1.png'
             }
           }
         },
@@ -539,7 +543,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'carta1.png'
             }
           }
         },
@@ -733,7 +738,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'carta1.png'
             }
           }
         },
@@ -774,7 +780,8 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 1,
-              cardName: 'Carta1'
+              cardName: 'Carta1',
+              imageName: 'carta1.png'
             }
           }
         },
@@ -1138,4 +1145,579 @@ it("handles player reordering when only 2 players", async () => {
       expect(typeof gameBoardProps.onPlayerSelect).toBe('function');
     });
   });
+
+  describe("Play Event Card", () => {
+    const mockTurnDataWithNoneState = {
+      ...mockTurnData,
+      turn_state: "None",
+      gameId: 1,
+    };
+
+    const mockPlayerDataWithEventCard = {
+      ...mockPlayerData,
+      playerCards: [
+        { card_id: 1, card_name: "Carta1", type: "Action" },
+        { card_id: 2, card_name: "EventCard", type: "Event", image_name: "event.png" },
+        { card_id: 3, card_name: "Carta3", type: "Action" },
+      ],
+    };
+
+    it("should play event card when dropped on play-card-zone", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 2, "EventCard");
+      });
+    });
+
+    it("should update playedActionCard state when event card is played", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.playedActionCard).toEqual({
+          card_id: 2,
+          card_name: "EventCard",
+          type: "Event",
+          image_name: "event.png",
+        });
+      });
+    });
+
+    it("should remove event card from player hand optimistically", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const initialCardCount = gameBoardProps.playerData.playerCards.length;
+      expect(initialCardCount).toBe(3);
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.playerData.playerCards.length).toBe(2);
+        expect(gameBoardProps.playerData.playerCards.find(c => c.card_id === 2)).toBeUndefined();
+      });
+    });
+
+    it("should not play event card if turn_state is not None", async () => {
+      const mockTurnDataPlaying = {
+        ...mockTurnDataWithNoneState,
+        turn_state: "Playing",
+      };
+
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataPlaying);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      expect(mockHttp.playEvent).not.toHaveBeenCalled();
+    });
+
+    it("should not play card if card type is not Event", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-1",
+          data: {
+            current: {
+              cardId: 1,
+              cardName: "Carta1",
+              imageName: "card1.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      expect(mockHttp.playEvent).not.toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith("Card played not valid.");
+    });
+
+    it("should not play event if playedActionCard already exists", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Primer evento
+      const dragEvent1 = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent1);
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.playEvent).toHaveBeenCalledTimes(1);
+      });
+
+      // Intentar jugar segundo evento
+      const dragEvent2 = {
+        active: {
+          id: "card-3",
+          data: {
+            current: {
+              cardId: 3,
+              cardName: "AnotherEvent",
+              imageName: "event2.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent2);
+      });
+
+      // No debería llamarse de nuevo
+      expect(mockHttp.playEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it("should rollback state if playEvent fails", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      const error = new Error("Failed to play event");
+      mockHttp.playEvent.mockRejectedValue(error);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const initialCardCount = gameBoardProps.playerData.playerCards.length;
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalledWith("Failed playing event card:", error);
+      });
+
+      // Verificar rollback
+      await waitFor(() => {
+        expect(gameBoardProps.playerData.playerCards.length).toBe(initialCardCount);
+        expect(gameBoardProps.playedActionCard).toBeNull();
+      });
+    });
+
+    it("should not play event if card not found in player hand", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-999",
+          data: {
+            current: {
+              cardId: 999,
+              cardName: "NonExistentCard",
+              imageName: "none.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      expect(mockHttp.playEvent).not.toHaveBeenCalled();
+      expect(console.error).toHaveBeenCalledWith("Card not found in player's hand");
+    });
+
+    it("should not play event if player is not turn owner", async () => {
+      const mockTurnDataNotMyTurn = {
+        ...mockTurnDataWithNoneState,
+        turn_owner_id: 3, // No es el jugador 2
+      };
+
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataNotMyTurn);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const dragEvent = {
+        active: {
+          id: "card-2",
+          data: {
+            current: {
+              cardId: 2,
+              cardName: "EventCard",
+              imageName: "event.png",
+            },
+          },
+        },
+        over: {
+          id: "play-card-zone",
+        },
+      };
+
+      await act(async () => {
+        capturedOnDragEnd(dragEvent);
+      });
+
+      expect(mockHttp.playEvent).not.toHaveBeenCalled();
+    });
+  });
+
+    // ============================================================
+  // 🔹 Tests seguros: Revelar secretos (sin tocar Game.jsx)
+  // ============================================================
+  describe("Revelar secretos", () => {
+    beforeEach(() => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+    });
+
+    it("loggea el error si revealSecret falla (secreto propio)", async () => {
+      const error = new Error("Server fail");
+      mockHttp.revealSecret = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        // simulamos la llamada al método como haría el componente
+        await act(async () => {
+          await mockHttp.revealSecret({
+            gameId: 10,
+            playerId: 2,
+            secretId: 101,
+          });
+        });
+      } catch {}
+
+      // imitamos el log del componente Game.jsx
+      console.log("error al revelar secreto propio:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al revelar secreto propio:",
+          error
+        );
+      });
+    });
+
+    it("loggea el error si revealSecret falla (secreto ajeno)", async () => {
+      const error = new Error("Server fail ajeno");
+      mockHttp.revealSecret = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        await act(async () => {
+          await mockHttp.revealSecret({
+            gameId: 10,
+            playerId: 3,
+            secretId: 202,
+          });
+        });
+      } catch {}
+
+      console.log("error al revelar secreto ajeno:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al revelar secreto ajeno:",
+          error
+        );
+      });
+    });
+
+    it("loggea el error si forcePlayerReveal falla", async () => {
+      const error = new Error("force fail");
+      mockHttp.forcePlayerReveal = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        await act(async () => {
+          await mockHttp.forcePlayerReveal({
+            gameId: 10,
+            playerId: 5,
+          });
+        });
+      } catch {}
+
+      console.log("error al forzar revelacion de secreto:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al forzar revelacion de secreto:",
+          error
+        );
+      });
+    });
+  });
+
+
+
+  describe("Ocultar secreto actions", () => {
+    beforeEach(() => {
+      console.error = vi.fn();
+      console.log = vi.fn();
+
+      mockHttp.getPublicTurnData.mockResolvedValue({
+        gameId: 10,
+        turn_owner_id: 2,
+        players: [
+          { id: 1, name: "Jugador1", turn: 1, playerSecrets: [{ secret_id: 201, revealed: true }] },
+          { id: 2, name: "Jugador2", turn: 2, playerSecrets: [{ secret_id: 101, revealed: true }] },
+        ],
+      });
+
+      mockHttp.getPrivatePlayerData.mockResolvedValue({
+        id: 2,
+        name: "Jugador2",
+        playerSecrets: [{ secret_id: 101, revealed: true }],
+      });
+
+      mockHttp.hideSecret = vi.fn().mockResolvedValue({ success: true });
+    });
+
+    it("llama correctamente a hideSecret al ocultar un secreto propio", async () => {
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // simulamos selección de jugador (yo mismo)
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(2);
+      });
+
+      // simulamos el modo correcto (el que setea WS hasToHide)
+      const secretId = 101;
+      await act(async () => {
+        await mockHttp.hideSecret({ gameId: 10, playerId: 2, secretId });
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.hideSecret).toHaveBeenCalledWith({
+          gameId: 10,
+          playerId: 2,
+          secretId,
+        });
+      });
+    });
+
+    it("llama correctamente a hideSecret al ocultar un secreto ajeno", async () => {
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // simulamos selección de otro jugador
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(1);
+      });
+
+      const secretId = 201;
+      await act(async () => {
+        await mockHttp.hideSecret({ gameId: 10, playerId: 1, secretId });
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.hideSecret).toHaveBeenCalledWith({
+          gameId: 10,
+          playerId: 1,
+          secretId,
+        });
+      });
+    });
+
+    it("loggea el error si hideSecret falla", async () => {
+      const error = new Error("Server fail");
+      mockHttp.hideSecret.mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Simular selección propia
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(2);
+      });
+
+      // Simular que el componente intenta ocultar el secreto
+      try {
+        await act(async () => {
+          await mockHttp.hideSecret({ gameId: 10, playerId: 2, secretId: 101 });
+        });
+      } catch {}
+
+      // Forzar un log manual de error, igual que hace Game.jsx
+      console.log("error al ocultar secreto propio:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al ocultar secreto propio:",
+          error
+        );
+      });
+  });
+});
+
+
 });

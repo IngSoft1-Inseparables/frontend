@@ -164,7 +164,6 @@ function HandCard({
           imageBackName={card.image_back_name}
           onSelect={() => handleSelect(card)}
           isSelected={selectedCards.some((c) => c.card_id === card.card_id)}
-          // onDragInitiate={() => handleDragStart(card)}
         />
       ))}
     </div>

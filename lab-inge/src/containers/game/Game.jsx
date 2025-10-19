@@ -15,18 +15,17 @@ import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 
 const reorderPlayers = (playersArray, myPlayerId) => {
-    // Aseguramos que la entrada sea un array y no mutamos el original
-    const mutableArray = [...playersArray];
-    const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
-    const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+  const mutableArray = [...playersArray];
+  const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
+  const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
 
-    if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
+  if (myPlayerIndex === -1) return sortedByTurn;
 
-    const myPlayer = sortedByTurn[myPlayerIndex];
-    const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
-    const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
+  const myPlayer = sortedByTurn[myPlayerIndex];
+  const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
+  const playersBeforeMe = sortedByTurn.slice(0, myPlayerIndex);
 
-    return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
+  return [myPlayer, ...playersAfterMe, ...playersBeforeMe];
 };
 
 function Game() {
@@ -45,6 +44,8 @@ function Game() {
   const [selectedSecret, setSelectedSecret] = useState(null);
   const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
+  const [playedActionCard, setPlayedActionCard] = useState(null);
+  const [message, setMessage] = useState(" ");
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -52,6 +53,46 @@ function Game() {
       navigate("/home", { replace: true });
     }
   }, [gameId, myPlayerId, navigate]);
+
+  const getPlayerNameById = (playerId) => {
+    if (!orderedPlayers || orderedPlayers.length === 0) return "Jugador";
+    const player = orderedPlayers.find(p => p?.id === parseInt(playerId));
+    return player?.name || "Jugador";
+  };
+
+  useEffect(() => {
+    if (!turnData) return;
+
+    if (turnData.turn_owner_id !== myPlayerId) {
+      const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+      setMessage(`${currentPlayerName} está jugando su turno.`);
+      return;
+    }
+
+    switch (turnData.turn_state) {
+      case "None":
+        setMessage(`¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`);
+        break;
+      case "Playing":
+        setMessage("Seguí las indicaciones para continuar el turno.");
+        break;
+      case "Waiting":
+        setMessage("Esperá para continuar tu turno.");
+        break;
+      case "Discarding":
+        setMessage("Podés reponer o seguir descartando.");
+        break;
+      case "Replenish":
+        setMessage("Debés tener seis cartas en mano para terminar el turno.");
+        break;
+      case "Complete":
+        setMessage("Siguiente turno...");
+        break;
+      default:
+        setMessage(" ");
+        break;
+    }
+  }, [turnData?.turn_state, turnData?.turn_owner_id, myPlayerId, orderedPlayers]);
 
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
@@ -63,7 +104,7 @@ function Game() {
     console.log(`Player selected: "${playerId}`);
     setSelectedSecret(secretId);
     console.log(`Secret selected: "${secretId}`);
-  }
+  };
 
   const handleCardClick = async () => {
     try {
@@ -77,6 +118,92 @@ function Game() {
     }
   };
 
+  // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
+
+  const revealMySecret = async (secretId) => {
+    try{
+      console.log("revelando secreto propio:", secretId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto propio:", err);
+    }
+  };
+
+  const revealOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("revelando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto ajeno:", err);
+    }
+  };
+
+  const forcePlayerRevealSecret = async (playerId) => {
+    try {
+      console.log("forzando al jugador a revelar secreto:", playerId);
+      
+      const response = await httpService.forcePlayerReveal({
+        gameId,
+        playerId,
+      });
+
+      console.log("respuesta del backend:", response);
+    } catch (err) {
+      console.log("error al forzar revelacion de secreto:", err);
+    } finally {
+      setSelectedPlayer(null);
+    }
+  };
+  // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
+
+  const hideMySecret = async (secretId) => {
+    try {
+      console.log("ocultando secreto propio:", secretId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto propio:", err);  
+    }
+  };
+
+  const hideOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("ocultando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto ajeno:", err);
+    }
+  };
 
   const fetchGameData = async () => {
     try {
@@ -88,10 +215,9 @@ function Game() {
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
-      // ARREGLO: Usamos la función reorderPlayers para limpiar el código
       const reorderedPlayersData = reorderPlayers(fetchedTurnData.players, myPlayerId);
       setOrderedPlayers(reorderedPlayersData);
-      
+
       console.log(fetchedTurnData);
     } catch (error) {
       console.error("Failed obtaining game data:", error);
@@ -99,6 +225,7 @@ function Game() {
       setIsLoading(false);
     }
   };
+
   useEffect(() => {
     if (!gameId || !myPlayerId) return;
 
@@ -125,7 +252,7 @@ function Game() {
         typeof payload === "string" ? JSON.parse(payload) : payload;
 
       setTurnData(dataPublic);
-       if (dataPublic.players) {
+      if (dataPublic.players) {
         const reorderedPlayersData = reorderPlayers(dataPublic.players, myPlayerId);
         setOrderedPlayers(reorderedPlayersData);
       }
@@ -165,6 +292,17 @@ function Game() {
     wsService.on("connection_status", handleConnectionStatus);
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
+    wsService.on("hasToReveal", (payload) => {
+      console.log("evento WS: hasToReveal recibido", payload);
+
+      if (payload.playerId === parseInt(myPlayerId)) {
+        console.log("este jugador fue forzado a revelar un secreto");
+        setSelectionMode("select-my-not-revealed-secret");
+      }
+      if (!payload) {
+        return;
+      }
+    });
 
     // Cleanup: remover TODOS los listeners y desconectar
     return () => {
@@ -176,9 +314,68 @@ function Game() {
       wsService.off("reconnecting", handleReconnecting);
       wsService.off("connection_failed", handleConnectionFailed);
 
+      wsService.off("hasToReveal");
       wsService.disconnect();
     };
   }, [gameId, myPlayerId]);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-my-not-revealed-secret" && selectedSecret) {
+      console.log("revelando secreto propio:", selectedSecret);
+      revealMySecret(selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret]);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-not-revealed-secret" && selectedSecret && selectedPlayer) {
+      console.log("revelando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+      revealOtherPlayerSecret(selectedPlayer, selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
+
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-player" && selectedPlayer) {
+      console.log("jugador seleccionado para forzar revelación:", selectedPlayer);
+
+      forcePlayerRevealSecret(selectedPlayer);
+      setSelectionMode(null);
+    } 
+  }, [selectionMode, selectedPlayer]);
+
+
+    useEffect(() => {
+      if (selectionMode === "select-my-revealed-secret" && selectedSecret) 
+        {
+          console.log("ocultando secreto propio:", selectedSecret);
+          hideMySecret(selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret]);
+
+    
+    useEffect(() => {
+      if (selectionMode === "select-revealed-secret" && selectedSecret && selectedPlayer) 
+        {
+          console.log("ocultando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+          hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret, selectedPlayer]);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -203,11 +400,13 @@ function Game() {
     const { active, over } = event;
     if (!over || myPlayerId != turnData.turn_owner_id) return;
 
+    const cardId = active.data.current?.cardId;
+    const cardName = active.data.current?.cardName;
+    const imageName = active.data.current?.imageName;
+
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      const cardId = active.data.current?.cardId;
-      const cardName = active.data.current?.cardName;
-      const imageName = active.data.current?.imageName;
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding") return;
 
       // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
@@ -243,6 +442,54 @@ function Game() {
         console.error("Error al descartar carta:", error);
         setPlayerData(previousPlayerData);
         setTurnData(previousTurnData);
+      }
+    }
+
+    // Si se soltó sobre la zona de eventos
+    if (over.id === "play-card-zone") {
+      if (turnData.turn_state != "None") return;
+
+      if (playedActionCard) {
+        return;
+      }
+      // Encontrar la carta completa desde playerData
+      const droppedCard = playerData?.playerCards?.find(
+        (card) => card.card_id === cardId
+      );
+
+      if (!droppedCard) {
+        console.error("Card not found in player's hand");
+        return;
+      }
+
+      if (droppedCard.type != "Event") {
+        console.log("Card played not valid.");
+        return;
+      }
+
+      // Guardar el estado anterior para rollback
+      const previousPlayerData = playerData;
+
+      // Actualizar optimisticamente: remover de la mano y agregar a zona de eventos
+      setPlayerData((prevData) => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          playerCards: prevData.playerCards.filter(
+            (card) => card.card_id !== cardId
+          ),
+        };
+      });
+
+      setPlayedActionCard(droppedCard);
+
+      try {
+        await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+      } catch (error) {
+        console.error("Failed playing event card:", error);
+        setPlayerData(previousPlayerData);
+        setPlayedActionCard(null);
       }
     }
   };
@@ -304,6 +551,8 @@ function Game() {
           selectedSecret={selectedSecret}
           selectionMode={selectionMode}
           setCards={handlePlaySetAction}
+          playedActionCard={playedActionCard}
+          message={message}
         />
 
         {showEndDialog && winnerData && (
