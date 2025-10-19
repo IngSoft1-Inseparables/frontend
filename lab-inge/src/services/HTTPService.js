@@ -159,6 +159,40 @@ const createHttpService = () => {
     });
   };
 
+  const revealSecret = ({ gameId, playerId, secretId }) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+    if (!secretId) {
+      throw new Error("Secret ID is required");
+    }
+
+    return request("/secrets/reveal", {
+      method: "PATCH",
+      body: JSON.stringify({
+        game_id: gameId,
+        player_id: playerId,
+        secret_id: secretId,
+      }),
+    });
+  };
+
+  const forcePlayerReveal = ({ gameId, playerId }) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+
+    return request(`/games/${gameId}/forceReveal/${playerId}`, {
+      method: "PATCH",
+    });
+  };
+
   return {
     getGame,
     getGames,
@@ -171,7 +205,9 @@ const createHttpService = () => {
     discardCard,
     playSets,
     leaveGame,
-    playEvent
+    playEvent,
+    revealSecret,
+    forcePlayerReveal,
   };
 };
 
