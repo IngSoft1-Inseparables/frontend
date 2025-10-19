@@ -150,6 +150,7 @@ describe("GameBoard component", () => {
     // asegurar que turnData incluye players y mazos por defecto para que el componente no falle
     turnData: { ...mockTurnData, players: mockPlayers, regpile: { count: 2 }, draft: { count: 3 }, discardpile: [] },
     myPlayerId: 2,
+    message: "¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.",
   };
 
   it("renders game background", () => {
@@ -965,16 +966,19 @@ describe("GameBoard component", () => {
         players: mockPlayers,
       };
 
+      const myTurnMessage = "¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.";
+
       render(
         <GameBoard
           {...defaultProps}
           turnData={turnDataMyTurn}
+          message={myTurnMessage}
         />
       );
 
       // Debe mostrar el texto de instrucción sobre arrastrar cartas
       expect(
-        screen.getByText(/Arrastrá una carta al mazo de descarte para descartarla/i)
+        screen.getByText(myTurnMessage)
       ).toBeInTheDocument();
     });
 
@@ -985,16 +989,18 @@ describe("GameBoard component", () => {
         players: mockPlayers,
       };
 
-      const { container } = render(
+      const notMyTurnMessage = "Jugador3 está jugando su turno.";
+
+      render(
         <GameBoard
           {...defaultProps}
           turnData={turnDataNotMyTurn}
+          message={notMyTurnMessage}
         />
       );
 
-      // El texto debe tener clase "invisible" cuando no es mi turno
-      const instructionText = container.querySelector(".invisible");
-      expect(instructionText).toBeInTheDocument();
+      // Debe mostrar el mensaje de que es turno de otro jugador
+      expect(screen.getByText(notMyTurnMessage)).toBeInTheDocument();
     });
   });
 

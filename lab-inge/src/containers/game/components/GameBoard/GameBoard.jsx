@@ -4,7 +4,7 @@ import RegularDeck from "../RegularDeck/RegularDeck.jsx";
 import DraftDeck from "../DraftDeck/DraftDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
-import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
+import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
 import { createHttpService } from "../../../../services/HTTPService";
 
@@ -51,6 +51,8 @@ function GameBoard({
   onSecretSelect,
   selectedSecret,
   selectionMode,
+  playedActionCard,
+  message
 }) {
   const playerCount = turnData.players_amount;
 
@@ -61,7 +63,7 @@ function GameBoard({
   const isRegpileAvailable =
     turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
   const availableToPlay = turnData.turn_owner_id === myPlayerId;
-  const currentTurnState = turnData?.turn_state || "None".toLowerCase();
+  const currentTurnState = turnData?.turn_state || "None";
   const [playedSets, setPlayedSets] = useState([]);
   const [isSetReady, setIsSetReady] = useState(false);
   const [currentSetCards, setCurrentSetCards] = useState([]);
@@ -197,9 +199,9 @@ function GameBoard({
 
               </div>
 
-              <div className="flex justify-center items-end gap-2 mb-10">
-                <EventDeck />
-              </div>
+                            <div className="flex justify-center items-end gap-2 mb-10">
+                                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                            </div>
 
               {/* Grupo derecho: mazo de descarte */}
               <div className="flex justify-center items-center gap-2">
@@ -271,40 +273,34 @@ function GameBoard({
             onSetStateChange={handleSetStateChange}
           />
 
-          <div>
-            <p
-              className={
-                turnData.turn_owner_id === myPlayerId
-                  ? "text-white text-center"
-                  : "invisible"
-              }
-            >
-              Arrastrá una carta al mazo de descarte para descartarla.
-            </p>
-          </div>
-        </div>
-        <div className=" flex justify-rigth mr-12 mb-6">
-          {isSetReady && availableToPlay && (
-            <button
-              onClick={handlePlaySetClick}
-              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
-            >
-              BAJAR SET DE{" "}
-              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1]?.card_name.toUpperCase()
-                : currentSetCards[0]?.card_name.toUpperCase()}
-            </button>
-          )}
-        </div>
-      </div>
-
+                    <div>
+                        <p className="text-white text-center">
+                            {message}
+                        </p>
+                    </div>
+                </div>
+                <div className=" flex justify-rigth mr-12 mb-6">
+                    {isSetReady && availableToPlay && (
+                        <button
+                            onClick={handlePlaySetClick}
+                            className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+                        >
+                            BAJAR SET DE{" "}
+                            {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                                ? currentSetCards[1]?.card_name.toUpperCase()
+                                : currentSetCards[0]?.card_name.toUpperCase()}
+                        </button>
+                    )}
+                </div>
+            </div>
+    
       <PlayerSetsModal
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
       />
     </div>
-  );
+    );
 }
 
 export default GameBoard;

@@ -147,6 +147,18 @@ const createHttpService = () => {
     });
   };
 
+  const playEvent = (gameId, playerId, cardId, cardName) => {
+    return request("/players/play/event", {
+      method: "POST",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId,
+        cardName
+      })
+    });
+  };
+
   
   const replenishFromDraft = (gameId, playerId, carta) => {
     if (!gameId) {
@@ -175,6 +187,7 @@ const createHttpService = () => {
     discardCard,
     playSets,
     leaveGame,
+    playEvent,
     replenishFromDraft,
   };
 };
