@@ -5,6 +5,7 @@ import DraftDeck from "../DraftDeck/DraftDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
+import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
 import { useState } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
@@ -62,6 +63,15 @@ function GameBoard({
   const [isSetReady, setIsSetReady] = useState(false);
   const [currentSetCards, setCurrentSetCards] = useState([]);
 
+  const [modalPlayerId, setModalPlayerId] = useState(null);
+  const openSetModal = (playerId) => setModalPlayerId(playerId);
+  const closeSetModal = () => setModalPlayerId(null);
+
+  if (!turnData || !playerData || orderedPlayers.length === 0) {
+    return (console.log("info publica:",turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    );
+  }
+
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
     setCurrentSetCards(cards);
@@ -97,6 +107,7 @@ function GameBoard({
             onSecretSelect={onSecretSelect}
             selectedSecret={selectedSecret}
             selectionMode={selectionMode}
+            openSetModal={openSetModal}
           />
         ))}
       </div>
@@ -116,6 +127,7 @@ function GameBoard({
               onSecretSelect={onSecretSelect}
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
+              openSetModal={openSetModal}
             />
           ))}
         </div>
@@ -160,7 +172,12 @@ function GameBoard({
             <div className="flex h-full w-full flex-wrap">
               {/* //CONEXION CON WEBSOCKET */}
 
-              <SetDeck setPlayed={ turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []} />
+              <SetDeck
+                setPlayed={
+                  turnData.players.find((p) => p.id === myPlayerId)
+                    ?.setPlayed || []
+                }
+              />
               {/* <SetDeck setPlayed={playedSets} />{" "} */}
               {/* ELIMINAR: cuando se conecte con websokcet eliminar esat linea y la  */}
             </div>
@@ -180,6 +197,7 @@ function GameBoard({
               onSecretSelect={onSecretSelect}
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
+              openSetModal={openSetModal}
             />
           ))}
         </div>
@@ -197,6 +215,7 @@ function GameBoard({
           onSecretSelect={onSecretSelect}
           selectedSecret={selectedSecret}
           selectionMode={selectionMode}
+          openSetModal={openSetModal}
         />
         <div
           className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
@@ -230,7 +249,13 @@ function GameBoard({
                     )}
                 </div>
             </div>
-        </div>
+    
+      <PlayerSetsModal
+        modalPlayerId={modalPlayerId}
+        orderedPlayers={orderedPlayers}
+        closeSetModal={closeSetModal}
+      />
+    </div>
     );
 }
 
