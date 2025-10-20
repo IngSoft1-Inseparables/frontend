@@ -246,7 +246,7 @@ const createHttpService = () => {
     playEvent,
     hideSecret,
     revealSecret,
-    forcePlayerReveal,,
+    forcePlayerReveal,
     replenishFromDraft,
   };
 };
