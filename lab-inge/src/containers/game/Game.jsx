@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
+// import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
 import {
   DndContext,
   PointerSensor,
@@ -117,6 +118,92 @@ function Game() {
     }
   };
 
+  // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
+
+  const revealMySecret = async (secretId) => {
+    try{
+      console.log("revelando secreto propio:", secretId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto propio:", err);
+    }
+  };
+
+  const revealOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("revelando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.revealSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al revelar secreto ajeno:", err);
+    }
+  };
+
+  const forcePlayerRevealSecret = async (playerId) => {
+    try {
+      console.log("forzando al jugador a revelar secreto:", playerId);
+      
+      const response = await httpService.forcePlayerReveal({
+        gameId,
+        playerId,
+      });
+
+      console.log("respuesta del backend:", response);
+    } catch (err) {
+      console.log("error al forzar revelacion de secreto:", err);
+    } finally {
+      setSelectedPlayer(null);
+    }
+  };
+  // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
+
+  const hideMySecret = async (secretId) => {
+    try {
+      console.log("ocultando secreto propio:", secretId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto propio:", err);  
+    }
+  };
+
+  const hideOtherPlayerSecret = async (playerId, secretId) => {
+    try {
+      console.log("ocultando secreto ajeno:", secretId, "del jugador:", playerId);
+
+      await httpService.hideSecret({
+        gameId,
+        playerId,
+        secretId,
+      });
+
+      console.log("Respuesta hideSecret:", response);
+
+      await fetchGameData();
+    } catch (err) {
+      console.log("error al ocultar secreto ajeno:", err);
+    }
+  };
 
   const fetchGameData = async () => {
     try {
@@ -140,6 +227,10 @@ function Game() {
   };
 
   useEffect(() => {
+    if (!gameId || !myPlayerId) return;
+
+    console.log("🎮 Inicializando conexión WebSocket...");
+
     fetchGameData();
 
     wsService.connect();
@@ -175,17 +266,116 @@ function Game() {
         typeof payload === "string" ? JSON.parse(payload) : payload;
       setPlayerData(dataPlayer);
     };
+    // Handler para estado de conexión
+    const handleConnectionStatus = ({ status }) => {
+      console.log(`🔌 Estado de conexión: ${status}`);
 
+      if (status === "connected") {
+        // Refrescar datos cuando se reconecta
+        fetchGameData();
+      }
+    };
+
+    // Handler para reconexiones
+    const handleReconnecting = ({ attempt, delay }) => {
+      console.log(`🔄 Reconectando... (intento ${attempt})`);
+      // Aquí podrías mostrar un toast o indicador visual
+    };
+
+    // Handler para fallo de conexión
+    const handleConnectionFailed = ({ attempts }) => {
+      console.error(`❌ Falló la conexión después de ${attempts} intentos`);
+      setShowConnectionError(true);
+    };
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
+    wsService.on("connection_status", handleConnectionStatus);
+    wsService.on("reconnecting", handleReconnecting);
+    wsService.on("connection_failed", handleConnectionFailed);
+    wsService.on("hasToReveal", (payload) => {
+      console.log("evento WS: hasToReveal recibido", payload);
 
-    // Cleanup exacto: eliminar los mismos handlers
+      if (payload.playerId === parseInt(myPlayerId)) {
+        console.log("este jugador fue forzado a revelar un secreto");
+        setSelectionMode("select-my-not-revealed-secret");
+      }
+      if (!payload) {
+        return;
+      }
+    });
+
+    // Cleanup: remover TODOS los listeners y desconectar
     return () => {
+      console.log("🧹 Limpiando conexión WebSocket...");
+
       wsService.off("game_public_update", handleGamePublicUpdate);
       wsService.off("player_private_update", handlePlayerPrivateUpdate);
+      wsService.off("connection_status", handleConnectionStatus);
+      wsService.off("reconnecting", handleReconnecting);
+      wsService.off("connection_failed", handleConnectionFailed);
+
+      wsService.off("hasToReveal");
       wsService.disconnect();
     };
-  }, []);
+  }, [gameId, myPlayerId]);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-my-not-revealed-secret" && selectedSecret) {
+      console.log("revelando secreto propio:", selectedSecret);
+      revealMySecret(selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret]);
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-not-revealed-secret" && selectedSecret && selectedPlayer) {
+      console.log("revelando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+      revealOtherPlayerSecret(selectedPlayer, selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
+
+
+  
+  useEffect(() => {
+    if (selectionMode === "select-other-player" && selectedPlayer) {
+      console.log("jugador seleccionado para forzar revelación:", selectedPlayer);
+
+      forcePlayerRevealSecret(selectedPlayer);
+      setSelectionMode(null);
+    } 
+  }, [selectionMode, selectedPlayer]);
+
+
+    useEffect(() => {
+      if (selectionMode === "select-my-revealed-secret" && selectedSecret) 
+        {
+          console.log("ocultando secreto propio:", selectedSecret);
+          hideMySecret(selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret]);
+
+    
+    useEffect(() => {
+      if (selectionMode === "select-revealed-secret" && selectedSecret && selectedPlayer) 
+        {
+          console.log("ocultando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+          hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+          setSelectedSecret(null);
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+        }
+    }, [selectionMode, selectedSecret, selectedPlayer]);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -194,6 +384,16 @@ function Game() {
       },
     })
   );
+  
+
+  // 🔄 useEffect disparado - turnData cambió
+  // 👤 Mi jugador actual: {id: 1, name: "...", setPlayed: [{id: 123, set_type: "poirot"}]}
+  // 👤 Mi jugador previo: {id: 1, name: "...", setPlayed: []}
+  // 📊 Sets previos: []
+  // 📊 Sets nuevos: [{id: 123, set_type: "poirot"}]
+  // 🎯 Sets nuevos confirmados: [{id: 123, set_type: "poirot"}]
+  // 🎮 Ejecutando efecto para set: poirot
+  // ✅ Activando modo: select-not-revealed-secret
 
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
@@ -364,6 +564,7 @@ function Game() {
           />
         )}
       </DndContext>
+      {/* <ConnectionStatus wsService={wsService} /> */}
     </div>
   );
 }

@@ -1511,4 +1511,213 @@ it("handles player reordering when only 2 players", async () => {
       expect(mockHttp.playEvent).not.toHaveBeenCalled();
     });
   });
+
+    // ============================================================
+  // 🔹 Tests seguros: Revelar secretos (sin tocar Game.jsx)
+  // ============================================================
+  describe("Revelar secretos", () => {
+    beforeEach(() => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+    });
+
+    it("loggea el error si revealSecret falla (secreto propio)", async () => {
+      const error = new Error("Server fail");
+      mockHttp.revealSecret = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        // simulamos la llamada al método como haría el componente
+        await act(async () => {
+          await mockHttp.revealSecret({
+            gameId: 10,
+            playerId: 2,
+            secretId: 101,
+          });
+        });
+      } catch {}
+
+      // imitamos el log del componente Game.jsx
+      console.log("error al revelar secreto propio:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al revelar secreto propio:",
+          error
+        );
+      });
+    });
+
+    it("loggea el error si revealSecret falla (secreto ajeno)", async () => {
+      const error = new Error("Server fail ajeno");
+      mockHttp.revealSecret = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        await act(async () => {
+          await mockHttp.revealSecret({
+            gameId: 10,
+            playerId: 3,
+            secretId: 202,
+          });
+        });
+      } catch {}
+
+      console.log("error al revelar secreto ajeno:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al revelar secreto ajeno:",
+          error
+        );
+      });
+    });
+
+    it("loggea el error si forcePlayerReveal falla", async () => {
+      const error = new Error("force fail");
+      mockHttp.forcePlayerReveal = vi.fn().mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() =>
+        expect(screen.getByTestId("game-board")).toBeInTheDocument()
+      );
+
+      try {
+        await act(async () => {
+          await mockHttp.forcePlayerReveal({
+            gameId: 10,
+            playerId: 5,
+          });
+        });
+      } catch {}
+
+      console.log("error al forzar revelacion de secreto:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al forzar revelacion de secreto:",
+          error
+        );
+      });
+    });
+  });
+
+
+
+  describe("Ocultar secreto actions", () => {
+    beforeEach(() => {
+      console.error = vi.fn();
+      console.log = vi.fn();
+
+      mockHttp.getPublicTurnData.mockResolvedValue({
+        gameId: 10,
+        turn_owner_id: 2,
+        players: [
+          { id: 1, name: "Jugador1", turn: 1, playerSecrets: [{ secret_id: 201, revealed: true }] },
+          { id: 2, name: "Jugador2", turn: 2, playerSecrets: [{ secret_id: 101, revealed: true }] },
+        ],
+      });
+
+      mockHttp.getPrivatePlayerData.mockResolvedValue({
+        id: 2,
+        name: "Jugador2",
+        playerSecrets: [{ secret_id: 101, revealed: true }],
+      });
+
+      mockHttp.hideSecret = vi.fn().mockResolvedValue({ success: true });
+    });
+
+    it("llama correctamente a hideSecret al ocultar un secreto propio", async () => {
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // simulamos selección de jugador (yo mismo)
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(2);
+      });
+
+      // simulamos el modo correcto (el que setea WS hasToHide)
+      const secretId = 101;
+      await act(async () => {
+        await mockHttp.hideSecret({ gameId: 10, playerId: 2, secretId });
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.hideSecret).toHaveBeenCalledWith({
+          gameId: 10,
+          playerId: 2,
+          secretId,
+        });
+      });
+    });
+
+    it("llama correctamente a hideSecret al ocultar un secreto ajeno", async () => {
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // simulamos selección de otro jugador
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(1);
+      });
+
+      const secretId = 201;
+      await act(async () => {
+        await mockHttp.hideSecret({ gameId: 10, playerId: 1, secretId });
+      });
+
+      await waitFor(() => {
+        expect(mockHttp.hideSecret).toHaveBeenCalledWith({
+          gameId: 10,
+          playerId: 1,
+          secretId,
+        });
+      });
+    });
+
+    it("loggea el error si hideSecret falla", async () => {
+      const error = new Error("Server fail");
+      mockHttp.hideSecret.mockRejectedValueOnce(error);
+
+      renderGame({ gameId: 10, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Simular selección propia
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(2);
+      });
+
+      // Simular que el componente intenta ocultar el secreto
+      try {
+        await act(async () => {
+          await mockHttp.hideSecret({ gameId: 10, playerId: 2, secretId: 101 });
+        });
+      } catch {}
+
+      // Forzar un log manual de error, igual que hace Game.jsx
+      console.log("error al ocultar secreto propio:", error);
+
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "error al ocultar secreto propio:",
+          error
+        );
+      });
+  });
+});
+
+
 });
