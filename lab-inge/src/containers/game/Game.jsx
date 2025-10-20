@@ -49,7 +49,6 @@ function Game() {
   const [playedActionCard, setPlayedActionCard] = useState(null);
   const [message, setMessage] = useState(" ");
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
-  const [discardTop5Cards, setDiscardTop5Cards] = useState([]);
 
 
   useEffect(() => {
@@ -123,30 +122,51 @@ function Game() {
     }
   };
 
-  //HANDLER PARA REPONER DESDE EL DIALOG DE LAS 5 CARTAS DE DESCARTE
 
-  const handleShowDiscardTop5 = () => {
+  // función simple: activa el flujo de descarte (el dialogo hace el GET solo)
+  const startDiscardTop5Action = () => {
     setShowDiscardDialog(true);
   };
 
   const handleReplenishFromDiscard = async (card) => {
-    try {
-      console.log(" Reponiendo carta desde descarte:", card);
+    if (!card || !gameId || !myPlayerId) return;
 
+    try {
       const response = await httpService.replenishFromDiscard(
         gameId,
         myPlayerId,
         card.card_id
       );
+      console.log("Replenish desde descarte:", response);
 
-      console.log(" Respuesta replenish:", response);
+      // ➕ Agregar la nueva carta a mi mano
+      setPlayerData((prev) => ({
+        ...prev,
+        playerCards: [...(prev?.playerCards || []), response.newCard],
+      }));
 
-      console.log("Esperando actualización del WebSocket...");
+      // 🔄 Actualizar el descarte con el nuevo estado devuelto por el back
+      setTurnData((prev) => ({
+        ...prev,
+        discardpile: {
+          ...prev?.discardpile,
+          count: response.newDiscard.length,
+          last_card_image:
+            response.newDiscard.at(-1)?.image_name || prev?.discardpile?.last_card_image,
+          last_card_name:
+            response.newDiscard.at(-1)?.card_name || prev?.discardpile?.last_card_name,
+        },
+      }));
+
+      // ✅ cerrar diálogo
       setShowDiscardDialog(false);
     } catch (err) {
-      console.error("Error al reponer carta desde descarte:", err);
+      console.error("Error al reponer desde descarte:", err);
+      // acá podrías mostrar un toast o setear un estado de error si querés
     }
   };
+
+
 
 
 
@@ -518,6 +538,16 @@ function Game() {
 
       try {
         await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+
+        // 🔹 Si la carta jugada es "Look into the ashes", iniciar acción de descarte
+        if (cardName?.toLowerCase() === "look into the ashes") {
+          console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
+          await fetchGameData();
+          setShowDiscardDialog(true); // abre el diálogo que hace el GET automático
+          return; // no necesitamos continuar el resto del flujo
+        }
+
+
       } catch (error) {
         console.error("Failed playing event card:", error);
         setPlayerData(previousPlayerData);
@@ -566,13 +596,7 @@ function Game() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
-      {/* 🔘 Botón temporal para probar el Dialog */}
-      <button
-        onClick={handleShowDiscardTop5}
-        className="absolute top-4 right-4 bg-orange-800 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition"
-      >
-        Ver top 5 descarte
-      </button>
+
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
@@ -605,12 +629,13 @@ function Game() {
 
         {showDiscardDialog && (
           <DiscardTop5Dialog
+            gameId={gameId}
             open={showDiscardDialog}
-            gameId={gameId} 
             onClose={() => setShowDiscardDialog(false)}
-            onSelect={handleReplenishFromDiscard} 
+            onSelect={handleReplenishFromDiscard} // ← al hacer click en una carta
           />
         )}
+
 
       </DndContext>
       {/* <ConnectionStatus wsService={wsService} /> */}
