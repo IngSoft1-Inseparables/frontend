@@ -42,7 +42,9 @@ const PLAYER_POSITIONS = {
 function GameBoard({
   orderedPlayers,
   playerData,
+  setPlayerData, 
   turnData,
+  setTurnData,
   myPlayerId,
   onCardClick,
   setCards,
@@ -100,30 +102,26 @@ function GameBoard({
     try {
       console.log("→ Robando carta del mazo de draft...");
 
-      const res = await httpService.replenishFromDraft(turnData.game_id, myPlayerId, carta);
+      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
 
-      // Agregar la carta nueva a la mano del jugador (solo visual)
-     
-      if (playerData && res.newCard) {
-        playerData.playerCards = [...playerData.playerCards, res.newCard];
-      }
 
-      // Actualizar el draft visible (solo visual)
-      if (res.newDraft) {
-        turnData.draft = {
+      // Actualizar el draft con las nuevas cartas
+      setTurnData((prev) => ({
+        ...prev,
+        draft: {
           count: res.newDraft.length,
-          card_1_image: res.newDraft[0]?.image_name,
-          card_2_image: res.newDraft[1]?.image_name,
-          card_3_image: res.newDraft[2]?.image_name,
-        };
-      }
+          card_1: res.newDraft[0],
+          card_2: res.newDraft[1],
+          card_3: res.newDraft[2],
+        },
+      }));
 
-      console.log("Draft y mano actualizados visualmente.");
-
+      console.log("Carta y draft actualizados correctamente.");
     } catch (error) {
-      console.error("Error al mockear replenish draft:", error);
+      console.error("Error al reponer carta desde draft:", error);
     }
   };
+
 
 
 
