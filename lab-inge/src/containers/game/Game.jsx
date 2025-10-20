@@ -133,6 +133,8 @@ function Game() {
   const handleReplenishFromDiscard = async (card) => {
     if (!card || !gameId || !myPlayerId) return;
 
+    console.log(card);
+
     try {
       const response = await httpService.replenishFromDiscard(
         gameId,
@@ -140,12 +142,6 @@ function Game() {
         card.card_id
       );
       console.log("Replenish desde descarte:", response);
-
-      //  Agregar la nueva carta a mi mano
-      setPlayerData((prev) => ({
-        ...prev,
-        playerCards: [...(prev?.playerCards || []), response.newCard],
-      }));
 
       // Actualizar el descarte con el nuevo estado devuelto por el back
       setTurnData((prev) => ({
@@ -162,6 +158,7 @@ function Game() {
 
       // cerrar diálogo
       setShowDiscardDialog(false);
+      setPlayedActionCard(null);
     } catch (err) {
       console.error("Error al reponer desde descarte:", err);
       
