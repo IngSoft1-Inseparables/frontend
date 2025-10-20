@@ -34,18 +34,36 @@ function GameList() {
 
   useEffect(() => {
     fetchGames();
+    console.log("🔌 Conectando WebSocket para lista de partidas...");
     wsService.connect();
+    
     const handleGameList = (payload) => {
+      console.log("📨 WebSocket recibió actualización de lista:", payload);
       const dataGameList =
         typeof payload === "string" ? JSON.parse(payload) : payload;
-      setGames(dataGameList);
+      console.log("📋 Datos parseados:", dataGameList);
+      
+      // Filtrar partidas que NO están en progreso (igual que en fetchGames)
+      const filtered = (dataGameList.games || []).filter((g) => !g.in_progress);
+      console.log("✅ Partidas filtradas (sin in_progress):", filtered);
+      setGames(filtered);
     };
+    
     wsService.on("game_list_update", handleGameList);
+    
+    // Escuchar estado de conexión para debug
+    wsService.on("connection_status", (status) => {
+      console.log("🔗 Estado de conexión WebSocket:", status);
+    });
+    
     return () => {
+      console.log("🔌 Desconectando WebSocket de lista de partidas...");
       wsService.off("game_list_update", handleGameList);
+      wsService.off("connection_status");
       wsService.disconnect();
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar el componente
   const availableGames = games.filter((game) => game.available);
 
   const goBackHome = async () => {
@@ -62,38 +80,9 @@ function GameList() {
       }} // cerrar con Escape
     >
       <div className="p-6">
-        <div className="flex justify-left">
-          <button onClick={goBackHome} className="group flex items-center gap-2 px-4 py-2  text-white text-lg font-bold transition-transform transform hover:scale-105 active:scale-95 ">
-            <ChevronLeft
-              size={35}
-              strokeWidth={3}
-              className="transition-transform group-hover:-translate-x-1"
-            />
-            <span className="transition-transform group-hover:-translate-x-1">
-              Volver
-            </span>
-          </button>
-        </div>
         <h2 className="flex justify-center text-xl text-white font-bold mb-4 ">
           Partidas disponibles
         </h2>
-        <div></div>
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={fetchGames}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#CA8747] to-[#A56A30] text-white font-semibold hover:bg-blue-700 active:scale-95 transition disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <span className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></span>
-                Actualizando...
-              </>
-            ) : (
-              "Actualizar partidas"
-            )}
-          </button>
-        </div>
 
         {loading ? (
           <p className="text-white font-semibold text-xl text-center">
@@ -107,7 +96,7 @@ function GameList() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {availableGames.map((game) => (
               <div
-                data-testid="GameCard"
+                data-testid = "GameCard"
                 key={game.id}
                 onClick={() => {
                   setSelectedGameId(game.id);
@@ -152,7 +141,7 @@ function GameList() {
         <JoinGameDialog
           onClose={() => setOpen(false)}
           partidaId={selectedGameId}
-          data-testid="joing-dialog"
+          data-testid = "joing-dialog"
         />
       )}
     </div>
