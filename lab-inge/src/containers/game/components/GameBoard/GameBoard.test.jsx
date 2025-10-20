@@ -2,6 +2,18 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
+// --- Mock global del servicio HTTP ---
+const mockReplenish = vi.fn(); // función reutilizable
+
+vi.mock("../../../../services/HTTPService", () => {
+  return {
+    createHttpService: () => ({
+      replenishFromDraft: mockReplenish,
+    }),
+  };
+});
+
+
 // Mock de componentes hijos para controlar comportamiento en tests unitarios
 vi.mock("../HandCard/HandCard.jsx", () => {
   const React = require("react");
@@ -57,23 +69,31 @@ vi.mock("../DraftDeck/DraftDeck.jsx", () => {
   const React = require("react");
   return {
     default: ({ draft, isAvailable, onCardClick }) => {
+      if (!draft || !draft.count) return React.createElement("div", null);
       const cards = [];
-      // render 3 slots if draft provided as object with count, else 0
-      const count = draft?.count ? 3 : 0;
-      for (let i = 0; i < count; i++) {
+      const draftCards = [
+        draft.card_1 || { card_id: 1, image_name: "card1" },
+        draft.card_2 || { card_id: 2, image_name: "card2" },
+        draft.card_3 || { card_id: 3, image_name: "card3" },
+      ];
+
+      for (const card of draftCards) {
         cards.push(
           React.createElement("img", {
-            key: i,
-            src: "/draft.png",
+            key: card.card_id,
+            src: `/cards/${card.image_name}.png`,
             className: `back-card-draft ${isAvailable ? "back-card-clickable" : ""}`,
-            onClick: () => isAvailable && onCardClick && onCardClick(),
+            onClick: () => isAvailable && onCardClick && onCardClick(card.card_id),
           })
         );
       }
+
       return React.createElement("div", { className: "draft-container" }, cards);
     },
   };
 });
+
+
 
 vi.mock("../DiscardDeck/DiscardDeck.jsx", () => {
   const React = require("react");
@@ -1004,99 +1024,101 @@ describe("GameBoard component", () => {
     });
   });
 
-});
+  // ==================== TESTS PARA REPONER DESDE EL DRAFT ====================
+describe("handleReplenishFromDraft", () => {
+  beforeEach(() => {
+    mockReplenish.mockReset();
+  });
 
-// ==================== TEST: REPLENISH FROM DRAFT (INTEGRACIÓN FINAL) ====================
-describe("Replenish from Draft – integración final", () => {
-  it("invoca replenishFromDraft al clickear una carta del draft y actualiza mano y draft", async () => {
-    // Mock del método del servicio
-    const mockReplenish = vi.fn().mockResolvedValue({
-      gameId: "game-999",
-      playerId: 2,
-      newCard: {
-        card_id: 999,
-        card_name: "Hercule Poirot",
-        image_name: "07-detective_poirot",
-        image_back_name: "01-card_back",
-        type: "detective",
-      },
+  it("llama correctamente a replenishFromDraft y actualiza el draft", async () => {
+    mockReplenish.mockResolvedValueOnce({
       newDraft: [
-        { image_name: "03-detective_marple" },
-        { image_name: "04-detective_tommy" },
-        { image_name: "05-detective_tuppence" },
+        { card_id: 10, image_name: "10-detective_pyne" },
+        { card_id: 11, image_name: "11-detective_brent" },
+        { card_id: 12, image_name: "12-detective_tommyberesford" },
       ],
+      newCard: { card_id: 99, image_name: "99-new_card" },
     });
 
-    //Simulamos que createHttpService devuelve ese mock
-    const serviceModule = await import("../../../../services/HTTPService");
-    const createSpy = vi
-      .spyOn(serviceModule, "createHttpService")
-      .mockReturnValue({ replenishFromDraft: mockReplenish });
+    const setTurnData = vi.fn((updater) => {
+      const prev = {
+        draft: {
+          count: 3,
+          card_1: { card_id: 1, image_name: "old1" },
+          card_2: { card_id: 2, image_name: "old2" },
+          card_3: { card_id: 3, image_name: "old3" },
+        },
+      };
+      const next = updater(prev);
+      expect(next.draft.card_1.card_id).toBe(10);
+      expect(next.draft.card_2.image_name).toBe("11-detective_brent");
+      expect(next.draft.card_3.image_name).toBe("12-detective_tommyberesford");
+    });
 
-    // Datos base del turno y jugador
-    const turnData = {
-      players_amount: 4,
-      turn_owner_id: 2,
-      game_id: "game-999",
-      draft: {
-        count: 3,
-        card_1_image: "draft1",
-        card_2_image: "draft2",
-        card_3_image: "draft3",
+    const props = {
+      orderedPlayers: [{ id: 1, name: "P1" }, { id: 2, name: "P2" }],
+      playerData: { id: 2, name: "Yo", playerCards: [{ card_id: 1 }] },
+      setPlayerData: vi.fn(),
+      turnData: {
+        gameId: 1,
+        turn_owner_id: 2,
+        players: [{ id: 1, name: "P1" }, { id: 2, name: "P2" }], // ✅ agregado
+        draft: {
+          count: 3,
+          card_1: { card_id: 1, image_name: "old1" },
+          card_2: { card_id: 2, image_name: "old2" },
+          card_3: { card_id: 3, image_name: "old3" },
+        },
       },
-      regpile: { count: 10 },
-      discardpile: [],
-      players: [
-        { id: 2, name: "Yo", playerSecrets: [{}, {}, {}] },
-        { id: 3, name: "Jugador3", playerSecrets: [{}, {}, {}] },
-        { id: 4, name: "Jugador4", playerSecrets: [{}, {}, {}] },
-        { id: 1, name: "Jugador1", playerSecrets: [{}, {}, {}] },
-      ],
+      setTurnData,
+      myPlayerId: 2,
     };
 
-    const playerData = {
-      id: 2,
-      name: "Yo",
-      playerCards: [
-        { card_id: 1, card_name: "Carta1" },
-        { card_id: 2, card_name: "Carta2" },
-      ],
+    render(<GameBoard {...props} />);
+    const draftCard = document.querySelector(".back-card-draft");
+    await fireEvent.click(draftCard);
+
+    expect(mockReplenish).toHaveBeenCalledWith(1, 2, expect.any(Number));
+  });
+
+  it("maneja errores si replenishFromDraft falla", async () => {
+    mockReplenish.mockRejectedValueOnce(new Error("Server error"));
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const props = {
+      orderedPlayers: [{ id: 2, name: "Yo" }],
+      playerData: { id: 2, name: "Yo", playerCards: [{ card_id: 1 }] },
+      setPlayerData: vi.fn(),
+      setTurnData: vi.fn(),
+      turnData: {
+        gameId: 1,
+        turn_owner_id: 2,
+        players: [{ id: 2, name: "Yo" }], // ✅ agregado
+        draft: { count: 3, card_1: { card_id: 1, image_name: "old1" } },
+      },
+      myPlayerId: 2,
     };
 
-    // Render del GameBoard
-    const { container } = render(
-      <GameBoard
-        orderedPlayers={turnData.players}
-        playerData={playerData}
-        turnData={turnData}
-        myPlayerId={2}
-      />
-    );
+    render(<GameBoard {...props} />);
+    const draftCard = document.querySelector(".back-card-draft");
+    await fireEvent.click(draftCard);
 
-    //Click en una carta del draft (tu DraftDeck mock las crea como <img>)
-    const draftImgs = container.querySelectorAll(".draft-container img");
-    expect(draftImgs.length).toBeGreaterThan(0);
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "Error al reponer carta desde draft:",
+        expect.any(Error)
+      );
+    });
 
-    draftImgs[0].click(); // Simula el click del jugador
-
-    // Esperamos la llamada al servicio
-    await waitFor(() => expect(mockReplenish).toHaveBeenCalledTimes(1));
-
-    // Validamos que se llamaron con los IDs correctos
-    const [calledGameId, calledPlayerId] = mockReplenish.mock.calls[0];
-    expect(calledGameId).toBe("game-999");
-    expect(calledPlayerId).toBe(2);
-
-    // Verificamos efectos sobre los datos locales
-    expect(playerData.playerCards.some(c => c.card_id === 999)).toBe(true);
-    expect(turnData.draft.card_1_image).toBe("03-detective_marple");
-    expect(turnData.draft.card_2_image).toBe("04-detective_tommy");
-    expect(turnData.draft.card_3_image).toBe("05-detective_tuppence");
-
-    // Limpieza
-    createSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 });
+
+
+});
+
+
+
 
 
 

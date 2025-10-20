@@ -32,7 +32,7 @@ export default function DraftDeck({ draft, isAvailable, onCardClick }) {
 
   if (cards.length === 0) return null;
 
-  console.log("🟩 DraftDeck renderizando cartas:", cards);
+  console.log("DraftDeck renderizando cartas:", cards);
 
   return (
     <div className="draft-container">
