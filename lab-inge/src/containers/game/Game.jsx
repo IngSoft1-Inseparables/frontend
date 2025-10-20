@@ -13,6 +13,8 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
+import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
+
 
 const reorderPlayers = (playersArray, myPlayerId) => {
   const mutableArray = [...playersArray];
@@ -46,6 +48,9 @@ function Game() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [playedActionCard, setPlayedActionCard] = useState(null);
   const [message, setMessage] = useState(" ");
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [discardTop5Cards, setDiscardTop5Cards] = useState([]);
+
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -117,6 +122,12 @@ function Game() {
       console.error("Failed to update hand:", error);
     }
   };
+
+  const handleShowDiscardTop5 = () => {
+    setShowDiscardDialog(true);
+  };
+
+
 
   // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
 
@@ -534,6 +545,13 @@ function Game() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
+      {/* 🔘 Botón temporal para probar el Dialog */}
+      <button
+        onClick={handleShowDiscardTop5}
+        className="absolute top-4 right-4 bg-orange-800 hover:bg-orange-700 text-white font-semibold px-4 py-2 rounded-lg shadow-md transition"
+      >
+        Ver top 5 descarte
+      </button>
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
@@ -563,6 +581,15 @@ function Game() {
             onClose={() => setShowEndDialog(false)}
           />
         )}
+
+        {showDiscardDialog && (
+          <DiscardTop5Dialog
+            open={showDiscardDialog}
+            gameId={gameId} 
+            onClose={() => setShowDiscardDialog(false)}
+          />
+        )}
+
       </DndContext>
       {/* <ConnectionStatus wsService={wsService} /> */}
     </div>

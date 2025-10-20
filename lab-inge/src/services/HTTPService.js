@@ -230,6 +230,14 @@ const createHttpService = () => {
     });
   };
 
+  const getDiscardTop5 = (gameId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    return request(`/games/${gameId}/discardPile/top5`);
+  };
+
+
 
   return {
     getGame,
@@ -248,6 +256,7 @@ const createHttpService = () => {
     revealSecret,
     forcePlayerReveal,
     replenishFromDraft,
+    getDiscardTop5,
   };
 };
 
