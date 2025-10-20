@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createHttpService } from "../../../../services/HTTPService";
 import FaceCard from "../FaceCard/FaceCard";
 
-export default function DiscardTop5Dialog({ gameId, open, onClose }) {
+export default function DiscardTop5Dialog({ gameId, open, onClose, onSelect }) {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -17,11 +17,11 @@ export default function DiscardTop5Dialog({ gameId, open, onClose }) {
 
       try {
         const data = await http.getDiscardTop5(gameId);
-        console.log("🟢 Respuesta del backend:", data);
+        console.log("Top 5 del descarte recibido:", data);
         setCards(data.cards || []);
       } catch (err) {
         console.error("Error al obtener top5:", err);
-        setError("No se pudieron cargar las cartas.");
+        setError("No se pudieron cargar las cartas del descarte.");
       } finally {
         setLoading(false);
       }
@@ -39,48 +39,45 @@ export default function DiscardTop5Dialog({ gameId, open, onClose }) {
           Primeras 5 cartas del mazo de descarte
         </h2>
 
+        {/* Estado de carga */}
         {loading && (
           <p className="text-center text-white text-lg">Cargando...</p>
         )}
 
+        {/* Error */}
         {error && (
           <p className="text-center text-red-400 font-semibold">{error}</p>
         )}
 
+        {/* Render normal */}
         {!loading && !error && cards.length > 0 && (
           <div className="flex justify-center flex-wrap gap-4">
             {cards.map((card) => (
-            <div
+              <div
                 key={card.card_id}
-                className="transform transition-transform hover:scale-105"
-            >
+                onClick={() => onSelect && onSelect(card)} // 🔹 acción de reponer
+                className="transform transition-transform hover:scale-110 cursor-pointer"
+                title={`Seleccionar ${card.card_name}`}
+              >
                 <FaceCard
-                cardId={card.card_id}
-                imageName={card.image_name.replace(".png", "")}
-                cardName={card.card_name}
-                imageBackName={card.image_back_name.replace(".png", "")}
-                isStatic={true}
+                  cardId={card.card_id}
+                  imageName={card.image_name.replace(".png", "")}
+                  cardName={card.card_name}
+                  imageBackName={card.image_back_name?.replace(".png", "")}
+                  isStatic={true}
                 />
-            </div>
+              </div>
             ))}
-
           </div>
         )}
 
+        {/* Sin cartas */}
         {!loading && !error && cards.length === 0 && (
           <p className="text-center text-white text-lg">
             No hay cartas para mostrar.
           </p>
         )}
 
-        <div className="flex justify-center mt-8">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white font-semibold transition-colors"
-          >
-            Cerrar
-          </button>
-        </div>
       </div>
     </div>
   );

@@ -123,8 +123,29 @@ function Game() {
     }
   };
 
+  //HANDLER PARA REPONER DESDE EL DIALOG DE LAS 5 CARTAS DE DESCARTE
+
   const handleShowDiscardTop5 = () => {
     setShowDiscardDialog(true);
+  };
+
+  const handleReplenishFromDiscard = async (card) => {
+    try {
+      console.log(" Reponiendo carta desde descarte:", card);
+
+      const response = await httpService.replenishFromDiscard(
+        gameId,
+        myPlayerId,
+        card.card_id
+      );
+
+      console.log(" Respuesta replenish:", response);
+
+      console.log("Esperando actualización del WebSocket...");
+      setShowDiscardDialog(false);
+    } catch (err) {
+      console.error("Error al reponer carta desde descarte:", err);
+    }
   };
 
 
@@ -587,6 +608,7 @@ function Game() {
             open={showDiscardDialog}
             gameId={gameId} 
             onClose={() => setShowDiscardDialog(false)}
+            onSelect={handleReplenishFromDiscard} 
           />
         )}
 
