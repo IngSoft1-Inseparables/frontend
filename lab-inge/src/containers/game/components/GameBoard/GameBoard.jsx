@@ -6,7 +6,9 @@ import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
-import { useState } from "react";
+import { createHttpService } from "../../../../services/HTTPService";
+
+import { useState, useEffect } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -40,7 +42,9 @@ const PLAYER_POSITIONS = {
 function GameBoard({
   orderedPlayers,
   playerData,
+  setPlayerData, 
   turnData,
+  setTurnData,
   myPlayerId,
   onCardClick,
   setCards,
@@ -53,6 +57,9 @@ function GameBoard({
   message
 }) {
   const playerCount = turnData.players_amount;
+
+  const httpService = createHttpService();
+
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
@@ -88,6 +95,40 @@ function GameBoard({
     // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
     // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
+
+
+
+  const handleReplenishFromDraft = async (carta) => {
+    try {
+      console.log("→ Robando carta del mazo de draft...");
+
+      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
+
+
+      // Actualizar el draft con las nuevas cartas
+      setTurnData((prev) => ({
+        ...prev,
+        draft: {
+          count: res.newDraft.length,
+          card_1: res.newDraft[0],
+          card_2: res.newDraft[1],
+          card_3: res.newDraft[2],
+        },
+      }));
+
+      console.log("Carta y draft actualizados correctamente.");
+    } catch (error) {
+      console.error("Error al reponer carta desde draft:", error);
+    }
+  };
+
+
+
+
+
+  const isDraftAvailable =
+    turnData.turn_owner_id === myPlayerId &&
+    playerData?.playerCards?.length < 6;
 
   return (
     <div
@@ -151,8 +192,9 @@ function GameBoard({
                     turnData?.turn_owner_id === myPlayerId &&
                     playerData?.playerCards?.length < 6
                   }
-                  onCardClick={onCardClick}
+                  onCardClick={handleReplenishFromDraft}
                 />
+
               </div>
 
                             <div className="flex justify-center items-end gap-2 mb-10">

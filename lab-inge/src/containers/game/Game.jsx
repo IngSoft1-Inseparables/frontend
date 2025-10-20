@@ -542,7 +542,9 @@ function Game() {
         <GameBoard
           orderedPlayers={orderedPlayers}
           playerData={playerData}
+          setPlayerData={setPlayerData} 
           turnData={turnData}
+          setTurnData={setTurnData}  
           myPlayerId={myPlayerId}
           onCardClick={handleCardClick}
           onPlayerSelect={handlePlayerSelection}

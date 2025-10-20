@@ -215,6 +215,22 @@ const createHttpService = () => {
     });
   };
 
+  
+  const replenishFromDraft = (gameId, playerId, carta) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!playerId) {
+      throw new Error("Player ID is required");
+    }
+
+    return request("/players/replenish/draft", {
+      method: "POST",
+      body: JSON.stringify({ gameId, playerId, cardId: carta.id }),
+    });
+  };
+
+
   return {
     getGame,
     getGames,
@@ -231,6 +247,7 @@ const createHttpService = () => {
     hideSecret,
     revealSecret,
     forcePlayerReveal,
+    replenishFromDraft,
   };
 };
 
