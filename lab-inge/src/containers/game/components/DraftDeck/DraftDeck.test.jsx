@@ -1,79 +1,65 @@
 import { render, screen } from "@testing-library/react";
-import DraftDeck from "./DraftDeck";
-import BackCard from "../BackCard/BackCard";
 import "@testing-library/jest-dom";
-
-vi.mock("../BackCard/BackCard", () => ({
-  default: vi.fn(() => <div data-testid="back-card-mock"></div>),
-}));
+import DraftDeck from "./DraftDeck";
 
 describe("DraftDeck", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  const mockOnCardClick = vi.fn();
 
-  test("no renderiza nada si draft es null o undefined", () => {
+  it("no renderiza nada si draft es null", () => {
     const { container } = render(<DraftDeck draft={null} />);
     expect(container.firstChild).toBeNull();
-
-    const { container: container2 } = render(<DraftDeck />);
-    expect(container2.firstChild).toBeNull();
   });
 
-  test("no renderiza nada si draft.count es 0", () => {
-    const draft = { count: 0 };
-    const { container } = render(<DraftDeck draft={draft} />);
+  it("no renderiza nada si draft.count es 0", () => {
+    const { container } = render(<DraftDeck draft={{ count: 0 }} />);
     expect(container.firstChild).toBeNull();
   });
 
-  test("renderiza correctamente las 3 cartas del draft cuando están disponibles", () => {
+  it("renderiza correctamente cuando hay 3 cartas", () => {
     const draft = {
       count: 3,
-      card_1_image: "01-detective_poirot",
-      card_2_image: "02-hastings",
-      card_3_image: "03-miss_marple",
+      card_1: { card_id: 101, image_name: "10-detective_pyne" },
+      card_2: { card_id: 102, image_name: "11-detective_brent" },
+      card_3: { card_id: 103, image_name: "12-detective_tommyberesford" },
     };
 
-    render(<DraftDeck draft={draft} isAvailable={true} onCardClick={() => {}} />);
+    render(<DraftDeck draft={draft} isAvailable={true} onCardClick={mockOnCardClick} />);
 
-    // Debe renderizar 3 BackCard
-    const cards = screen.getAllByTestId("back-card-mock");
+    // Asegura que las 3 cartas se rendericen
+    const cards = screen.getAllByAltText(/Carta del draft/i);
     expect(cards).toHaveLength(3);
 
-    // Verifica que BackCard fue llamado 3 veces
-    expect(BackCard).toHaveBeenCalledTimes(3);
-
-    // Verifica que los props tengan type y available correctos
-    const firstCallProps = BackCard.mock.calls[0][0];
-    expect(firstCallProps.type).toBe("draft");
-    expect(firstCallProps.available).toBe(true);
+    // Verifica que cada imagen tenga la ruta correcta
+    expect(cards[0]).toHaveAttribute("src", "/cards/10-detective_pyne.png");
+    expect(cards[1]).toHaveAttribute("src", "/cards/11-detective_brent.png");
+    expect(cards[2]).toHaveAttribute("src", "/cards/12-detective_tommyberesford.png");
   });
 
-  test("no renderiza cartas si las imágenes son null", () => {
+  it("renderiza solo las cartas válidas si faltan algunas", () => {
     const draft = {
-      count: 3,
-      card_1_image: null,
-      card_2_image: null,
-      card_3_image: null,
+      count: 2,
+      card_1: { card_id: 201, image_name: "14-detective_hastings" },
+      card_2: null,
+      card_3: { card_id: 203, image_name: "16-detective_tommy" },
     };
 
-    const { container } = render(<DraftDeck draft={draft} />);
-    expect(container.firstChild).toBeNull();
+    render(<DraftDeck draft={draft} isAvailable={false} />);
+
+    const cards = screen.getAllByAltText(/Carta del draft/i);
+    expect(cards).toHaveLength(2);
   });
 
-  test("llama correctamente al callback onCardClick", () => {
+  it("llama a onCardClick cuando se hace click en una carta (si está disponible)", async () => {
     const draft = {
-      count: 3,
-      card_1_image: "01-test",
-      card_2_image: "02-test",
-      card_3_image: "03-test",
+      count: 1,
+      card_1: { card_id: 300, image_name: "10-detective_pyne" },
     };
 
-    const handleClick = vi.fn();
-    render(<DraftDeck draft={draft} isAvailable={true} onCardClick={handleClick} />);
+    render(<DraftDeck draft={draft} isAvailable={true} onCardClick={mockOnCardClick} />);
 
-    // Verifica que el callback fue pasado como prop
-    const firstCallProps = BackCard.mock.calls[0][0];
-    expect(firstCallProps.onCardClick).toBe(handleClick);
+    const card = screen.getByAltText("Carta del draft 1");
+    card.click();
+
+    expect(mockOnCardClick).toHaveBeenCalledTimes(1);
   });
 });

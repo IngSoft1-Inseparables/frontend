@@ -4,8 +4,10 @@ import RegularDeck from "../RegularDeck/RegularDeck.jsx";
 import DraftDeck from "../DraftDeck/DraftDeck.jsx";
 import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
-import EventDeck from "../EventDeck/SetDeck/EventDeck.jsx";
+import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
+import { createHttpService } from "../../../../services/HTTPService";
+
 import { useState, useEffect } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
@@ -40,7 +42,9 @@ const PLAYER_POSITIONS = {
 function GameBoard({
   orderedPlayers,
   playerData,
+  setPlayerData, 
   turnData,
+  setTurnData,
   myPlayerId,
   onCardClick,
   setCards,
@@ -49,14 +53,19 @@ function GameBoard({
   onSecretSelect,
   selectedSecret,
   selectionMode,
+  playedActionCard,
+  message
 }) {
   const playerCount = turnData.players_amount;
+
+  const httpService = createHttpService();
+
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
     turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
   const availableToPlay = turnData.turn_owner_id === myPlayerId;
-  const currentTurnState = turnData?.turn_state || "None".toLowerCase();
+  const currentTurnState = turnData?.turn_state || "None";
   const [playedSets, setPlayedSets] = useState([]);
   const [isSetReady, setIsSetReady] = useState(false);
   const [currentSetCards, setCurrentSetCards] = useState([]);
@@ -86,6 +95,37 @@ function GameBoard({
     // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
     // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
+
+
+
+  const handleReplenishFromDraft = async (carta) => {
+    try {
+      console.log("→ Robando carta del mazo de draft...");
+
+      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
+
+
+      // Actualizar el draft con las nuevas cartas
+      setTurnData((prev) => ({
+        ...prev,
+        draft: {
+          count: res.newDraft.length,
+          card_1: res.newDraft[0],
+          card_2: res.newDraft[1],
+          card_3: res.newDraft[2],
+        },
+      }));
+
+      console.log("Carta y draft actualizados correctamente.");
+    } catch (error) {
+      console.error("Error al reponer carta desde draft:", error);
+    }
+  };
+
+
+
+
+
   const isDraftAvailable =
     turnData.turn_owner_id === myPlayerId &&
     playerData?.playerCards?.length < 6;
@@ -152,13 +192,14 @@ function GameBoard({
                     turnData?.turn_owner_id === myPlayerId &&
                     playerData?.playerCards?.length < 6
                   }
-                  onCardClick={onCardClick}
+                  onCardClick={handleReplenishFromDraft}
                 />
+
               </div>
 
-              <div className="flex justify-center items-end gap-2 mb-10">
-                <EventDeck />
-              </div>
+                            <div className="flex justify-center items-end gap-2 mb-10">
+                                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                            </div>
 
               {/* Grupo derecho: mazo de descarte */}
               <div className="flex justify-center items-center gap-2">
@@ -230,40 +271,34 @@ function GameBoard({
             onSetStateChange={handleSetStateChange}
           />
 
-          <div>
-            <p
-              className={
-                turnData.turn_owner_id === myPlayerId
-                  ? "text-white text-center"
-                  : "invisible"
-              }
-            >
-              Arrastrá una carta al mazo de descarte para descartarla.
-            </p>
-          </div>
-        </div>
-        <div className=" flex justify-rigth mr-12 mb-6">
-          {isSetReady && availableToPlay && (
-            <button
-              onClick={handlePlaySetClick}
-              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
-            >
-              BAJAR SET DE{" "}
-              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1]?.card_name.toUpperCase()
-                : currentSetCards[0]?.card_name.toUpperCase()}
-            </button>
-          )}
-        </div>
-      </div>
-
+                    <div>
+                        <p className="text-white text-center">
+                            {message}
+                        </p>
+                    </div>
+                </div>
+                <div className=" flex justify-rigth mr-12 mb-6">
+                    {isSetReady && availableToPlay && (
+                        <button
+                            onClick={handlePlaySetClick}
+                            className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+                        >
+                            BAJAR SET DE{" "}
+                            {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                                ? currentSetCards[1]?.card_name.toUpperCase()
+                                : currentSetCards[0]?.card_name.toUpperCase()}
+                        </button>
+                    )}
+                </div>
+            </div>
+    
       <PlayerSetsModal
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
       />
     </div>
-  );
+    );
 }
 
 export default GameBoard;
