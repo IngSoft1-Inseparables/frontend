@@ -42,7 +42,7 @@ const PLAYER_POSITIONS = {
 function GameBoard({
   orderedPlayers,
   playerData,
-  setPlayerData, 
+  setPlayerData,
   turnData,
   setTurnData,
   myPlayerId,
@@ -75,7 +75,7 @@ function GameBoard({
   const closeSetModal = () => setModalPlayerId(null);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
-    return (console.log("info publica:",turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
     );
   }
 
@@ -197,9 +197,9 @@ function GameBoard({
 
               </div>
 
-                            <div className="flex justify-center items-end gap-2 mb-10">
-                                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
-                            </div>
+              <div className="flex justify-center items-end gap-2 mb-10">
+                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+              </div>
 
               {/* Grupo derecho: mazo de descarte */}
               <div className="flex justify-center items-center gap-2">
@@ -260,9 +260,8 @@ function GameBoard({
           openSetModal={openSetModal}
         />
         <div
-          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
-            playerCount < 6 ? "z-20" : ""
-          }`}
+          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
+            }`}
         >
           <HandCard
             playerCards={playerData?.playerCards || []}
@@ -271,34 +270,34 @@ function GameBoard({
             onSetStateChange={handleSetStateChange}
           />
 
-                    <div>
-                        <p className="text-white text-center">
-                            {message}
-                        </p>
-                    </div>
-                </div>
-                <div className=" flex justify-rigth mr-12 mb-6">
-                    {isSetReady && availableToPlay && (
-                        <button
-                            onClick={handlePlaySetClick}
-                            className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
-                        >
-                            BAJAR SET DE{" "}
-                            {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                                ? currentSetCards[1]?.card_name.toUpperCase()
-                                : currentSetCards[0]?.card_name.toUpperCase()}
-                        </button>
-                    )}
-                </div>
-            </div>
-    
+          <div>
+            <p className="text-white text-center">
+              {message}
+            </p>
+          </div>
+        </div>
+        <div className=" flex justify-rigth mr-12 mb-6">
+          {isSetReady && availableToPlay && (
+            <button
+              onClick={handlePlaySetClick}
+              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+            >
+              BAJAR SET DE{" "}
+              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                ? currentSetCards[1]?.card_name.toUpperCase()
+                : currentSetCards[0]?.card_name.toUpperCase()}
+            </button>
+          )}
+        </div>
+      </div>
+
       <PlayerSetsModal
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
       />
     </div>
-    );
+  );
 }
 
 export default GameBoard;
