@@ -80,6 +80,18 @@ function GameList() {
       }} // cerrar con Escape
     >
       <div className="p-6">
+         <div className="flex justify-left">
+          <button onClick={goBackHome} className="group flex items-center gap-2 px-4 py-2  text-white text-lg font-bold transition-transform transform hover:scale-105 active:scale-95 ">
+            <ChevronLeft
+              size={35}
+              strokeWidth={3}
+              className="transition-transform group-hover:-translate-x-1"
+            />
+            <span className="transition-transform group-hover:-translate-x-1">
+              Volver
+            </span>
+          </button>
+        </div>
         <h2 className="flex justify-center text-xl text-white font-bold mb-4 ">
           Partidas disponibles
         </h2>
