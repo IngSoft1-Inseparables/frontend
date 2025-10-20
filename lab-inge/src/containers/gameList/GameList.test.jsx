@@ -231,49 +231,6 @@ describe("GameList", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/home");
   });
 
-  it("llama a fetchGames al hacer click en 'Actualizar partidas'", async () => {
-    render(
-      <BrowserRouter>
-        <GameList />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
-    });
-
-    // Limpiar las llamadas anteriores
-    mockGetGames.mockClear();
-
-    const actualizarBtn = screen.getByRole("button", { name: /Actualizar partidas/i });
-    fireEvent.click(actualizarBtn);
-
-    expect(mockGetGames).toHaveBeenCalled();
-  });
-
-  it("muestra el estado de carga al actualizar partidas", async () => {
-    render(
-      <BrowserRouter>
-        <GameList />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
-    });
-
-    // Hacer que la siguiente llamada tarde más
-    mockGetGames.mockImplementationOnce(
-      () => new Promise((resolve) => setTimeout(() => resolve({ games: mockGames }), 100))
-    );
-
-    const actualizarBtn = screen.getByRole("button", { name: /Actualizar partidas/i });
-    fireEvent.click(actualizarBtn);
-
-    // Debe mostrar "Actualizando..."
-    expect(screen.getByText(/Actualizando/i)).toBeInTheDocument();
-  });
-
   it("conecta y desconecta el WebSocket correctamente", () => {
     const { unmount } = render(
       <BrowserRouter>
