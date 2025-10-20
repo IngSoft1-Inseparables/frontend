@@ -163,105 +163,7 @@ function Game() {
       },
     })
   );
- useEffect(() => {
-  console.log("🔄 useEffect disparado - turnData cambió");
-  
-  // Si aún no hay datos de turno, no hacemos nada
-  if (!turnData) {
-    console.log("⏭️ No hay turnData, saliendo...");
-    return;
-  }
-
-  // Si es la primera vez que recibimos datos, solo inicializamos
-  if (!prevTurnData) {
-    console.log("✨ Primera carga de datos, inicializando prevTurnData");
-    setPrevTurnData(turnData);
-    return;
-  }
-
-  // --- Detección de sets nuevos ---
-  const myPlayer = turnData.players.find((p) => p.id === parseInt(myPlayerId));
-  const prevPlayer = prevTurnData.players.find((p) => p.id === parseInt(myPlayerId));
-
-  console.log("👤 Mi jugador actual:", myPlayer);
-  console.log("👤 Mi jugador previo:", prevPlayer);
-
-  const prevSets = prevPlayer?.setPlayed || [];
-  const newSets = myPlayer?.setPlayed || [];
-
-  console.log("📊 Sets previos:", prevSets);
-  console.log("📊 Sets nuevos:", newSets);
-
-  const setsToTrigger = newSets.filter(
-    (newSet) => !prevSets.some((prevSet) => prevSet.id === newSet.id)
-  );
-
-  if (setsToTrigger.length > 0) {
-    console.log("🎯 Sets nuevos confirmados:", setsToTrigger);
-  } else {
-    console.log("⚠️ No se detectaron sets nuevos");
-  }
-
-  // --- Disparo de efectos según tipo de set ---
-  setsToTrigger.forEach((set) => {
-    console.log("🎮 Ejecutando efecto para set:", set.set_type);
-
-    switch (set.set_type?.toLowerCase()) {
-      case "poirot":
-      case "marple":
-        console.log("✅ Activando modo: select-not-revealed-secret");
-        setSelectionMode("select-not-revealed-secret");
-        break;
-
-      case "ladybrent":
-        console.log("✅ Activando modo: select-other-player");
-        setSelectionMode("select-other-player");
-        break;
-
-      case "tommyberestford":
-      case "tuppenceberestbord":
-        console.log("✅ Activando modo: select-other-player");
-        setSelectionMode("select-other-player");
-        break;
-
-      case "tommytuppence":
-        console.log("✅ Activando modo: select-other-player (no cancelable)");
-        setSelectionMode("select-other-player");
-        break;
-
-      case "satterthwaite":
-        console.log("✅ Activando modo: select-other-not-revealed-secret");
-        setSelectionMode("select-other-not-revealed-secret");
-        break;
-
-      case "special_satterthwaite":
-        console.log("✅ Activando modo: select-other-revealed-secret");
-        setSelectionMode("select-other-revealed-secret");
-        break;
-
-      case "pyne":
-        console.log("✅ Activando modo: select-revealed-secret");
-        setSelectionMode("select-revealed-secret");
-        break;
-
-      default:
-        console.log("⚠️ Set sin efecto:", set.set_type);
-    }
-  });
-
-  // Actualizamos el estado previo para el próximo cambio
-  setPrevTurnData(turnData);
-}, [turnData]);
-
-// 🔄 useEffect disparado - turnData cambió
-// 👤 Mi jugador actual: {id: 1, name: "...", setPlayed: [{id: 123, set_type: "poirot"}]}
-// 👤 Mi jugador previo: {id: 1, name: "...", setPlayed: []}
-// 📊 Sets previos: []
-// 📊 Sets nuevos: [{id: 123, set_type: "poirot"}]
-// 🎯 Sets nuevos confirmados: [{id: 123, set_type: "poirot"}]
-// 🎮 Ejecutando efecto para set: poirot
-// ✅ Activando modo: select-not-revealed-secret
-
+ 
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -318,17 +220,62 @@ function Game() {
       </div>
     );
   }
-  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
     const cardIds = currentSetCards.map((card) => card.card_id);
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+      console.log("TIPO DE SET:", response);
+    
+      switch (response.set_type?.toLowerCase()) {
+        case "poirot":
+        case "marple":
+          console.log("✅ Activando modo: select-not-revealed-secret");
+          setSelectionMode("select-other-not-revealed-secret");
+          break;
+
+        case "ladybrent":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "tommyberestford":
+        case "tuppenceberestford":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "tommytuppence":
+          console.log("✅ Activando modo: select-other-player (no cancelable)");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "satterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "specialsatterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          setSelectionAction("specials");
+          break;
+
+        case "pyne":
+          console.log("✅ Activando modo: select-revealed-secret");
+          setSelectionMode("select-revealed-secret");
+          break;
+
+        default:
+          console.log("⚠️ Set sin efecto:", set.set_type);
+      }
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
   };
+
   return (
     <div className="h-screen w-screen relative overflow-hidden">
       <DndContext
