@@ -9,20 +9,21 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
 
   const isMyTurn = turnData && turnData.turn_owner_id === myPlayerId;
 
-  if (!isMyTurn) actionCard = turnData.event_card_played || null;
+  if (!isMyTurn && turnData?.event_card_played) actionCard = turnData.event_card_played;
 
   const draggingCardId = active?.data?.current?.cardId;
   const draggingCard = playerData?.playerCards?.find(
     (card) => card.card_id === draggingCardId
   );
 
-  const isEventCard = draggingCard?.type.toLowerCase() === "event" && draggingCard.card_name.toLowerCase() == "look into the ashes";
-  const shouldShowDropStyle = isMyTurn && isOver && isEventCard && turnData.turn_state.toLowerCase() === "none";
+  console.log("carta:", draggingCard);
+  const isEventCard = draggingCard?.type === "Event";
+
 
   if (!actionCard) {
     return (
       <div ref={setNodeRef} className="relative w-24 h-36">
-        <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${shouldShowDropStyle ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
+        <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${isMyTurn && isOver && isEventCard ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
           <img
             src="public/icons/event-icon.png"
             className='rem-0.8 opacity-95 transition-all'

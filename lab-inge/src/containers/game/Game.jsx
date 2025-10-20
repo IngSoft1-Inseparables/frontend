@@ -105,7 +105,10 @@ function Game() {
   useEffect(() => {
     if (!turnData) return;
 
-    if (!turnData.event_card_played) {
+    if (turnData.event_card_played) {
+      setPlayedActionCard(turnData.event_card_played);
+    }
+    else if (!turnData.event_card_played) {
       setPlayedActionCard(null);
     }
     else if (turnData.turn_owner_id !== myPlayerId && playedActionCard) {
@@ -161,18 +164,7 @@ function Game() {
       );
       console.log("Replenish desde descarte:", response);
 
-      // Actualizar el descarte con el nuevo estado devuelto por el back
-      setTurnData((prev) => ({
-        ...prev,
-        discardpile: {
-          ...prev?.discardpile,
-          count: response.newDiscard.length,
-          last_card_image:
-            response.newDiscard.at(-1)?.image_name || prev?.discardpile?.last_card_image,
-          last_card_name:
-            response.newDiscard.at(-1)?.card_name || prev?.discardpile?.last_card_name,
-        },
-      }));
+      await fetchGameData();
 
       // cerrar diálogo
       setShowDiscardDialog(false);
@@ -556,8 +548,6 @@ function Game() {
           await fetchGameData();
           startDiscardTop5Action(); // abre el diálogo que hace el GET automático
           return; // no necesitamos continuar el resto del flujo
-        }else{
-          return;
         }
 
 

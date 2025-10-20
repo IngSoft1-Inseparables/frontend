@@ -1158,11 +1158,21 @@ it("handles player reordering when only 2 players", async () => {
       gameId: 1,
     };
 
+    const mockTurnDataWithEventPlayed = {
+      ...mockTurnDataWithNoneState,
+      event_card_played: {
+        card_id: 2,
+        card_name: "Look into the ashes",
+        type: "Event",
+        image_name: "event.png",
+      },
+    };
+
     const mockPlayerDataWithEventCard = {
       ...mockPlayerData,
       playerCards: [
         { card_id: 1, card_name: "Carta1", type: "Action" },
-        { card_id: 2, card_name: "EventCard", type: "Event", image_name: "event.png" },
+        { card_id: 2, card_name: "Look into the ashes", type: "Event", image_name: "event.png" },
         { card_id: 3, card_name: "Carta3", type: "Action" },
       ],
     };
@@ -1182,7 +1192,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
@@ -1197,12 +1207,14 @@ it("handles player reordering when only 2 players", async () => {
       });
 
       await waitFor(() => {
-        expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 2, "EventCard");
+        expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 2, "Look into the ashes");
       });
     });
 
     it("should update playedActionCard state when event card is played", async () => {
-      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      mockHttp.getPublicTurnData
+        .mockResolvedValueOnce(mockTurnDataWithNoneState)
+        .mockResolvedValue(mockTurnDataWithEventPlayed);
       mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
       mockHttp.playEvent.mockResolvedValue({ success: true });
 
@@ -1216,7 +1228,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
@@ -1233,7 +1245,7 @@ it("handles player reordering when only 2 players", async () => {
       await waitFor(() => {
         expect(gameBoardProps.playedActionCard).toEqual({
           card_id: 2,
-          card_name: "EventCard",
+          card_name: "Look into the ashes",
           type: "Event",
           image_name: "event.png",
         });
@@ -1241,8 +1253,19 @@ it("handles player reordering when only 2 players", async () => {
     });
 
     it("should remove event card from player hand optimistically", async () => {
-      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
-      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
+      mockHttp.getPublicTurnData
+        .mockResolvedValueOnce(mockTurnDataWithNoneState)
+        .mockResolvedValue(mockTurnDataWithEventPlayed);
+      const mockPlayerDataWithEventCardRemoved = {
+        ...mockPlayerDataWithEventCard,
+        playerCards: [
+          { card_id: 1, card_name: "Carta1", type: "Action" },
+          { card_id: 3, card_name: "Carta3", type: "Action" },
+        ],
+      };
+      mockHttp.getPrivatePlayerData
+        .mockResolvedValueOnce(mockPlayerDataWithEventCard)
+        .mockResolvedValue(mockPlayerDataWithEventCardRemoved);
       mockHttp.playEvent.mockResolvedValue({ success: true });
 
       renderGame({ gameId: 1, myPlayerId: 2 });
@@ -1258,7 +1281,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
@@ -1297,7 +1320,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
@@ -1362,7 +1385,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
@@ -1423,7 +1446,7 @@ it("handles player reordering when only 2 players", async () => {
           data: {
             current: {
               cardId: 2,
-              cardName: "EventCard",
+              cardName: "Look into the ashes",
               imageName: "event.png",
             },
           },
