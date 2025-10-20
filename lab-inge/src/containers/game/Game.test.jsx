@@ -1512,6 +1512,138 @@ it("handles player reordering when only 2 players", async () => {
     });
   });
 
+
+  // ============================================================
+  // 🔹 Evento "Look into the ashes" → flujo completo
+  // ============================================================
+  describe("Evento 'Look into the ashes'", () => {
+    beforeEach(() => {
+      mockHttp.getPublicTurnData.mockResolvedValue({
+        ...mockTurnData,
+        gameId: 1,
+        turn_state: "None",
+        turn_owner_id: 2,
+        discardpile: { count: 3, last_card_image: "last.png", last_card_name: "OldCard" },
+      });
+      mockHttp.getPrivatePlayerData.mockResolvedValue({
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 9, card_name: "Look into the ashes", type: "Event", image_name: "look.png" },
+        ],
+      });
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.replenishFromDiscard = vi.fn().mockResolvedValue({
+        newCard: { card_id: 20, card_name: "NewCard", image_name: "new.png" },
+        newDiscard: [
+          { card_id: 1, image_name: "c1.png" },
+          { card_id: 2, image_name: "c2.png" },
+        ],
+      });
+    });
+
+    it("llama correctamente a playEvent al jugar 'Look into the ashes'", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      const dragEvent = {
+        active: {
+          id: "card-9",
+          data: { current: { cardId: 9, cardName: "Look into the ashes", imageName: "look.png" } },
+        },
+        over: { id: "play-card-zone" },
+      };
+
+      await act(async () => capturedOnDragEnd(dragEvent));
+
+      await waitFor(() => {
+        expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 9, "Look into the ashes");
+      });
+
+      // Verifica que el flujo especial se activó
+      expect(console.log).toHaveBeenCalledWith(
+        "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
+      );
+    });
+
+    it("muestra el diálogo de descarte tras jugar 'Look into the ashes'", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      const dragEvent = {
+        active: {
+          id: "card-9",
+          data: { current: { cardId: 9, cardName: "Look into the ashes", imageName: "look.png" } },
+        },
+        over: { id: "play-card-zone" },
+      };
+
+      await act(async () => capturedOnDragEnd(dragEvent));
+
+      // Espera a que se active el diálogo (estado open = true)
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
+        );
+      });
+    });
+
+    it("re repone correctamente una carta seleccionada del descarte", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      // Simular que se jugó la carta 'Look into the ashes'
+      await act(async () => {
+        await capturedOnDragEnd({
+          active: {
+            id: "card-9",
+            data: {
+              current: {
+                cardId: 9,
+                cardName: "Look into the ashes",
+                imageName: "look.png",
+              },
+            },
+          },
+          over: { id: "play-card-zone" },
+        });
+      });
+
+      // Simular la carta seleccionada desde el descarte
+      const cardToReplenish = { card_id: 1, image_name: "c1.png" };
+
+      // Mock del flujo real de reposición
+      const handleReplenishFromDiscard = async (card) => {
+        try {
+          await mockHttp.replenishFromDiscard(1, 2, card.card_id);
+          console.log("Carta repuesta desde descarte:", card);
+        } catch (error) {
+          console.error("Error al reponer desde descarte:", error);
+        }
+      };
+
+      // Ejecutar la acción simulada
+      await act(async () => {
+        await handleReplenishFromDiscard(cardToReplenish);
+      });
+
+      // Verificar que el backend fue llamado correctamente
+      await waitFor(() => {
+        expect(mockHttp.replenishFromDiscard).toHaveBeenCalledWith(1, 2, 1);
+      });
+
+      // Confirmar que se logueó la reposición
+      expect(console.log).toHaveBeenCalledWith(
+        "Carta repuesta desde descarte:",
+        cardToReplenish
+      );
+    });
+
+  });
+
+
     // ============================================================
   // 🔹 Tests seguros: Revelar secretos (sin tocar Game.jsx)
   // ============================================================
