@@ -230,6 +230,26 @@ const createHttpService = () => {
     });
   };
 
+  const getDiscardTop5 = (gameId) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    return request(`/games/${gameId}/discardPile/top5`);
+  };
+
+  const replenishFromDiscard = (gameId, playerId, cardId) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (!playerId) throw new Error("Player ID is required");
+    if (!cardId) throw new Error("Card ID is required");
+
+    return request("/players/replenish/discard", {
+      method: "POST",
+      body: JSON.stringify({ gameId, playerId, cardId }),
+    });
+  };
+
+
+
 
   return {
     getGame,
@@ -248,6 +268,8 @@ const createHttpService = () => {
     revealSecret,
     forcePlayerReveal,
     replenishFromDraft,
+    getDiscardTop5,
+    replenishFromDiscard,
   };
 };
 

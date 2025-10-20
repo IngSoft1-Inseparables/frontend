@@ -13,6 +13,8 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
+import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
+
 
 const reorderPlayers = (playersArray, myPlayerId) => {
   const mutableArray = [...playersArray];
@@ -46,6 +48,8 @@ function Game() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [playedActionCard, setPlayedActionCard] = useState(null);
   const [message, setMessage] = useState(" ");
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -118,6 +122,53 @@ function Game() {
     }
   };
 
+
+  // función simple: activa el flujo de descarte (el dialogo hace el GET solo)
+  const startDiscardTop5Action = () => {
+    setShowDiscardDialog(true);
+  };
+
+
+  //funcion para reponer del dialog 
+  const handleReplenishFromDiscard = async (card) => {
+    if (!card || !gameId || !myPlayerId) return;
+
+    console.log(card);
+
+    try {
+      const response = await httpService.replenishFromDiscard(
+        gameId,
+        myPlayerId,
+        card.card_id
+      );
+      console.log("Replenish desde descarte:", response);
+
+      // Actualizar el descarte con el nuevo estado devuelto por el back
+      setTurnData((prev) => ({
+        ...prev,
+        discardpile: {
+          ...prev?.discardpile,
+          count: response.newDiscard.length,
+          last_card_image:
+            response.newDiscard.at(-1)?.image_name || prev?.discardpile?.last_card_image,
+          last_card_name:
+            response.newDiscard.at(-1)?.card_name || prev?.discardpile?.last_card_name,
+        },
+      }));
+
+      // cerrar diálogo
+      setShowDiscardDialog(false);
+      setPlayedActionCard(null);
+    } catch (err) {
+      console.error("Error al reponer desde descarte:", err);
+      
+    }
+  };
+
+
+
+
+
   // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
 
   const revealMySecret = async (secretId) => {
@@ -167,6 +218,8 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
+
+
   // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
 
   const hideMySecret = async (secretId) => {
@@ -486,6 +539,16 @@ function Game() {
 
       try {
         await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+
+        // 🔹 Si la carta jugada es "Look into the ashes", iniciar acción de descarte
+        if (cardName?.toLowerCase() === "look into the ashes") {
+          console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
+          await fetchGameData();
+          startDiscardTop5Action(); // abre el diálogo que hace el GET automático
+          return; // no necesitamos continuar el resto del flujo
+        }
+
+
       } catch (error) {
         console.error("Failed playing event card:", error);
         setPlayerData(previousPlayerData);
@@ -534,6 +597,7 @@ function Game() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
+
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
@@ -563,6 +627,17 @@ function Game() {
             onClose={() => setShowEndDialog(false)}
           />
         )}
+
+        {showDiscardDialog && (
+          <DiscardTop5Dialog
+            gameId={gameId}
+            open={showDiscardDialog}
+            onClose={() => setShowDiscardDialog(false)}
+            onSelect={handleReplenishFromDiscard} // ← al hacer click en una carta
+          />
+        )}
+
+
       </DndContext>
       {/* <ConnectionStatus wsService={wsService} /> */}
     </div>
