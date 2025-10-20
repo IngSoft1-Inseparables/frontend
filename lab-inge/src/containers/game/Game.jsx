@@ -17,11 +17,14 @@ import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.
 
 
 const reorderPlayers = (playersArray, myPlayerId) => {
+  // Aseguramos que la entrada sea un array y no mutamos el original
   const mutableArray = [...playersArray];
   const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
-  const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+  const myPlayerIndex = sortedByTurn.findIndex(
+    (player) => player.id === parseInt(myPlayerId)
+  );
 
-  if (myPlayerIndex === -1) return sortedByTurn;
+  if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
 
   const myPlayer = sortedByTurn[myPlayerIndex];
   const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
@@ -101,7 +104,7 @@ function Game() {
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
     console.log(playerId);
-  }
+  };
 
   const handleSecretSelection = (playerId, secretId) => {
     setSelectedPlayer(playerId);
@@ -263,7 +266,10 @@ function Game() {
       setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
-      const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+      const fetchedPlayerData = await httpService.getPrivatePlayerData(
+        gameId,
+        myPlayerId
+      );
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
@@ -311,7 +317,6 @@ function Game() {
       }
 
       handleEndGameEvent(dataPublic);
-
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -437,17 +442,7 @@ function Game() {
       },
     })
   );
-  
-
-  // 🔄 useEffect disparado - turnData cambió
-  // 👤 Mi jugador actual: {id: 1, name: "...", setPlayed: [{id: 123, set_type: "poirot"}]}
-  // 👤 Mi jugador previo: {id: 1, name: "...", setPlayed: []}
-  // 📊 Sets previos: []
-  // 📊 Sets nuevos: [{id: 123, set_type: "poirot"}]
-  // 🎯 Sets nuevos confirmados: [{id: 123, set_type: "poirot"}]
-  // 🎮 Ejecutando efecto para set: poirot
-  // ✅ Activando modo: select-not-revealed-secret
-
+ 
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -557,14 +552,6 @@ function Game() {
     }
   };
 
-  // const [draggingCards, setDraggingCards] = useState([]);
-  // const handleDragFromHand = ({ cards }) => {
-  //   // Ahora 'cards' es el array de objetos carta.
-  //   // Solo se necesita una validación para asegurar que es un array.
-  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
-  //   setDraggingCards(cardsArray);
-  // };
-
   if (isLoading || orderedPlayers.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
@@ -572,24 +559,57 @@ function Game() {
       </div>
     );
   }
-  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
     const cardIds = currentSetCards.map((card) => card.card_id);
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+      console.log("TIPO DE SET:", response);
+    
+      switch (response.set_type?.toLowerCase()) {
+        case "poirot":
+        case "marple":
+          console.log("✅ Activando modo: select-not-revealed-secret");
+          setSelectionMode("select-other-not-revealed-secret");
+          break;
 
-      // setPlayerData((prevData) => {
-      //   if (!prevData) return prevData;
+        case "ladybrent":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
 
-      //   return {
-      //     ...prevData,
-      //     playerCards: prevData.playerCards.filter(
-      //       (card) => !cardIds.includes(card.card_id)
-      //     ),
-      //   };
-      // });
+        case "tommyberestford":
+        case "tuppenceberestford":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "tommytuppence":
+          console.log("✅ Activando modo: select-other-player (no cancelable)");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "satterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "specialsatterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          setSelectionAction("specials");
+          break;
+
+        case "pyne":
+          console.log("✅ Activando modo: select-revealed-secret");
+          setSelectionMode("select-revealed-secret");
+          break;
+
+        default:
+          console.log("⚠️ Set sin efecto:", set.set_type);
+      }
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
@@ -603,6 +623,7 @@ function Game() {
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
+        
         <GameBoard
           orderedPlayers={orderedPlayers}
           playerData={playerData}
