@@ -9,13 +9,15 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
 
   const isMyTurn = turnData && turnData.turn_owner_id === myPlayerId;
 
+  if (!isMyTurn) actionCard = turnData.event_card_played || null;
+
   const draggingCardId = active?.data?.current?.cardId;
   const draggingCard = playerData?.playerCards?.find(
     (card) => card.card_id === draggingCardId
   );
 
-  const isEventCard = draggingCard?.type === "Event";
-  const shouldShowDropStyle = isMyTurn && isOver && isEventCard && turnData.turn_state === "None";
+  const isEventCard = draggingCard?.type.toLowerCase() === "event";
+  const shouldShowDropStyle = isMyTurn && isOver && isEventCard && turnData.turn_state.toLowerCase() === "none";
 
   if (!actionCard) {
     return (

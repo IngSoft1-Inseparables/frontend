@@ -486,6 +486,7 @@ function Game() {
 
       try {
         await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+        setSelectionMode("select-my-not-revealed-secret");
       } catch (error) {
         console.error("Failed playing event card:", error);
         setPlayerData(previousPlayerData);
