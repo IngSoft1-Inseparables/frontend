@@ -128,6 +128,8 @@ function Game() {
     setShowDiscardDialog(true);
   };
 
+
+  //funcion para reponer del dialog 
   const handleReplenishFromDiscard = async (card) => {
     if (!card || !gameId || !myPlayerId) return;
 
@@ -139,13 +141,13 @@ function Game() {
       );
       console.log("Replenish desde descarte:", response);
 
-      // ➕ Agregar la nueva carta a mi mano
+      //  Agregar la nueva carta a mi mano
       setPlayerData((prev) => ({
         ...prev,
         playerCards: [...(prev?.playerCards || []), response.newCard],
       }));
 
-      // 🔄 Actualizar el descarte con el nuevo estado devuelto por el back
+      // Actualizar el descarte con el nuevo estado devuelto por el back
       setTurnData((prev) => ({
         ...prev,
         discardpile: {
@@ -158,11 +160,11 @@ function Game() {
         },
       }));
 
-      // ✅ cerrar diálogo
+      // cerrar diálogo
       setShowDiscardDialog(false);
     } catch (err) {
       console.error("Error al reponer desde descarte:", err);
-      // acá podrías mostrar un toast o setear un estado de error si querés
+      
     }
   };
 
@@ -219,6 +221,8 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
+
+
   // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
 
   const hideMySecret = async (secretId) => {
@@ -543,7 +547,7 @@ function Game() {
         if (cardName?.toLowerCase() === "look into the ashes") {
           console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
           await fetchGameData();
-          setShowDiscardDialog(true); // abre el diálogo que hace el GET automático
+          startDiscardTop5Action(); // abre el diálogo que hace el GET automático
           return; // no necesitamos continuar el resto del flujo
         }
 
