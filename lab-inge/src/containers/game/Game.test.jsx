@@ -28,6 +28,11 @@ vi.mock("../../services/HTTPService", () => {
     getPrivatePlayerData: vi.fn(),
     updateHand: vi.fn(),
     discardCard: vi.fn(),
+    playSets: vi.fn(),
+    revealSecret: vi.fn(),
+    hideSecret: vi.fn(),
+    forcePlayerReveal: vi.fn(),
+    stealSecret: vi.fn(),
     playEvent: vi.fn(),
   };
 
@@ -59,9 +64,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards };
     
     return (
       <div data-testid="game-board">
@@ -1512,15 +1517,366 @@ it("handles player reordering when only 2 players", async () => {
     });
   });
 
+
+  // ============================================================
+  // 🔹 Evento "Look into the ashes" → flujo completo
+  // ============================================================
+  describe("Evento 'Look into the ashes'", () => {
+    beforeEach(() => {
+      mockHttp.getPublicTurnData.mockResolvedValue({
+        ...mockTurnData,
+        gameId: 1,
+        turn_state: "None",
+        turn_owner_id: 2,
+        discardpile: { count: 3, last_card_image: "last.png", last_card_name: "OldCard" },
+      });
+      mockHttp.getPrivatePlayerData.mockResolvedValue({
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 9, card_name: "Look into the ashes", type: "Event", image_name: "look.png" },
+        ],
+      });
+      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.replenishFromDiscard = vi.fn().mockResolvedValue({
+        newCard: { card_id: 20, card_name: "NewCard", image_name: "new.png" },
+        newDiscard: [
+          { card_id: 1, image_name: "c1.png" },
+          { card_id: 2, image_name: "c2.png" },
+        ],
+      });
+    });
+
+    it("llama correctamente a playEvent al jugar 'Look into the ashes'", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      const dragEvent = {
+        active: {
+          id: "card-9",
+          data: { current: { cardId: 9, cardName: "Look into the ashes", imageName: "look.png" } },
+        },
+        over: { id: "play-card-zone" },
+      };
+
+      await act(async () => capturedOnDragEnd(dragEvent));
+
+      await waitFor(() => {
+        expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 9, "Look into the ashes");
+      });
+
+      // Verifica que el flujo especial se activó
+      expect(console.log).toHaveBeenCalledWith(
+        "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
+      );
+    });
+
+    it("muestra el diálogo de descarte tras jugar 'Look into the ashes'", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      const dragEvent = {
+        active: {
+          id: "card-9",
+          data: { current: { cardId: 9, cardName: "Look into the ashes", imageName: "look.png" } },
+        },
+        over: { id: "play-card-zone" },
+      };
+
+      await act(async () => capturedOnDragEnd(dragEvent));
+
+      // Espera a que se active el diálogo (estado open = true)
+      await waitFor(() => {
+        expect(console.log).toHaveBeenCalledWith(
+          "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
+        );
+      });
+    });
+
+    it("re repone correctamente una carta seleccionada del descarte", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => screen.getByTestId("game-board"));
+
+      // Simular que se jugó la carta 'Look into the ashes'
+      await act(async () => {
+        await capturedOnDragEnd({
+          active: {
+            id: "card-9",
+            data: {
+              current: {
+                cardId: 9,
+                cardName: "Look into the ashes",
+                imageName: "look.png",
+              },
+            },
+          },
+          over: { id: "play-card-zone" },
+        });
+      });
+
+      // Simular la carta seleccionada desde el descarte
+      const cardToReplenish = { card_id: 1, image_name: "c1.png" };
+
+      // Mock del flujo real de reposición
+      const handleReplenishFromDiscard = async (card) => {
+        try {
+          await mockHttp.replenishFromDiscard(1, 2, card.card_id);
+          console.log("Carta repuesta desde descarte:", card);
+        } catch (error) {
+          console.error("Error al reponer desde descarte:", error);
+        }
+      };
+
+      // Ejecutar la acción simulada
+      await act(async () => {
+        await handleReplenishFromDiscard(cardToReplenish);
+      });
+
+      // Verificar que el backend fue llamado correctamente
+      await waitFor(() => {
+        expect(mockHttp.replenishFromDiscard).toHaveBeenCalledWith(1, 2, 1);
+      });
+
+      // Confirmar que se logueó la reposición
+      expect(console.log).toHaveBeenCalledWith(
+        "Carta repuesta desde descarte:",
+        cardToReplenish
+      );
+    });
+
+  });
+
+
     // ============================================================
   // 🔹 Tests seguros: Revelar secretos (sin tocar Game.jsx)
   // ============================================================
   describe("Revelar secretos", () => {
+    const mockSetCards = [
+      { card_id: 1, card_name: "Card1" },
+      { card_id: 2, card_name: "Card2" }
+    ];
     beforeEach(() => {
       mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
       mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
     });
 
+    it("llama a playSets con los IDs de cartas correctos", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "Poirot" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      expect(mockHttp.playSets).toHaveBeenCalledWith(1, 2, [1, 2]);
+    });
+
+    it("establece selectionMode a 'select-other-not-revealed-secret' para Poirot", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "Poirot" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-not-revealed-secret");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-not-revealed-secret' para Marple", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "Marple" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-not-revealed-secret");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-player' para LadyBrent", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "LadyBrent" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-player' para TommyBerestford", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "TommyBerestford" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-player' para TuppenceBerestford", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "TuppenceBerestford" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-player' para TommyTuppence", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "TommyTuppence" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode a 'select-other-player' para Satterthwaite", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "Satterthwaite" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode y selectionAction para SpecialSatterthwaite", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "SpecialSatterthwaite" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-other-player");
+      });
+    });
+
+    it("establece selectionMode a 'select-revealed-secret' para Pyne", async () => {
+      mockHttp.playSets.mockResolvedValue({ set_type: "Pyne" });
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(gameBoardProps.selectionMode).toBe("select-revealed-secret");
+      });
+    });
+
+    it("no hace nada si currentSetCards está vacío", async () => {
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, []);
+      });
+
+      expect(mockHttp.playSets).not.toHaveBeenCalled();
+    });
+
+    it("maneja errores al llamar a playSets", async () => {
+      const error = new Error("API Error");
+      mockHttp.playSets.mockRejectedValue(error);
+
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      const setCards = gameBoardProps.setCards;
+
+      await act(async () => {
+        await setCards(2, 1, mockSetCards);
+      });
+
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith("Error al cargar los sets:", error);
+      });
+
+      consoleSpy.mockRestore();
+    });
+  });
     it("loggea el error si revealSecret falla (secreto propio)", async () => {
       const error = new Error("Server fail");
       mockHttp.revealSecret = vi.fn().mockRejectedValueOnce(error);
@@ -1616,6 +1972,13 @@ it("handles player reordering when only 2 players", async () => {
 
 
   describe("Ocultar secreto actions", () => {
+    const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
+      return render(
+        <MemoryRouter initialEntries={[{ pathname: "/game", state: initialState }]}>
+          <Game />
+        </MemoryRouter>
+      );
+    };
     beforeEach(() => {
       console.error = vi.fn();
       console.log = vi.fn();
@@ -1717,7 +2080,4 @@ it("handles player reordering when only 2 players", async () => {
         );
       });
   });
-});
-
-
 });

@@ -13,13 +13,18 @@ import {
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
+import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
+
 
 const reorderPlayers = (playersArray, myPlayerId) => {
+  // Aseguramos que la entrada sea un array y no mutamos el original
   const mutableArray = [...playersArray];
   const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
-  const myPlayerIndex = sortedByTurn.findIndex((player) => player.id === parseInt(myPlayerId));
+  const myPlayerIndex = sortedByTurn.findIndex(
+    (player) => player.id === parseInt(myPlayerId)
+  );
 
-  if (myPlayerIndex === -1) return sortedByTurn;
+  if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
 
   const myPlayer = sortedByTurn[myPlayerIndex];
   const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
@@ -46,6 +51,8 @@ function Game() {
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [playedActionCard, setPlayedActionCard] = useState(null);
   const [message, setMessage] = useState(" ");
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -94,10 +101,25 @@ function Game() {
     }
   }, [turnData?.turn_state, turnData?.turn_owner_id, myPlayerId, orderedPlayers]);
 
+  // Limpiar playedActionCard cuando cambia el turno o cuando el backend indica que no hay carta jugada
+  useEffect(() => {
+    if (!turnData) return;
+
+    if (!turnData.event_card_played) {
+      setPlayedActionCard(null);
+    }
+    else if (turnData.turn_owner_id !== myPlayerId && playedActionCard) {
+      setPlayedActionCard(null);
+    }
+    else if (turnData.turn_owner_id === myPlayerId && turnData.turn_state === "None" && !turnData.event_card_played) {
+      setPlayedActionCard(null);
+    }
+  }, [turnData?.event_card_played, turnData?.turn_owner_id, turnData?.turn_state, myPlayerId, playedActionCard]);
+
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
     console.log(playerId);
-  }
+  };
 
   const handleSecretSelection = (playerId, secretId) => {
     setSelectedPlayer(playerId);
@@ -117,6 +139,53 @@ function Game() {
       console.error("Failed to update hand:", error);
     }
   };
+
+
+  // función simple: activa el flujo de descarte (el dialogo hace el GET solo)
+  const startDiscardTop5Action = () => {
+    setShowDiscardDialog(true);
+  };
+
+
+  //funcion para reponer del dialog 
+  const handleReplenishFromDiscard = async (card) => {
+    if (!card || !gameId || !myPlayerId) return;
+
+    console.log(card);
+
+    try {
+      const response = await httpService.replenishFromDiscard(
+        gameId,
+        myPlayerId,
+        card.card_id
+      );
+      console.log("Replenish desde descarte:", response);
+
+      // Actualizar el descarte con el nuevo estado devuelto por el back
+      setTurnData((prev) => ({
+        ...prev,
+        discardpile: {
+          ...prev?.discardpile,
+          count: response.newDiscard.length,
+          last_card_image:
+            response.newDiscard.at(-1)?.image_name || prev?.discardpile?.last_card_image,
+          last_card_name:
+            response.newDiscard.at(-1)?.card_name || prev?.discardpile?.last_card_name,
+        },
+      }));
+
+      // cerrar diálogo
+      setShowDiscardDialog(false);
+      setPlayedActionCard(null);
+    } catch (err) {
+      console.error("Error al reponer desde descarte:", err);
+      
+    }
+  };
+
+
+
+
 
   // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
 
@@ -167,6 +236,8 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
+
+
   // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
 
   const hideMySecret = async (secretId) => {
@@ -210,7 +281,10 @@ function Game() {
       setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
-      const fetchedPlayerData = await httpService.getPrivatePlayerData(gameId, myPlayerId);
+      const fetchedPlayerData = await httpService.getPrivatePlayerData(
+        gameId,
+        myPlayerId
+      );
 
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
@@ -258,7 +332,6 @@ function Game() {
       }
 
       handleEndGameEvent(dataPublic);
-
     };
 
     const handlePlayerPrivateUpdate = (payload) => {
@@ -384,17 +457,7 @@ function Game() {
       },
     })
   );
-  
-
-  // 🔄 useEffect disparado - turnData cambió
-  // 👤 Mi jugador actual: {id: 1, name: "...", setPlayed: [{id: 123, set_type: "poirot"}]}
-  // 👤 Mi jugador previo: {id: 1, name: "...", setPlayed: []}
-  // 📊 Sets previos: []
-  // 📊 Sets nuevos: [{id: 123, set_type: "poirot"}]
-  // 🎯 Sets nuevos confirmados: [{id: 123, set_type: "poirot"}]
-  // 🎮 Ejecutando efecto para set: poirot
-  // ✅ Activando modo: select-not-revealed-secret
-
+ 
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -462,7 +525,7 @@ function Game() {
         return;
       }
 
-      if (droppedCard.type != "Event") {
+      if (droppedCard.type.toLowerCase() != "event" || cardName.toLowerCase() != "look into the ashes") {
         console.log("Card played not valid.");
         return;
       }
@@ -486,7 +549,18 @@ function Game() {
 
       try {
         await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
-        setSelectionMode("select-my-not-revealed-secret");
+
+        // 🔹 Si la carta jugada es "Look into the ashes", iniciar acción de descarte
+        if (cardName?.toLowerCase() === "look into the ashes") {
+          console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
+          await fetchGameData();
+          startDiscardTop5Action(); // abre el diálogo que hace el GET automático
+          return; // no necesitamos continuar el resto del flujo
+        }else{
+          return;
+        }
+
+
       } catch (error) {
         console.error("Failed playing event card:", error);
         setPlayerData(previousPlayerData);
@@ -495,14 +569,6 @@ function Game() {
     }
   };
 
-  // const [draggingCards, setDraggingCards] = useState([]);
-  // const handleDragFromHand = ({ cards }) => {
-  //   // Ahora 'cards' es el array de objetos carta.
-  //   // Solo se necesita una validación para asegurar que es un array.
-  //   const cardsArray = Array.isArray(cards) ? cards : [cards];
-  //   setDraggingCards(cardsArray);
-  // };
-
   if (isLoading || orderedPlayers.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
@@ -510,24 +576,57 @@ function Game() {
       </div>
     );
   }
-  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
     const cardIds = currentSetCards.map((card) => card.card_id);
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+      console.log("TIPO DE SET:", response);
+    
+      switch (response.set_type?.toLowerCase()) {
+        case "poirot":
+        case "marple":
+          console.log("✅ Activando modo: select-not-revealed-secret");
+          setSelectionMode("select-other-not-revealed-secret");
+          break;
 
-      // setPlayerData((prevData) => {
-      //   if (!prevData) return prevData;
+        case "ladybrent":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
 
-      //   return {
-      //     ...prevData,
-      //     playerCards: prevData.playerCards.filter(
-      //       (card) => !cardIds.includes(card.card_id)
-      //     ),
-      //   };
-      // });
+        case "tommyberestford":
+        case "tuppenceberestford":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "tommytuppence":
+          console.log("✅ Activando modo: select-other-player (no cancelable)");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "satterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          break;
+
+        case "specialsatterthwaite":
+          console.log("✅ Activando modo: select-other-player");
+          setSelectionMode("select-other-player");
+          setSelectionAction("specials");
+          break;
+
+        case "pyne":
+          console.log("✅ Activando modo: select-revealed-secret");
+          setSelectionMode("select-revealed-secret");
+          break;
+
+        default:
+          console.log("⚠️ Set sin efecto:", set.set_type);
+      }
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
@@ -535,11 +634,13 @@ function Game() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
+
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
+        
         <GameBoard
           orderedPlayers={orderedPlayers}
           playerData={playerData}
@@ -564,6 +665,17 @@ function Game() {
             onClose={() => setShowEndDialog(false)}
           />
         )}
+
+        {showDiscardDialog && (
+          <DiscardTop5Dialog
+            gameId={gameId}
+            open={showDiscardDialog}
+            onClose={() => setShowDiscardDialog(false)}
+            onSelect={handleReplenishFromDiscard} // ← al hacer click en una carta
+          />
+        )}
+
+
       </DndContext>
       {/* <ConnectionStatus wsService={wsService} /> */}
     </div>

@@ -16,7 +16,7 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
     (card) => card.card_id === draggingCardId
   );
 
-  const isEventCard = draggingCard?.type.toLowerCase() === "event";
+  const isEventCard = draggingCard?.type.toLowerCase() === "event" && draggingCard.card_name.toLowerCase() == "look into the ashes";
   const shouldShowDropStyle = isMyTurn && isOver && isEventCard && turnData.turn_state.toLowerCase() === "none";
 
   if (!actionCard) {
