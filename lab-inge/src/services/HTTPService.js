@@ -147,7 +147,6 @@ const createHttpService = () => {
     });
   };
 
-
   const playSets = (game_Id, player_Id, cardIds) => {
     if (!game_Id) {
       throw new Error("Game ID is required");
@@ -176,8 +175,8 @@ const createHttpService = () => {
         gameId,
         playerId,
         cardId,
-        cardName
-      })
+        cardName,
+      }),
     });
   };
 
@@ -215,6 +214,22 @@ const createHttpService = () => {
     });
   };
 
+  const stealSecret = ({ gameId, secretId, fromPlayerId, toPlayerId }) => {
+    if (!gameId) {
+      throw new Error("Game ID is required");
+    }
+    if (!secretId) {
+      throw new Error("secret ID is required");
+    }
+    return request(`/secrets/${gameId}/secrets/${secretId}/assign`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        fromPlayerId,
+        toPlayerId,
+      }),
+    });
+  };
+
   return {
     getGame,
     getGames,
@@ -231,6 +246,7 @@ const createHttpService = () => {
     hideSecret,
     revealSecret,
     forcePlayerReveal,
+    stealSecret
   };
 };
 
