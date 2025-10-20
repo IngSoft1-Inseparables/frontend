@@ -22,17 +22,17 @@ describe("BackCard", () => {
       { id: 1, back: "/cards/back1.png", alt: "card1" },
       { id: 2, back: "/cards/back1.png", alt: "card2" },
     ];
-    // available true
-    render(<BackCard type="regular" deck={deck} available={true} />);
-    const imgsTrue = screen.getAllByRole("img");
-    expect(imgsTrue[imgsTrue.length - 1]).toHaveClass("back-card-clickable");
-
-    // available false
-    render(<BackCard type="regular" deck={deck} available={false} />);
-    const imgsFalse = screen.getAllByRole("img");
-    expect(imgsFalse[imgsFalse.length - 1]).not.toHaveClass(
-      "back-card-clickable"
+    const { rerender } = render(
+      <BackCard type="regular" deck={deck} available={true} />
     );
+    let imgs = screen.getAllByRole("img");
+    // La última carta tiene clase clickable cuando available=true y id != 0
+    expect(imgs[imgs.length - 1]).toHaveClass("back-card-clickable");
+
+    // available false - rerender updates the same DOM
+    rerender(<BackCard type="regular" deck={deck} available={false} />);
+    imgs = screen.getAllByRole("img");
+    expect(imgs[imgs.length - 1]).not.toHaveClass("back-card-clickable");
   });
 
   test("la última carta es clickeable solo si available es true", () => {
@@ -40,20 +40,16 @@ describe("BackCard", () => {
       { id: 1, back: "/cards/back1.png", alt: "card1" },
       { id: 2, back: "/cards/back1.png", alt: "card2" },
     ];
-
-    // available true
-    const { container: containerTrue } = render(
+    const { rerender, container } = render(
       <BackCard type="regular" deck={deck} available={true} />
     );
-    const lastCardTrue = containerTrue.querySelector(".back-card:last-child");
-    expect(lastCardTrue).toHaveClass("back-card-clickable");
+    let lastCard = container.querySelector(".back-card:last-child");
+    expect(lastCard).toHaveClass("back-card-clickable");
 
-    // available false
-    const { container: containerFalse } = render(
-      <BackCard type="regular" deck={deck} available={false} />
-    );
-    const lastCardFalse = containerFalse.querySelector(".back-card:last-child");
-    expect(lastCardFalse).not.toHaveClass("back-card-clickable");
+    // rerender with available=false
+    rerender(<BackCard type="regular" deck={deck} available={false} />);
+    lastCard = container.querySelector(".back-card:last-child");
+    expect(lastCard).not.toHaveClass("back-card-clickable");
   });
 
   test('renderiza todas las cartas con el dorso cuando type="regular"', () => {
@@ -153,7 +149,7 @@ describe("BackCard", () => {
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(2); 
     
-    // La última carta (índice 1) debe tener la clase clickable
+    // La última carta (índice 1) debe tener la clase clickable (id != 0)
     const topCard = imgs[1];
     expect(topCard).toHaveClass("back-card-clickable");
 
@@ -206,9 +202,10 @@ describe("BackCard", () => {
     expect(imgs[1]).toHaveAttribute('src', '/cards/card2.png');
     expect(imgs[2]).toHaveAttribute('src', '/cards/card3.png');
 
-    // No tienen posición absoluta, deben tener position: static
+    // Draft type no tiene posición absoluta
     imgs.forEach(img => {
       expect(img).toHaveStyle('position: static');
+      expect(img).toHaveStyle('transform: none');
     });
   });
 
@@ -261,6 +258,31 @@ describe("BackCard", () => {
     const img = container.querySelector('img');
     fireEvent.click(img);
 
+    expect(onCardClickMock).not.toHaveBeenCalled();
+  });
+
+  test('la carta Murder Escapes (id: 0) no es clickeable aunque available sea true', () => {
+    // Deck con una sola carta que será reemplazada por Murder Escapes
+    const deck = [
+      { id: 0, back: '/cards/back1.png', alt: 'murder' }
+    ];
+    const onCardClickMock = vi.fn();
+
+    render(
+      <BackCard type="regular" deck={deck} available={true} onCardClick={onCardClickMock} />
+    );
+
+    const imgs = screen.getAllByRole('img');
+    const murderCard = imgs[0];
+    
+    // Verifica que es Murder Escapes
+    expect(murderCard).toHaveAttribute('src', '/cards/02-murder_escapes.png');
+    
+    // No debe tener clase clickable
+    expect(murderCard).not.toHaveClass('back-card-clickable');
+    
+    // Click no debe ejecutar el callback
+    fireEvent.click(murderCard);
     expect(onCardClickMock).not.toHaveBeenCalled();
   });
 
