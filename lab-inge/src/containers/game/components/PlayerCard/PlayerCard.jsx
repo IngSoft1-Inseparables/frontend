@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 const PlayerCard = ({
   player,
   turnData,
@@ -62,9 +60,7 @@ const PlayerCard = ({
     selectedPlayer === player.id && selectionMode?.includes("player");
   const isOtherPlayerSelected = selectedPlayer && selectedPlayer !== player.id;
 
-  // Condición para la activación del modal
   const canOpenSetModal = player.setPlayed?.length > 0;
-  // Determinamos si el jugador es el local (para el estilo opacidad)
   const isLocalPlayer = player.id === Number(myPlayerId);
   return (
     <div

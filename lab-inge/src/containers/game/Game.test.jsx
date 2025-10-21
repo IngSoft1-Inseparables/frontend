@@ -1219,7 +1219,7 @@ it("handles player reordering when only 2 players", async () => {
         .mockResolvedValueOnce(mockTurnDataWithNoneState)
         .mockResolvedValue(mockTurnDataWithEventPlayed);
       mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
-      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Look into the ashes" });
 
       renderGame({ gameId: 1, myPlayerId: 2 });
 
@@ -1269,7 +1269,7 @@ it("handles player reordering when only 2 players", async () => {
       mockHttp.getPrivatePlayerData
         .mockResolvedValueOnce(mockPlayerDataWithEventCard)
         .mockResolvedValue(mockPlayerDataWithEventCardRemoved);
-      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Look into the ashes" });
 
       renderGame({ gameId: 1, myPlayerId: 2 });
 
@@ -1562,7 +1562,7 @@ it("handles player reordering when only 2 players", async () => {
           { card_id: 9, card_name: "Look into the ashes", type: "Event", image_name: "look.png" },
         ],
       });
-      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Look into the ashes" });
       mockHttp.replenishFromDiscard = vi.fn().mockResolvedValue({
         newCard: { card_id: 20, card_name: "NewCard", image_name: "new.png" },
         newDiscard: [
@@ -1591,10 +1591,9 @@ it("handles player reordering when only 2 players", async () => {
         expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 9, "Look into the ashes");
       });
 
-      // Verifica que el flujo especial se activó
-      expect(console.log).toHaveBeenCalledWith(
-        "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
-      );
+      // Verifica que se llamó a fetchGameData (que ocurre en el case "look into the ashes")
+      expect(mockHttp.getPublicTurnData).toHaveBeenCalled();
+      expect(mockHttp.getPrivatePlayerData).toHaveBeenCalled();
     });
 
     it("muestra el diálogo de descarte tras jugar 'Look into the ashes'", async () => {
@@ -1612,11 +1611,10 @@ it("handles player reordering when only 2 players", async () => {
 
       await act(async () => capturedOnDragEnd(dragEvent));
 
-      // Espera a que se active el diálogo (estado open = true)
+      // Espera a que se ejecute el flujo de "Look into the ashes"
       await waitFor(() => {
-        expect(console.log).toHaveBeenCalledWith(
-          "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
-        );
+        expect(mockHttp.getPublicTurnData).toHaveBeenCalled();
+        expect(mockHttp.getPrivatePlayerData).toHaveBeenCalled();
       });
     });
 
@@ -2556,7 +2554,7 @@ it("handles player reordering when only 2 players", async () => {
         ...mockPlayerData,
         playerCards: [mockEventCard],
       });
-      mockHttp.playEvent.mockResolvedValue({ cardName: "And then there was one more" });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "and then there was one more..." });
       mockHttp.stealSecret.mockResolvedValue({ success: true });
       mockHttp.hideSecret.mockResolvedValue({ success: true });
     });
