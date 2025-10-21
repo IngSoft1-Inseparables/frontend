@@ -759,7 +759,7 @@ function Game() {
             await fetchGameData();
             startDiscardTop5Action();
             break;
-          case "and then there was one more":
+          case "and then there was one more...":
             setSelectionMode("select-other-revealed-secret");
             setSelectionAction("one more");
             break;
