@@ -2554,7 +2554,7 @@ it("handles player reordering when only 2 players", async () => {
         ...mockPlayerData,
         playerCards: [mockEventCard],
       });
-      mockHttp.playEvent.mockResolvedValue({ cardName: "And then there was one more" });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "and then there was one more..." });
       mockHttp.stealSecret.mockResolvedValue({ success: true });
       mockHttp.hideSecret.mockResolvedValue({ success: true });
     });
