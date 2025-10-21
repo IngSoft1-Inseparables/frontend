@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+coverage
+
+# Vitest / Vite caches
+.vitest
+.vite
+
+# ESLint cache
+.eslintcache
+
+# Environment variables (do not commit secrets)
+.env
+.env.local
+.env.*.local
+.env.test
+.env.production
+!.env.example

@@ -51,10 +51,27 @@ describe("CreateFormGame - funcionalidades de los elementos", () => {
     await userEvent.type(input, "CualquierNombre");
     expect(input.value).toBe("CualquierNombre");
   });
+  it("no permite escribir más de 35 caracteres en el Nombre de Usuario", async () => {
+    const input = screen.getByLabelText(/Nombre de Usuario/i);
+    const longText = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    await userEvent.type(input, longText);
+    // Solo debería tomar los primeros 35 caracteres
+    expect(input.value.length).toBeLessThanOrEqual(35);
+    expect(input.value).toBe(longText.slice(0, 35));
+  });
+
   it("permite escribir en el input de Nombre de Partida", async () => {
     const input = screen.getByLabelText(/Nombre de la Partida/i);
     await userEvent.type(input, "CualquierNombre para la partida");
     expect(input.value).toBe("CualquierNombre para la partida");
+  });
+  it("no permite escribir más de 40 caracteres en el Nombre de la Partida", async () => {
+    const input = screen.getByLabelText(/Nombre de la Partida/i);
+    const longText = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    await userEvent.type(input, longText);
+    // Solo debería tomar los primeros 35 caracteres
+    expect(input.value.length).toBeLessThanOrEqual(40);
+    expect(input.value).toBe(longText.slice(0, 40));
   });
   it("permite escribir en la fecha de nacimiento", async () => {
     const input = screen.getByLabelText(/Fecha de nacimiento/i);
@@ -124,6 +141,21 @@ describe("CreateFormGame - validaciones de errores", () => {
     await userEvent.clear(input);
     await userEvent.click(submitButton);
   });
+  it("muestra un error si se ingresa una fecha menor a 1910", async () => {
+    const input = screen.getByLabelText(/Fecha de nacimiento/i);
+    await userEvent.type(input, "1810-05-15");
+
+    const submitButton = screen.getByRole("button", { name: /Crear Partida/i });
+    await userEvent.click(submitButton); // enviar el form
+    expect(
+      await screen.findByText((text) =>
+        text.includes("La fecha debe estar entre")
+      )
+    ).toBeInTheDocument();
+    await userEvent.clear(input);
+    await userEvent.click(submitButton);
+  });
+
   it("muestra un error si el minimo es mas grande que el maximo de jugadores", async () => {
     const minSelect = screen.getByTestId("minPlayers");
     const maxSelect = screen.getByTestId("maxPlayers");

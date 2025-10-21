@@ -1,16 +1,15 @@
-/* === Overlay (añadí className="backdrop-fix") === */
+
 .backdrop-fix {
   position: fixed;
   inset: 0;
   z-index: 9999;
   display: grid;
   place-items: center;
-  padding: 1rem;                  /* respiro en pantallas chicas */
-  background: rgba(0, 0, 0, 0.5); /* oscurecer fondo */
-  backdrop-filter: blur(2px);     /* opcional: leve blur */
+  padding: 1rem; 
+  background: rgba(0, 0, 0, 0.5); 
+  backdrop-filter: blur(2px); 
 }
 
-/* === Botón gradiente === */
 .my-button {
   background: linear-gradient(to right, #CA8747, #A56A30);
   color: #FEFCFB;
@@ -21,27 +20,53 @@
   font-size: 16px;
   transition: filter 0.2s ease, transform 0.2s ease;
 }
-.my-button:hover { filter: brightness(1.05); transform: translateY(-1px); }
-.my-button:active { transform: scale(0.97); }
+.my-button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.my-button:active {
+  transform: scale(0.97);
+}
 
-/* === Modal / Form === */
 .my-form {
   background: #7A6655;
   color: #FEFCFB;
   border-radius: 0.5rem;
   padding: 20px;
-  width: min(28rem, 92vw);        /* ancho máx + responsivo */
+  width: min(28rem, 92vw); 
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
-.my-form input { width: 100%; }
+.my-form input {
+  width: 100%;
+}
 
-/* === Etiquetas/secciones === */
+
 .label {
   font-weight: 600;
   color: #FEFCFB;
 }
 
-/* === Avatares === */
+
+.input-uniform {
+  width: 100%;
+  padding: 0.5rem 1rem; 
+  border: 1px solid #4b5563; 
+  border-radius: 0.375rem; 
+  background-color: #303030;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.input-uniform:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: 0 0 0 2px #CA8747; 
+}
+
+.input-uniform::placeholder {
+  color: #9ca3af;
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(3, 64px);
