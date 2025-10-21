@@ -538,16 +538,20 @@ function Game() {
       setPlayedActionCard(droppedCard);
 
       try {
-        await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
+        const response = await httpService.playEvent(gameId, myPlayerId, cardId, cardName);
 
-        // 🔹 Si la carta jugada es "Look into the ashes", iniciar acción de descarte
-        if (cardName?.toLowerCase() === "look into the ashes") {
-          console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
-          await fetchGameData();
-          startDiscardTop5Action(); // abre el diálogo que hace el GET automático
-          return; // no necesitamos continuar el resto del flujo
+        switch (response.cardName.toLowerCase()) {
+          case "look into the ashes":
+            await fetchGameData();
+            startDiscardTop5Action();
+            break;
+          case "and then there was one more":
+            setSelectionMode("select-other-revealed-secret");
+            setSelectionAction("one more");
+            break;
+          default:
+            break;
         }
-
 
       } catch (error) {
         console.error("Failed playing event card:", error);
