@@ -6,7 +6,9 @@ import PlayerCard from "../PlayerCard/PlayerCard.jsx";
 import SetDeck from "../SetDeck/SetDeck.jsx";
 import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
-import { useState } from "react";
+import { createHttpService } from "../../../../services/HTTPService";
+
+import { useState, useEffect } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -40,7 +42,9 @@ const PLAYER_POSITIONS = {
 function GameBoard({
   orderedPlayers,
   playerData,
+  setPlayerData,
   turnData,
+  setTurnData,
   myPlayerId,
   onCardClick,
   setCards,
@@ -53,6 +57,9 @@ function GameBoard({
   message
 }) {
   const playerCount = turnData.players_amount;
+
+  const httpService = createHttpService();
+
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
@@ -68,7 +75,7 @@ function GameBoard({
   const closeSetModal = () => setModalPlayerId(null);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
-    return (console.log("info publica:",turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
     );
   }
 
@@ -88,6 +95,40 @@ function GameBoard({
     // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
     // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
+
+
+
+  const handleReplenishFromDraft = async (carta) => {
+    try {
+      console.log("→ Robando carta del mazo de draft...");
+
+      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
+
+
+      // Actualizar el draft con las nuevas cartas
+      setTurnData((prev) => ({
+        ...prev,
+        draft: {
+          count: res.newDraft.length,
+          card_1: res.newDraft[0],
+          card_2: res.newDraft[1],
+          card_3: res.newDraft[2],
+        },
+      }));
+
+      console.log("Carta y draft actualizados correctamente.");
+    } catch (error) {
+      console.error("Error al reponer carta desde draft:", error);
+    }
+  };
+
+
+
+
+
+  const isDraftAvailable =
+    turnData.turn_owner_id === myPlayerId &&
+    playerData?.playerCards?.length < 6;
 
   return (
     <div
@@ -151,13 +192,14 @@ function GameBoard({
                     turnData?.turn_owner_id === myPlayerId &&
                     playerData?.playerCards?.length < 6
                   }
-                  onCardClick={onCardClick}
+                  onCardClick={handleReplenishFromDraft}
                 />
+
               </div>
 
-                            <div className="flex justify-center items-end gap-2 mb-10">
-                                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
-                            </div>
+              <div className="flex justify-center items-end gap-2 mb-10">
+                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+              </div>
 
               {/* Grupo derecho: mazo de descarte */}
               <div className="flex justify-center items-center gap-2">
@@ -218,9 +260,8 @@ function GameBoard({
           openSetModal={openSetModal}
         />
         <div
-          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
-            playerCount < 6 ? "z-20" : ""
-          }`}
+          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
+            }`}
         >
           <HandCard
             playerCards={playerData?.playerCards || []}
@@ -229,34 +270,34 @@ function GameBoard({
             onSetStateChange={handleSetStateChange}
           />
 
-                    <div>
-                        <p className="text-white text-center">
-                            {message}
-                        </p>
-                    </div>
-                </div>
-                <div className=" flex justify-rigth mr-12 mb-6">
-                    {isSetReady && availableToPlay && (
-                        <button
-                            onClick={handlePlaySetClick}
-                            className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
-                        >
-                            BAJAR SET DE{" "}
-                            {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                                ? currentSetCards[1]?.card_name.toUpperCase()
-                                : currentSetCards[0]?.card_name.toUpperCase()}
-                        </button>
-                    )}
-                </div>
-            </div>
-    
+          <div>
+            <p className="text-white text-center">
+              {message}
+            </p>
+          </div>
+        </div>
+        <div className=" flex justify-rigth mr-12 mb-6">
+          {isSetReady && availableToPlay && (
+            <button
+              onClick={handlePlaySetClick}
+              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+            >
+              BAJAR SET DE{" "}
+              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                ? currentSetCards[1]?.card_name.toUpperCase()
+                : currentSetCards[0]?.card_name.toUpperCase()}
+            </button>
+          )}
+        </div>
+      </div>
+
       <PlayerSetsModal
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
       />
     </div>
-    );
+  );
 }
 
 export default GameBoard;

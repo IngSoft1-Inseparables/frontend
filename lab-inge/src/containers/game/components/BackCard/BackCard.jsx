@@ -20,7 +20,7 @@ export default function BackCard({
     if (!available) return;
     setSelectedCardId(carta.id);
     console.log("click", carta.id);
-    if (onCardClick) onCardClick();
+    if (onCardClick) onCardClick(carta);
   };
 
   return (
