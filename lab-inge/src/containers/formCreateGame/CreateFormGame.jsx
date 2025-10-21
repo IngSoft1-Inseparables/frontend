@@ -115,8 +115,6 @@ export default function CreateFormGame({ onSubmit, onClose }) {
     setIsSubmitting(true);
 
     try {
-     
-
       await onSubmit(playerData, formDataGame);
 
       setPlayerData({
