@@ -10,7 +10,6 @@ const PlayerCard = ({
   selectedSecret,
   selectionMode,
   openSetModal,
-  playerSetsCount,
 }) => {
   if (!player || !turnData) return null;
 
@@ -186,7 +185,7 @@ const PlayerCard = ({
                                 }
                                 `}
                             style={{
-                                maxWidth: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
+                                width: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
                                 backgroundImage: secret?.revealed || player.id === parseInt(myPlayerId)
                                     ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
                                     : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`

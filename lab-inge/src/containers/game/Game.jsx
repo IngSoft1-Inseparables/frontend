@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { createHttpService } from "../../services/HTTPService.js";
 import { createWSService } from "../../services/WSService.js";
-// import ConnectionStatus from './components/ConnectionStatus/ConnectionStatus';
+
 import {
   DndContext,
   PointerSensor,
@@ -15,16 +15,14 @@ import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
 
-
 const reorderPlayers = (playersArray, myPlayerId) => {
-  // Aseguramos que la entrada sea un array y no mutamos el original
   const mutableArray = [...playersArray];
   const sortedByTurn = mutableArray.sort((a, b) => a.turn - b.turn);
   const myPlayerIndex = sortedByTurn.findIndex(
     (player) => player.id === parseInt(myPlayerId)
   );
 
-  if (myPlayerIndex === -1) return sortedByTurn; // Fallback si no se encuentra
+  if (myPlayerIndex === -1) return sortedByTurn;
 
   const myPlayer = sortedByTurn[myPlayerIndex];
   const playersAfterMe = sortedByTurn.slice(myPlayerIndex + 1);
@@ -47,12 +45,16 @@ function Game() {
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);
+  const [selectionAction, setSelectionAction] = useState(null); // "reveal-my-secret", "reveal-other-player-secret", "force-reveal-my-secret"
   const [selectionMode, setSelectionMode] = useState(null); // "select-player", "select-other-player", "select-other-revealed-secret", "select-my-revealed-secret", "select-revealed-secret", "select-other-not-revealed-secret", "select-my-not-revealed-secret", "select-not-revealed-secret"
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [playedActionCard, setPlayedActionCard] = useState(null);
   const [message, setMessage] = useState(" ");
-  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
+  const [prevData, setPrevData] = useState();
+  const [stolenPlayer, setStolenPlayer] = useState(null); // Jugador del que robaremos el secreto
+  const [fromPlayer, setFromPlayer] = useState(null);
 
+  const [showDiscardDialog, setShowDiscardDialog] = useState(false);
 
   useEffect(() => {
     if (!gameId || !myPlayerId) {
@@ -63,7 +65,7 @@ function Game() {
 
   const getPlayerNameById = (playerId) => {
     if (!orderedPlayers || orderedPlayers.length === 0) return "Jugador";
-    const player = orderedPlayers.find(p => p?.id === parseInt(playerId));
+    const player = orderedPlayers.find((p) => p?.id === parseInt(playerId));
     return player?.name || "Jugador";
   };
 
@@ -78,7 +80,9 @@ function Game() {
 
     switch (turnData.turn_state) {
       case "None":
-        setMessage(`¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`);
+        setMessage(
+          `¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`
+        );
         break;
       case "Playing":
         setMessage("Seguí las indicaciones para continuar el turno.");
@@ -99,7 +103,12 @@ function Game() {
         setMessage(" ");
         break;
     }
-  }, [turnData?.turn_state, turnData?.turn_owner_id, myPlayerId, orderedPlayers]);
+  }, [
+    turnData?.turn_state,
+    turnData?.turn_owner_id,
+    myPlayerId,
+    orderedPlayers,
+  ]);
 
   // Limpiar playedActionCard cuando cambia el turno o cuando el backend indica que no hay carta jugada
   useEffect(() => {
@@ -107,17 +116,24 @@ function Game() {
 
     if (turnData.event_card_played) {
       setPlayedActionCard(turnData.event_card_played);
-    }
-    else if (!turnData.event_card_played) {
+    } else if (!turnData.event_card_played) {
+      setPlayedActionCard(null);
+    } else if (turnData.turn_owner_id !== myPlayerId && playedActionCard) {
+      setPlayedActionCard(null);
+    } else if (
+      turnData.turn_owner_id === myPlayerId &&
+      turnData.turn_state === "None" &&
+      !turnData.event_card_played
+    ) {
       setPlayedActionCard(null);
     }
-    else if (turnData.turn_owner_id !== myPlayerId && playedActionCard) {
-      setPlayedActionCard(null);
-    }
-    else if (turnData.turn_owner_id === myPlayerId && turnData.turn_state === "None" && !turnData.event_card_played) {
-      setPlayedActionCard(null);
-    }
-  }, [turnData?.event_card_played, turnData?.turn_owner_id, turnData?.turn_state, myPlayerId, playedActionCard]);
+  }, [
+    turnData?.event_card_played,
+    turnData?.turn_owner_id,
+    turnData?.turn_state,
+    myPlayerId,
+    playedActionCard,
+  ]);
 
   const handlePlayerSelection = (playerId) => {
     setSelectedPlayer(playerId);
@@ -143,14 +159,12 @@ function Game() {
     }
   };
 
-
   // función simple: activa el flujo de descarte (el dialogo hace el GET solo)
   const startDiscardTop5Action = () => {
     setShowDiscardDialog(true);
   };
 
-
-  //funcion para reponer del dialog 
+  //funcion para reponer del dialog
   const handleReplenishFromDiscard = async (card) => {
     if (!card || !gameId || !myPlayerId) return;
 
@@ -171,18 +185,45 @@ function Game() {
       setPlayedActionCard(null);
     } catch (err) {
       console.error("Error al reponer desde descarte:", err);
-      
     }
   };
 
+  const handleStealSecret = async () => {
+    if (!selectedPlayer) {
+      console.error("❌ No hay jugador seleccionado para robar secreto");
+      return;
+    }
 
+    try {
+      // 1. Guardar el jugador del que robaremos
+      setStolenPlayer(selectedPlayer);
 
+      // 2. Guardar una copia profunda del estado actual ANTES de forzar la revelación
+      setPrevData(JSON.parse(JSON.stringify(turnData)));
 
+      // 3. Forzar al jugador a revelar un secreto
+      await forcePlayerRevealSecret(selectedPlayer);
 
-  // ACCIONES PARA REVELAR UN SECRETO (propio/ajeno)
+      // NOTA: El resto del flujo se ejecuta en el useEffect que detecta el cambio en turnData
+    } catch (error) {
+      console.error("❌ ERROR al forzar revelación:", error);
+      setStolenPlayer(null);
+      setPrevData(null);
+      setSelectionAction(null);
+    }
+  };
 
+  const handleStealSecretEvent = async (selectedSecret) => {
+    if (!selectedSecret || !selectedPlayer) {
+      console.log("No hay secreto seleccionado");
+      return;
+    }
+    setFromPlayer(selectedPlayer);
+    setSelectedPlayer(null);
+    setSelectionMode("select-player");
+  };
   const revealMySecret = async (secretId) => {
-    try{
+    try {
       console.log("revelando secreto propio:", secretId);
 
       await httpService.revealSecret({
@@ -194,13 +235,21 @@ function Game() {
       await fetchGameData();
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
+    } finally {
+      setSelectionMode(null); // Limpiar el modo de selección
     }
   };
 
   const revealOtherPlayerSecret = async (playerId, secretId) => {
+    setSelectionMode("select-other-secret");
     try {
-      console.log("revelando secreto ajeno:", secretId, "del jugador:", playerId);
-
+      console.log(
+        "revelando secreto ajeno:",
+        secretId,
+        "del jugador:",
+        playerId
+      );
+      // const selectedSecretId = await waitForUserSelection();
       await httpService.revealSecret({
         gameId,
         playerId,
@@ -215,7 +264,7 @@ function Game() {
   const forcePlayerRevealSecret = async (playerId) => {
     try {
       console.log("forzando al jugador a revelar secreto:", playerId);
-      
+
       const response = await httpService.forcePlayerReveal({
         gameId,
         playerId,
@@ -228,8 +277,6 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
-
-
   // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
 
   const hideMySecret = async (secretId) => {
@@ -246,13 +293,18 @@ function Game() {
 
       await fetchGameData();
     } catch (err) {
-      console.log("error al ocultar secreto propio:", err);  
+      console.log("error al ocultar secreto propio:", err);
     }
   };
 
   const hideOtherPlayerSecret = async (playerId, secretId) => {
     try {
-      console.log("ocultando secreto ajeno:", secretId, "del jugador:", playerId);
+      console.log(
+        "ocultando secreto ajeno:",
+        secretId,
+        "del jugador:",
+        playerId
+      );
 
       await httpService.hideSecret({
         gameId,
@@ -281,12 +333,21 @@ function Game() {
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 
-      const reorderedPlayersData = reorderPlayers(fetchedTurnData.players, myPlayerId);
-      setOrderedPlayers(reorderedPlayersData);
+      if (fetchedTurnData?.players) {
+        const reorderedPlayersData = reorderPlayers(
+          fetchedTurnData.players,
+          myPlayerId
+        );
+        setOrderedPlayers(reorderedPlayersData);
+      }
 
       console.log(fetchedTurnData);
+
+      // Retornar los datos para poder usarlos inmediatamente
+      return { turnData: fetchedTurnData, playerData: fetchedPlayerData };
     } catch (error) {
       console.error("Failed obtaining game data:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -297,7 +358,15 @@ function Game() {
 
     console.log("🎮 Inicializando conexión WebSocket...");
 
-    fetchGameData();
+    const initializeGame = async () => {
+      try {
+        await fetchGameData();
+      } catch (error) {
+        // Error ya loggeado en fetchGameData
+      }
+    };
+
+    initializeGame();
 
     wsService.connect();
 
@@ -319,7 +388,10 @@ function Game() {
 
       setTurnData(dataPublic);
       if (dataPublic.players) {
-        const reorderedPlayersData = reorderPlayers(dataPublic.players, myPlayerId);
+        const reorderedPlayersData = reorderPlayers(
+          dataPublic.players,
+          myPlayerId
+        );
         setOrderedPlayers(reorderedPlayersData);
       }
 
@@ -384,8 +456,91 @@ function Game() {
     };
   }, [gameId, myPlayerId]);
 
-  
+  // useEffect para detectar cuando se revela un secreto y automáticamente robarlo
   useEffect(() => {
+    // Solo ejecutar si tenemos los datos necesarios para robar el secreto
+    if (
+      !prevData ||
+      !turnData ||
+      !stolenPlayer ||
+      selectionAction?.toLowerCase() !== "specials"
+    ) {
+      return;
+    }
+
+    // Buscar el jugador objetivo en ambos estados (antes y después)
+    const previousPlayerData = prevData?.players?.find(
+      (p) => p.id === parseInt(stolenPlayer)
+    );
+
+    const currentPlayerData = turnData?.players?.find(
+      (p) => p.id === parseInt(stolenPlayer)
+    );
+
+    if (!previousPlayerData || !currentPlayerData) {
+      return;
+    }
+
+    // Buscar el secreto que cambió de oculto (revealed=false) a revelado (revealed=true)
+    const secretToSteal = currentPlayerData?.playerSecrets?.find(
+      (currentSecret) => {
+        const prevSecret = previousPlayerData?.playerSecrets?.find(
+          (s) => s.secret_id === currentSecret.secret_id
+        );
+
+        // El secreto estaba OCULTO antes (revealed=false) y ahora está REVELADO (revealed=true)
+        const wasHidden = prevSecret?.revealed === false;
+        const isNowRevealed = currentSecret.revealed === true;
+
+        return isNowRevealed && wasHidden;
+      }
+    );
+
+    if (secretToSteal) {
+      // Limpiar prevData para evitar ejecuciones múltiples
+      setPrevData(null);
+
+      // Ejecutar el robo del secreto
+      (async () => {
+        try {
+          // 1. Robar el secreto (asignarlo al jugador actual)
+          await httpService.stealSecret({
+            gameId,
+            secretId: secretToSteal.secret_id,
+            fromPlayerId: stolenPlayer,
+            toPlayerId: myPlayerId,
+          });
+
+          // 2. Pequeña pausa para asegurar que el backend procese la asignación
+          await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // 3. Ocultar el secreto robado
+          await httpService.hideSecret({
+            gameId,
+            playerId: myPlayerId,
+            secretId: secretToSteal.secret_id,
+          });
+
+          // 4. Actualizar los datos del juego
+          await fetchGameData();
+
+          // 5. Limpiar estados
+          setSelectedPlayer(null);
+          setSelectionAction(null);
+          setStolenPlayer(null);
+        } catch (error) {
+          console.error("❌ ERROR al robar secreto:", error);
+          console.error("Detalles del error:", error.message);
+          // En caso de error, limpiar estados
+          setStolenPlayer(null);
+          setSelectionAction(null);
+        }
+      })();
+    }
+  }, [turnData, prevData, stolenPlayer, selectionAction, gameId, myPlayerId]);
+
+  useEffect(() => {
+    // Revelar secreto propio
     if (selectionMode === "select-my-not-revealed-secret" && selectedSecret) {
       console.log("revelando secreto propio:", selectedSecret);
       revealMySecret(selectedSecret);
@@ -395,10 +550,19 @@ function Game() {
     }
   }, [selectionMode, selectedSecret]);
 
-  
   useEffect(() => {
-    if (selectionMode === "select-other-not-revealed-secret" && selectedSecret && selectedPlayer) {
-      console.log("revelando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
+    // Revelar secreto ajeno
+    if (
+      selectionMode === "select-other-not-revealed-secret" &&
+      selectedSecret &&
+      selectedPlayer
+    ) {
+      console.log(
+        "revelando secreto ajeno:",
+        selectedSecret,
+        "de jugador:",
+        selectedPlayer
+      );
       revealOtherPlayerSecret(selectedPlayer, selectedSecret);
       setSelectedSecret(null);
       setSelectedPlayer(null);
@@ -406,41 +570,121 @@ function Game() {
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-
-  
   useEffect(() => {
     if (selectionMode === "select-other-player" && selectedPlayer) {
-      console.log("jugador seleccionado para forzar revelación:", selectedPlayer);
+      console.log(
+        "jugador seleccionado para forzar revelación:",
+        selectedPlayer
+      );
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
-    } 
+    }
   }, [selectionMode, selectedPlayer]);
 
+  useEffect(() => {
+    if (selectionMode === "select-my-revealed-secret" && selectedSecret) {
+      console.log("ocultando secreto propio:", selectedSecret);
+      hideMySecret(selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret]);
 
-    useEffect(() => {
-      if (selectionMode === "select-my-revealed-secret" && selectedSecret) 
-        {
-          console.log("ocultando secreto propio:", selectedSecret);
-          hideMySecret(selectedSecret);
-          setSelectedSecret(null);
+  useEffect(() => {
+    if (
+      selectionMode === "select-revealed-secret" &&
+      selectedSecret &&
+      selectedPlayer
+    ) {
+      console.log(
+        "ocultando secreto ajeno:",
+        selectedSecret,
+        "de jugador:",
+        selectedPlayer
+      );
+      hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+      setSelectedSecret(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction?.toLowerCase() === "specials"
+    ) {
+      console.log(
+        "jugador seleccionado para forzar revelación:",
+        selectedPlayer
+      );
+
+      handleStealSecret(selectedPlayer);
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedPlayer]);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-revealed-secret" &&
+      selectedSecret &&
+      selectionAction?.toLowerCase() === "one more"
+    ) {
+      console.log(
+        "jugador al que se le va a robar un secreto:",
+        selectedPlayer
+      );
+
+      handleStealSecretEvent(selectedSecret, selectedPlayer);
+    }
+  }, [selectionMode, selectedSecret]);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-player" &&
+      selectedSecret &&
+      selectedPlayer &&
+      selectionAction?.toLowerCase() === "one more"
+    ) {
+      console.log(
+        "jugador seleccionado para asignarle un secreto:",
+        selectedPlayer
+      );
+
+      (async () => {
+        try {
+          await httpService.stealSecret({
+            gameId,
+            secretId: selectedSecret,
+            fromPlayerId: fromPlayer,
+            toPlayerId: selectedPlayer,
+          });
+
+          await httpService.hideSecret({
+            gameId,
+            playerId: selectedPlayer,
+            secretId: selectedSecret,
+          });
+
+          await fetchGameData();
+
           setSelectedPlayer(null);
-          setSelectionMode(null);
-        }
-    }, [selectionMode, selectedSecret]);
-
-    
-    useEffect(() => {
-      if (selectionMode === "select-revealed-secret" && selectedSecret && selectedPlayer) 
-        {
-          console.log("ocultando secreto ajeno:", selectedSecret, "de jugador:", selectedPlayer);
-          hideOtherPlayerSecret(selectedPlayer, selectedSecret);
+          setSelectionAction(null);
+          setFromPlayer(null);
+        } catch (error) {
+          console.error("Error al asignar secreto:", error);
+          setFromPlayer(null);
+          setSelectionAction(null);
           setSelectedSecret(null);
-          setSelectedPlayer(null);
-          setSelectionMode(null);
         }
-    }, [selectionMode, selectedSecret, selectedPlayer]);
+      })();
 
+      setSelectionMode(null);
+    }
+  }, [selectionMode, selectedSecret, selectedPlayer]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -449,7 +693,7 @@ function Game() {
       },
     })
   );
- 
+
   // Handler para cuando se suelta una carta
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -461,7 +705,8 @@ function Game() {
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding") return;
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
+        return;
 
       // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
@@ -517,7 +762,11 @@ function Game() {
         return;
       }
 
-      if (droppedCard.type.toLowerCase() != "event" || cardName.toLowerCase() != "look into the ashes") {
+      if (
+        droppedCard.type.toLowerCase() != "event" &&
+        (cardName.toLowerCase() === "look into the ashes" ||
+          cardName.toLowerCase() === "and then there was one more")
+      ) {
         console.log("Card played not valid.");
         return;
       }
@@ -544,13 +793,23 @@ function Game() {
 
         // 🔹 Si la carta jugada es "Look into the ashes", iniciar acción de descarte
         if (cardName?.toLowerCase() === "look into the ashes") {
-          console.log("🔥 Evento Look into the ashes jugado → mostrando top5 del descarte");
+          console.log(
+            "🔥 Evento Look into the ashes jugado → mostrando top5 del descarte"
+          );
           await fetchGameData();
           startDiscardTop5Action(); // abre el diálogo que hace el GET automático
           return; // no necesitamos continuar el resto del flujo
         }
 
-
+        // 🔹 Si la carta jugada es "And Then There Was One More", iniciar selección de secreto revelado
+        if (cardName?.toLowerCase() === "and then there was one more") {
+          console.log(
+            "🔥 Evento And Then There Was One More jugado → seleccionar secreto revelado"
+          );
+          setSelectionMode("select-other-revealed-secret");
+          setSelectionAction("one more");
+          return;
+        }
       } catch (error) {
         console.error("Failed playing event card:", error);
         setPlayerData(previousPlayerData);
@@ -566,7 +825,7 @@ function Game() {
       </div>
     );
   }
-   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
+  const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
     const cardIds = currentSetCards.map((card) => card.card_id);
@@ -574,7 +833,7 @@ function Game() {
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
       console.log("TIPO DE SET:", response);
-    
+
       switch (response.set_type?.toLowerCase()) {
         case "poirot":
         case "marple":
@@ -615,7 +874,8 @@ function Game() {
           break;
 
         default:
-          console.log("⚠️ Set sin efecto:", set.set_type);
+          console.log("⚠️ Set sin efecto:", response.set_type);
+          break;
       }
     } catch (error) {
       console.error("Error al cargar los sets:", error);
@@ -624,19 +884,17 @@ function Game() {
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
-
       <DndContext
         sensors={sensors}
         onDragEnd={handleDragEnd}
         modifiers={[restrictToWindowEdges]}
       >
-        
         <GameBoard
           orderedPlayers={orderedPlayers}
           playerData={playerData}
-          setPlayerData={setPlayerData} 
+          setPlayerData={setPlayerData}
           turnData={turnData}
-          setTurnData={setTurnData}  
+          setTurnData={setTurnData}
           myPlayerId={myPlayerId}
           onCardClick={handleCardClick}
           onPlayerSelect={handlePlayerSelection}
@@ -664,8 +922,6 @@ function Game() {
             onSelect={handleReplenishFromDiscard} // ← al hacer click en una carta
           />
         )}
-
-
       </DndContext>
       {/* <ConnectionStatus wsService={wsService} /> */}
     </div>
