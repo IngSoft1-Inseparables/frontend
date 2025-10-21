@@ -8,7 +8,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
@@ -110,7 +109,6 @@ function Game() {
     orderedPlayers,
   ]);
 
-  // Limpiar playedActionCard cuando cambia el turno o cuando el backend indica que no hay carta jugada
   useEffect(() => {
     if (!turnData) return;
 
@@ -159,12 +157,10 @@ function Game() {
     }
   };
 
-  // función simple: activa el flujo de descarte (el dialogo hace el GET solo)
   const startDiscardTop5Action = () => {
     setShowDiscardDialog(true);
   };
 
-  //funcion para reponer del dialog
   const handleReplenishFromDiscard = async (card) => {
     if (!card || !gameId || !myPlayerId) return;
 
@@ -180,7 +176,6 @@ function Game() {
 
       await fetchGameData();
 
-      // cerrar diálogo
       setShowDiscardDialog(false);
       setPlayedActionCard(null);
     } catch (err) {
@@ -195,16 +190,11 @@ function Game() {
     }
 
     try {
-      // 1. Guardar el jugador del que robaremos
       setStolenPlayer(selectedPlayer);
-
-      // 2. Guardar una copia profunda del estado actual ANTES de forzar la revelación
       setPrevData(JSON.parse(JSON.stringify(turnData)));
 
-      // 3. Forzar al jugador a revelar un secreto
       await forcePlayerRevealSecret(selectedPlayer);
 
-      // NOTA: El resto del flujo se ejecuta en el useEffect que detecta el cambio en turnData
     } catch (error) {
       console.error("❌ ERROR al forzar revelación:", error);
       setStolenPlayer(null);
@@ -236,7 +226,7 @@ function Game() {
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {
-      setSelectionMode(null); // Limpiar el modo de selección
+      setSelectionMode(null);
     }
   };
 
@@ -249,7 +239,6 @@ function Game() {
         "del jugador:",
         playerId
       );
-      // const selectedSecretId = await waitForUserSelection();
       await httpService.revealSecret({
         gameId,
         playerId,
@@ -277,7 +266,6 @@ function Game() {
       setSelectedPlayer(null);
     }
   };
-  // ACCIONES PARA OCULTAR SECRETO (propio/ajeno)
 
   const hideMySecret = async (secretId) => {
     try {
@@ -343,7 +331,6 @@ function Game() {
 
       console.log(fetchedTurnData);
 
-      // Retornar los datos para poder usarlos inmediatamente
       return { turnData: fetchedTurnData, playerData: fetchedPlayerData };
     } catch (error) {
       console.error("Failed obtaining game data:", error);
@@ -356,13 +343,12 @@ function Game() {
   useEffect(() => {
     if (!gameId || !myPlayerId) return;
 
-    console.log("🎮 Inicializando conexión WebSocket...");
+    console.log("Inicializando conexión WebSocket...");
 
     const initializeGame = async () => {
       try {
         await fetchGameData();
       } catch (error) {
-        // Error ya loggeado en fetchGameData
       }
     };
 
@@ -403,25 +389,22 @@ function Game() {
         typeof payload === "string" ? JSON.parse(payload) : payload;
       setPlayerData(dataPlayer);
     };
-    // Handler para estado de conexión
     const handleConnectionStatus = ({ status }) => {
-      console.log(`🔌 Estado de conexión: ${status}`);
+      console.log(`Estado de conexión: ${status}`);
 
       if (status === "connected") {
-        // Refrescar datos cuando se reconecta
         fetchGameData();
       }
     };
 
-    // Handler para reconexiones
     const handleReconnecting = ({ attempt, delay }) => {
-      console.log(`🔄 Reconectando... (intento ${attempt})`);
+      console.log(`Reconectando... (intento ${attempt})`);
       // Aquí podrías mostrar un toast o indicador visual
     };
 
     // Handler para fallo de conexión
     const handleConnectionFailed = ({ attempts }) => {
-      console.error(`❌ Falló la conexión después de ${attempts} intentos`);
+      console.error(`Falló la conexión después de ${attempts} intentos`);
       setShowConnectionError(true);
     };
     wsService.on("game_public_update", handleGamePublicUpdate);
@@ -430,10 +413,8 @@ function Game() {
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
     wsService.on("hasToReveal", (payload) => {
-      console.log("evento WS: hasToReveal recibido", payload);
 
       if (payload.playerId === parseInt(myPlayerId)) {
-        console.log("este jugador fue forzado a revelar un secreto");
         setSelectionMode("select-my-not-revealed-secret");
       }
       if (!payload) {
@@ -441,9 +422,8 @@ function Game() {
       }
     });
 
-    // Cleanup: remover TODOS los listeners y desconectar
     return () => {
-      console.log("🧹 Limpiando conexión WebSocket...");
+      console.log("Limpiando conexión WebSocket...");
 
       wsService.off("game_public_update", handleGamePublicUpdate);
       wsService.off("player_private_update", handlePlayerPrivateUpdate);
@@ -456,9 +436,7 @@ function Game() {
     };
   }, [gameId, myPlayerId]);
 
-  // useEffect para detectar cuando se revela un secreto y automáticamente robarlo
   useEffect(() => {
-    // Solo ejecutar si tenemos los datos necesarios para robar el secreto
     if (
       !prevData ||
       !turnData ||
@@ -468,7 +446,6 @@ function Game() {
       return;
     }
 
-    // Buscar el jugador objetivo en ambos estados (antes y después)
     const previousPlayerData = prevData?.players?.find(
       (p) => p.id === parseInt(stolenPlayer)
     );
@@ -488,7 +465,6 @@ function Game() {
           (s) => s.secret_id === currentSecret.secret_id
         );
 
-        // El secreto estaba OCULTO antes (revealed=false) y ahora está REVELADO (revealed=true)
         const wasHidden = prevSecret?.revealed === false;
         const isNowRevealed = currentSecret.revealed === true;
 
@@ -497,13 +473,10 @@ function Game() {
     );
 
     if (secretToSteal) {
-      // Limpiar prevData para evitar ejecuciones múltiples
       setPrevData(null);
 
-      // Ejecutar el robo del secreto
       (async () => {
         try {
-          // 1. Robar el secreto (asignarlo al jugador actual)
           await httpService.stealSecret({
             gameId,
             secretId: secretToSteal.secret_id,
@@ -511,27 +484,22 @@ function Game() {
             toPlayerId: myPlayerId,
           });
 
-          // 2. Pequeña pausa para asegurar que el backend procese la asignación
           await new Promise((resolve) => setTimeout(resolve, 100));
 
-          // 3. Ocultar el secreto robado
           await httpService.hideSecret({
             gameId,
             playerId: myPlayerId,
             secretId: secretToSteal.secret_id,
           });
 
-          // 4. Actualizar los datos del juego
           await fetchGameData();
 
-          // 5. Limpiar estados
           setSelectedPlayer(null);
           setSelectionAction(null);
           setStolenPlayer(null);
         } catch (error) {
           console.error("❌ ERROR al robar secreto:", error);
           console.error("Detalles del error:", error.message);
-          // En caso de error, limpiar estados
           setStolenPlayer(null);
           setSelectionAction(null);
         }
@@ -708,11 +676,9 @@ function Game() {
       if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
         return;
 
-      // Guardar el estado anterior para poder hacer rollback
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
 
-      // Actualizar optimisticamente la mano del jugador
       setPlayerData((prevData) => {
         if (!prevData) return prevData;
 
@@ -724,7 +690,6 @@ function Game() {
         };
       });
 
-      // Actualizar optimisticamente el mazo de descarte
       setTurnData((prevTurnData) => {
         return {
           ...prevTurnData,
@@ -771,10 +736,8 @@ function Game() {
         return;
       }
 
-      // Guardar el estado anterior para rollback
       const previousPlayerData = playerData;
 
-      // Actualizar optimisticamente: remover de la mano y agregar a zona de eventos
       setPlayerData((prevData) => {
         if (!prevData) return prevData;
 
@@ -913,11 +876,10 @@ function Game() {
             gameId={gameId}
             open={showDiscardDialog}
             onClose={() => setShowDiscardDialog(false)}
-            onSelect={handleReplenishFromDiscard} // ← al hacer click en una carta
+            onSelect={handleReplenishFromDiscard}
           />
         )}
       </DndContext>
-      {/* <ConnectionStatus wsService={wsService} /> */}
     </div>
   );
 }

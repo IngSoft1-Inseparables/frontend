@@ -91,9 +91,6 @@ function GameBoard({
     if (setCards) {
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
-    // console.log("datos obtenidos:", turnData.player.{myPlayerId}.setPlayed);
-    // setPlayedSets([...playedSets, { cards: [...currentSetCards] }]); // ELIMINAR: luego de conexion con websocket
-    // setCurrentSetCards([]); // ELIMINAR: luego de conexion con websocket
   };
 
 
@@ -121,14 +118,6 @@ function GameBoard({
       console.error("Error al reponer carta desde draft:", error);
     }
   };
-
-
-
-
-
-  const isDraftAvailable =
-    turnData.turn_owner_id === myPlayerId &&
-    playerData?.playerCards?.length < 6;
 
   return (
     <div
@@ -212,16 +201,12 @@ function GameBoard({
             </div>
 
             <div className="flex h-full w-full flex-wrap">
-              {/* //CONEXION CON WEBSOCKET */}
-
               <SetDeck
                 setPlayed={
                   turnData.players.find((p) => p.id === myPlayerId)
                     ?.setPlayed || []
                 }
               />
-              {/* <SetDeck setPlayed={playedSets} />{" "} */}
-              {/* ELIMINAR: cuando se conecte con websokcet eliminar esat linea y la  */}
             </div>
           </div>
         </div>
