@@ -82,4 +82,57 @@ describe("GameModalController", () => {
       });
     });
   });
+
+  it("muestra alert cuando createGame falla", async () => {
+    const mockCreateGame = vi.fn().mockRejectedValue(new Error("400 badRequest"));
+
+    vi.mocked(HTTPService.createHttpService).mockImplementation(() => ({
+      createGame: mockCreateGame,
+    }));
+
+    const mockOnClose = vi.fn();
+    const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+
+    render(
+      <BrowserRouter>
+        <GameModalController isOpen={true} onClose={mockOnClose} />
+      </BrowserRouter>
+    );
+
+    // El modal debería estar visible
+    const modal = screen.getByText(/Crear nueva partida/i).closest("div");
+    const modalWithin = within(modal);
+
+    await userEvent.type(
+      modalWithin.getByLabelText(/Nombre de Usuario/i),
+      "Micaela"
+    );
+    await userEvent.type(
+      modalWithin.getByLabelText(/Nombre de la Partida/i),
+      "Partida Duplicada"
+    );
+    await userEvent.type(
+      modalWithin.getByLabelText(/Fecha de nacimiento/i),
+      "2000-05-10"
+    );
+    await userEvent.selectOptions(modalWithin.getByTestId("minPlayers"), "2");
+    await userEvent.selectOptions(modalWithin.getByTestId("maxPlayers"), "4");
+
+    const avatars = modalWithin.getAllByRole("img");
+    await userEvent.click(avatars[0]);
+
+    const submitButton = modalWithin.getByRole("button", {
+      name: /Crear Partida/i,
+    });
+    await userEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockCreateGame).toHaveBeenCalled();
+        expect(alertMock).toHaveBeenCalledWith(
+          "El nombre 'Partida Duplicada' ya está en uso. Ingresa un nombre distinto."
+        );
+    });
+
+    alertMock.mockRestore();
+  });
 });
