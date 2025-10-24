@@ -18,6 +18,14 @@ export default function DiscardTop5Dialog({ gameId, open, onClose, onSelect }) {
       try {
         const data = await http.getDiscardTop5(gameId);
         console.log("Top 5 del descarte recibido:", data);
+
+        // 🧠 Nuevo control agregado:
+        if (!data.cards || data.cards.length === 0) {
+          console.warn("No hay cartas en el descarte. Cerrando diálogo automáticamente.");
+          onClose(); // 🔹 cierra el diálogo automáticamente
+          return; // 🔹 evita seguir ejecutando el resto
+        }
+
         setCards(data.cards || []);
       } catch (err) {
         console.error("Error al obtener top5:", err);
@@ -29,6 +37,7 @@ export default function DiscardTop5Dialog({ gameId, open, onClose, onSelect }) {
 
     fetchTop5();
   }, [open, gameId]);
+
 
   if (!open) return null;
 

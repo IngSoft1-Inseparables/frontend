@@ -757,19 +757,7 @@ function Game() {
         switch (response.cardName.toLowerCase()) {
           case "look into the ashes":
             await fetchGameData();
-            //solo abrir el dialog si hay cartas en el descarte
-
-            if (response.cards && response.cards.length > 0) {
-              startDiscardTop5Action();
-            } else { 
-              console.log("No hay cartas en el descarte para mostrar.");
-              //asegurar que el turno siga correctamente
-              setTurnData((prevTurnData) => ({
-                ...prevTurnData,
-                turn_state: "Discarding",
-              }));
-            }
-            
+            startDiscardTop5Action();
             break;
           case "and then there was one more...":
             setSelectionMode("select-other-revealed-secret");
