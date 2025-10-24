@@ -73,9 +73,15 @@ export default function DiscardTop5Dialog({ gameId, open, onClose, onSelect }) {
 
         {/* Sin cartas */}
         {!loading && !error && cards.length === 0 && (
-          <p className="text-center text-white text-lg">
-            No hay cartas para mostrar.
-          </p>
+          <div className="text-center text-white text-lg flex flex-col items-center gap-4">
+            <p>No hay cartas para mostrar.</p>
+            <button
+              onClick={onClose}
+              className="mt-2 px-4 py-2 bg-orange-700 hover:bg-orange-800 text-white rounded-lg transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
         )}
 
       </div>

@@ -875,7 +875,10 @@ function Game() {
           <DiscardTop5Dialog
             gameId={gameId}
             open={showDiscardDialog}
-            onClose={() => setShowDiscardDialog(false)}
+            onClose={() => {
+              setShowDiscardDialog(false)
+              fetchGameData
+            }}
             onSelect={handleReplenishFromDiscard}
           />
         )}
