@@ -18,7 +18,7 @@ vi.mock("../FaceCard/FaceCard", () => ({
   default: ({ cardName }) => <div data-testid="face-card">{cardName}</div>,
 }));
 
-// ✅ AHORA IMPORTAMOS EL COMPONENTE (después de mockear)
+// ✅ IMPORTAMOS EL COMPONENTE DESPUÉS DE MOCKEAR
 import DiscardTop5Dialog from "./DiscardTop5Dialog";
 
 describe("DiscardTop5Dialog", () => {
@@ -58,14 +58,14 @@ describe("DiscardTop5Dialog", () => {
     // Estado de carga
     expect(screen.getByText("Cargando...")).toBeInTheDocument();
 
-    // Espera a que termine el fetch
+    // Espera a que termine el fetch y renderice el título
     await waitFor(() =>
       expect(
         screen.getByText("Primeras 5 cartas del mazo de descarte")
       ).toBeInTheDocument()
     );
 
-    // Verifica que se rendericen las cartas
+    // Verifica que se rendericen las cartas mockeadas
     expect(screen.getByText("Poirot")).toBeInTheDocument();
     expect(screen.getByText("Marple")).toBeInTheDocument();
   });
@@ -82,14 +82,14 @@ describe("DiscardTop5Dialog", () => {
     );
   });
 
-  it("muestra 'No hay cartas para mostrar' si la respuesta está vacía", async () => {
+  it("cierra automáticamente si no hay cartas en el descarte", async () => {
     mockGetDiscardTop5.mockResolvedValueOnce({ cards: [] });
+    const mockClose = vi.fn();
 
-    render(<DiscardTop5Dialog gameId={1} open={true} />);
+    render(<DiscardTop5Dialog gameId={1} open={true} onClose={mockClose} />);
 
-    await waitFor(() =>
-      expect(screen.getByText("No hay cartas para mostrar.")).toBeInTheDocument()
-    );
+    // Espera a que se llame onClose automáticamente
+    await waitFor(() => expect(mockClose).toHaveBeenCalled());
   });
 
   it("ejecuta onSelect al hacer click en una carta", async () => {
