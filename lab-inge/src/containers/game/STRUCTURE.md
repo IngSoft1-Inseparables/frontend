@@ -6,8 +6,23 @@ src/containers/game/
 ├── Game.jsx                          # Componente principal (270 líneas) ✨
 │   └── Importa y usa todos los hooks
 │
+├── Game.test.jsx                     # Tests de integración (~300 líneas)
+│   └── Tests end-to-end del componente
+│
 ├── hooks/                            # 📁 Directorio de custom hooks
 │   ├── index.js                      # Exporta todos los hooks
+│   │
+│   ├── __tests__/                    # 🧪 Tests de hooks
+│   │   ├── README.md                 # Documentación de tests
+│   │   ├── testUtils.js              # Utilidades y mocks compartidos
+│   │   ├── useGameData.test.js       # ✅ Tests de datos del juego
+│   │   ├── useSecretActions.test.js  # ✅ Tests de acciones de secretos
+│   │   ├── useTurnMessages.test.js   # ✅ Tests de mensajes
+│   │   ├── useCardActions.test.js    # 🔜 Por migrar
+│   │   ├── useWebSocket.test.js      # 🔜 Por migrar
+│   │   ├── useSelectionEffects.test.js # 🔜 Por migrar
+│   │   ├── useGameDialogs.test.js    # 🔜 Por migrar
+│   │   └── useStealSecretLogic.test.js # 🔜 Por migrar
 │   │
 │   ├── useGameData.js                # 🎮 Estado y datos del juego
 │   │   ├── turnData
