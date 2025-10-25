@@ -99,7 +99,7 @@ const PlayerCard = ({
                 ? "rounded-full bg-cover border-2 border-yellow-400 w-10 h-10 scale-110 transition-all duration-300 transform flex-shrink-0 ml-6"
                 : "rounded-full bg-cover border-2 border-gray-400 w-10 h-10 flex-shrink-0 ml-6"
             }
-            style={{ backgroundImage: `url(public/${player.avatar})` }}
+            style={{ backgroundImage: `url(/${player.avatar})` }}
           ></div>
           <p
             className={
@@ -189,7 +189,7 @@ const PlayerCard = ({
                             {
                                 (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
                                     <div className="flex w-full h-full items-start justify-end">
-                                        <img src="public/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
+                                        <img src="/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
                                     </div>
                                 )
                             }

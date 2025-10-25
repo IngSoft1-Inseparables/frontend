@@ -114,7 +114,6 @@ export const useSecretActions = (
       console.error("❌ No hay jugador seleccionado para robar secreto");
       return;
     }
-
     try {
       setStolenPlayer(selectedPlayer);
 

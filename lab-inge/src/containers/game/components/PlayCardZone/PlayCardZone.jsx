@@ -25,7 +25,7 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
       <div ref={setNodeRef} className="relative w-24 h-36">
         <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${isMyTurn && isOver && isEventCard ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
           <img
-            src="public/icons/event-icon.png"
+            src="/icons/event-icon.png"
             className='rem-0.8 opacity-95 transition-all'
             alt="Card Zone"
             onMouseEnter={(e) =>

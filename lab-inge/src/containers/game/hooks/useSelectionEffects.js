@@ -100,7 +100,7 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-  // Robar secreto con carta especial
+  // Robar secreto con carta especial satherwhite
   useEffect(() => {
     if (
       selectionMode === "select-other-player" &&
@@ -163,17 +163,16 @@ export const useSelectionEffects = (
 
           await fetchGameData();
 
-          setSelectedPlayer(null);
-          setSelectionAction(null);
-          setFromPlayer(null);
         } catch (error) {
           console.error("Error al asignar secreto:", error);
+        } finally {
+          setSelectedPlayer(null);
+          setSelectedSecret(null);
           setFromPlayer(null);
           setSelectionAction(null);
-          setSelectedSecret(null);
         }
       })();
-
+      
       setSelectionMode(null);
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
