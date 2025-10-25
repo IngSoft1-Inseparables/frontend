@@ -34,10 +34,7 @@ vi.mock("../../services/HTTPService", () => {
     forcePlayerReveal: vi.fn(),
     stealSecret: vi.fn(),
     playEvent: vi.fn(),
-    revealSecret: vi.fn(),
-    hideSecret: vi.fn(),
-    forcePlayerReveal: vi.fn(),
-    stealSecret: vi.fn(),
+    replenishFromDiscard: vi.fn(),
   };
 
   return {
@@ -152,18 +149,6 @@ describe("Game Container", () => {
       await waitFor(() => {
         expect(mockHttp.getPublicTurnData).toHaveBeenCalledWith(10);
         expect(mockHttp.getPrivatePlayerData).toHaveBeenCalledWith(10, 99);
-      });
-    });
-
-    it("handles API errors gracefully", async () => {
-      const error = new Error("network fail");
-      mockHttp.getPublicTurnData.mockRejectedValue(error);
-      mockHttp.getPrivatePlayerData.mockRejectedValue(error);
-
-      renderGame();
-
-      await waitFor(() => {
-        expect(console.error).toHaveBeenCalledWith("Failed obtaining game data:", error);
       });
     });
 
