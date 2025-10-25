@@ -61,7 +61,7 @@ describe("PlayCardZone Component", () => {
 
       const icon = screen.getByAltText("Card Zone");
       expect(icon).toBeInTheDocument();
-      expect(icon).toHaveAttribute("src", "public/icons/event-icon.png");
+      expect(icon).toHaveAttribute("src", "/icons/event-icon.png");
     });
 
     it("has default border style when not hovering", () => {

@@ -43,7 +43,7 @@ describe('PlayEventZone', () => {
 
       const eventIcon = screen.getByAltText('Event Zone');
       expect(eventIcon).toBeInTheDocument();
-      expect(eventIcon).toHaveAttribute('src', 'public/icons/event-icon.png');
+      expect(eventIcon).toHaveAttribute('src', '/icons/event-icon.png');
     });
 
     it('shows default styling when not my turn', () => {
