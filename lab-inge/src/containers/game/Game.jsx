@@ -43,6 +43,7 @@ function Game() {
     orderedPlayers,
     setOrderedPlayers,
     isLoading,
+    hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
   } = useGameData(httpService, gameId, myPlayerId);
@@ -213,7 +214,7 @@ function Game() {
     })
   );
 
-  if (isLoading || orderedPlayers.length === 0) {
+    if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl">Cargando jugadores...</p>
