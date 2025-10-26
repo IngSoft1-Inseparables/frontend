@@ -86,7 +86,12 @@ function Game() {
     handleSecretSelection,
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
-  const { message } = useTurnMessages(turnData, myPlayerId, orderedPlayers);
+  const [movedCardsCount, setMovedCardsCount] = useState(0);
+
+  // Debug: Monitorear cambios en movedCardsCount
+
+
+  const { message } = useTurnMessages(turnData, myPlayerId, orderedPlayers, selectionAction, setSelectionAction, movedCardsCount);
 
   // WebSocket connection
   useWebSocket(
@@ -123,7 +128,8 @@ function Game() {
     setSelectionAction,
     setFromPlayer,
     setSelectedSecret,
-    setSelectionMode
+    setSelectionMode,
+    setMovedCardsCount
   );
 
   // Steal secret logic
@@ -244,6 +250,7 @@ function Game() {
           setCards={handlePlaySetAction}
           playedActionCard={playedActionCard}
           message={message}
+          setSelectionAction={setSelectionAction}
         />
 
         {showEndDialog && winnerData && (

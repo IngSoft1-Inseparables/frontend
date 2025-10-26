@@ -1,13 +1,27 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import BackCard from '../BackCard/BackCard'
 
-export default function DiscardDeck({ discardpile, turnData, myPlayerId }) {
-  if (!discardpile) return null;
-
+export default function DiscardDeck({ discardpile, turnData, myPlayerId, setSelectionAction }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'discard-deck',
   });
+
+  const prevLastCardRef = useRef(null);
+
+  // Detectar cuando se descarta "Early train to paddington" (NO cuando se juega como evento)
+  useEffect(() => {
+    // Detectar cuando la carta actual es Early train y el estado es Discarding
+    if (discardpile?.last_card_image === "24-event_earlytrain" &&
+        turnData?.turn_state === "Discarding" &&
+        prevLastCardRef.current !== "24-event_earlytrain") {
+      setSelectionAction("paddington");
+    }
+    
+    prevLastCardRef.current = discardpile?.last_card_image;
+  }, [discardpile?.last_card_image, setSelectionAction, turnData?.turn_state]);
+
+  if (!discardpile) return null;
 
   // Si no hay cartas descartadas
   if (discardpile.count === 0) {

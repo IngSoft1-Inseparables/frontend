@@ -277,4 +277,312 @@ describe("useTurnMessages Hook", () => {
       expect(result.current.message).toBe(" ");
     });
   });
+
+  describe("Event Cards - Paddington and Delay", () => {
+    const mockSetSelectionAction = vi.fn();
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.runOnlyPendingTimers();
+      vi.useRealTimers();
+    });
+
+    describe("Paddington Card (Early train to paddington)", () => {
+      it("should show message with count when paddington is played with valid count", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            5 // movedCardsCount
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se han movido 5 cartas del mazo de robo al mazo de descarte. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should use singular form when only 1 card is moved for paddington", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            1 // movedCardsCount = 1
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se ha movido 1 carta del mazo de robo al mazo de descarte. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should show fallback message when no cards to move for paddington", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            0 // movedCardsCount = 0
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se han movido cartas del mazo de robo al mazo de descarte. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should clear selectionAction after 4500ms for paddington", async () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            5
+          )
+        );
+
+        expect(mockSetSelectionAction).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(4500);
+
+        expect(mockSetSelectionAction).toHaveBeenCalledWith(null);
+        expect(mockSetSelectionAction).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("Delay Card (Delay the murderer's escape!)", () => {
+      it("should show message with count when delay is played with valid count", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "delay",
+            mockSetSelectionAction,
+            5 // movedCardsCount
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se han movido 5 cartas del mazo de descarte al mazo de robo. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should use singular form when only 1 card is moved for delay", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "delay",
+            mockSetSelectionAction,
+            1 // movedCardsCount = 1
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se ha movido 1 carta del mazo de descarte al mazo de robo. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should show fallback message when no cards to move for delay", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "delay",
+            mockSetSelectionAction,
+            0 // movedCardsCount = 0
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Se han movido cartas del mazo de descarte al mazo de robo. Ahora podés reponer o seguir descartando."
+        );
+      });
+
+      it("should clear selectionAction after 4500ms for delay", async () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "delay",
+            mockSetSelectionAction,
+            5
+          )
+        );
+
+        expect(mockSetSelectionAction).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(4500);
+
+        expect(mockSetSelectionAction).toHaveBeenCalledWith(null);
+        expect(mockSetSelectionAction).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    describe("Multiple card counts", () => {
+      it("should handle 3 cards moved for paddington", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            3
+          )
+        );
+
+        expect(result.current.message).toContain("Se han movido 3 cartas");
+      });
+
+      it("should handle 6 cards moved for paddington", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "paddington",
+            mockSetSelectionAction,
+            6
+          )
+        );
+
+        expect(result.current.message).toContain("Se han movido 6 cartas");
+      });
+
+      it("should handle 2 cards moved for delay", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "delay",
+            mockSetSelectionAction,
+            2
+          )
+        );
+
+        expect(result.current.message).toContain("Se han movido 2 cartas");
+      });
+    });
+
+    describe("Without selectionAction in Discarding state", () => {
+      it("should show default discarding message when no selectionAction", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            null, // no selectionAction
+            mockSetSelectionAction,
+            0
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Podés reponer o seguir descartando."
+        );
+      });
+
+      it("should show default message when selectionAction is different", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            "other_action",
+            mockSetSelectionAction,
+            5
+          )
+        );
+
+        expect(result.current.message).toBe(
+          "Podés reponer o seguir descartando."
+        );
+      });
+    });
+  });
 });

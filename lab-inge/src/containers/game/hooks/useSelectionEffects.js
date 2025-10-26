@@ -23,7 +23,8 @@ export const useSelectionEffects = (
   setSelectionAction,
   setFromPlayer,
   setSelectedSecret,
-  setSelectionMode
+  setSelectionMode,
+  setMovedCardsCount
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -176,4 +177,29 @@ export const useSelectionEffects = (
       setSelectionMode(null);
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
+
+  useEffect(() => {
+    if (selectionAction === "paddington" || selectionAction === "delay") {
+      (async () => {
+        try {
+          let response;
+          if (selectionAction === "paddington") {
+            response = await httpService.sixCardsToDiscardpile(gameId);
+          } else {
+            response = await httpService.fiveCardsToRegpile(gameId);
+          }
+          // Guardar la cantidad de cartas movidas
+          if (response && response.moved_count !== undefined) {
+            setMovedCardsCount(response.moved_count);
+          }
+          await fetchGameData();
+        } catch (error) {
+          setSelectionAction(null);
+        }
+      })();
+    } else if (selectionAction !== null) {
+      setMovedCardsCount(null);
+    }
+  }, [selectionAction]);
+
 };

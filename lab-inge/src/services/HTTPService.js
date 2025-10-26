@@ -262,8 +262,18 @@ const createHttpService = () => {
       body: JSON.stringify({ gameId, playerId, cardId }),
     });
   };
+ //post games/{gameId}/fivecards
+  const fiveCardsToRegpile = (gameId) => {
+     return request(`/games/${gameId}/fivecards`, {
+      method: "PATCH",
+    });
+  }
 
-
+const sixCardsToDiscardpile = (gameId) => {
+     return request(`/games/${gameId}/sixcards`, {
+      method: "PATCH",
+    });
+  }
 
 
   return {
@@ -286,6 +296,8 @@ const createHttpService = () => {
     replenishFromDraft,
     getDiscardTop5,
     replenishFromDiscard,
+    fiveCardsToRegpile,
+    sixCardsToDiscardpile
   };
 };
 
