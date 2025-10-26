@@ -26,6 +26,7 @@ describe("useGameData Hook", () => {
       );
 
       expect(result.current.isLoading).toBe(true);
+      expect(result.current.hasLoadedOnce).toBe(false);
       expect(result.current.turnData).toBeNull();
       expect(result.current.playerData).toBeNull();
       expect(result.current.orderedPlayers).toEqual([]);
@@ -202,6 +203,117 @@ describe("useGameData Hook", () => {
 
       expect(result.current.setPlayerData).toBeDefined();
       expect(typeof result.current.setPlayerData).toBe("function");
+    });
+  });
+
+  describe("hasLoadedOnce flag", () => {
+    it("should set hasLoadedOnce to true after first successful fetch", async () => {
+      mockHttpService.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttpService.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      const { result } = renderHook(() =>
+        useGameData(mockHttpService, 1, 2)
+      );
+
+      // Initially false
+      expect(result.current.hasLoadedOnce).toBe(false);
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // After successful fetch, should be true
+      expect(result.current.hasLoadedOnce).toBe(true);
+    });
+
+    it("should keep hasLoadedOnce true after manual refetch", async () => {
+      mockHttpService.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttpService.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      const { result } = renderHook(() =>
+        useGameData(mockHttpService, 1, 2)
+      );
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.hasLoadedOnce).toBe(true);
+
+      // Call fetchGameData manually (simulating WebSocket reconnection)
+      await result.current.fetchGameData();
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // hasLoadedOnce should still be true
+      expect(result.current.hasLoadedOnce).toBe(true);
+    });
+
+    it("should temporarily set isLoading to true during refetch but keep hasLoadedOnce true", async () => {
+      mockHttpService.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttpService.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      const { result } = renderHook(() =>
+        useGameData(mockHttpService, 1, 2)
+      );
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.hasLoadedOnce).toBe(true);
+      });
+
+      // Mock a delayed response to capture isLoading state during fetch
+      mockHttpService.getPublicTurnData.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(mockTurnData), 100))
+      );
+      mockHttpService.getPrivatePlayerData.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(mockPlayerData), 100))
+      );
+
+      // Trigger refetch
+      const fetchPromise = result.current.fetchGameData();
+
+      // During fetch, isLoading should be true but hasLoadedOnce remains true
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(true);
+      });
+      expect(result.current.hasLoadedOnce).toBe(true);
+
+      // Wait for fetch to complete
+      await fetchPromise;
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // After refetch, both should be correct
+      expect(result.current.hasLoadedOnce).toBe(true);
+    });
+
+    it("should set hasLoadedOnce to true even after multiple refetches", async () => {
+      mockHttpService.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttpService.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      const { result } = renderHook(() =>
+        useGameData(mockHttpService, 1, 2)
+      );
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.hasLoadedOnce).toBe(true);
+      });
+
+      // Call fetchGameData multiple times
+      await result.current.fetchGameData();
+      expect(result.current.hasLoadedOnce).toBe(true);
+
+      await result.current.fetchGameData();
+      expect(result.current.hasLoadedOnce).toBe(true);
+
+      // hasLoadedOnce should remain true throughout
+      expect(result.current.hasLoadedOnce).toBe(true);
     });
   });
 });

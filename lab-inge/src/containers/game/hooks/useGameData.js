@@ -8,6 +8,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
   const [playerData, setPlayerData] = useState(null);
   const [orderedPlayers, setOrderedPlayers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const reorderPlayers = (playersArray, myPlayerId) => {
     const mutableArray = [...playersArray];
@@ -54,6 +55,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
       throw error;
     } finally {
       setIsLoading(false);
+      setHasLoadedOnce(true);
     }
   };
 
@@ -71,6 +73,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
     orderedPlayers,
     setOrderedPlayers,
     isLoading,
+    hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
   };
