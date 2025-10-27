@@ -101,10 +101,7 @@ export const useWebSocket = (
 
     const handleEarlyTrainCardPlayed = (payload) => {
       const data = typeof payload === "string" ? JSON.parse(payload) : payload;
-      console.log("🚂 Cartas movidas desde el backend:", data.moved_count);
-
-      setMovedCardsCount(data.moved_count);
-      setSelectionAction("paddington-discarded");
+       setSelectionAction({ type: "paddington-discarded", movedCount: data.moved_count });
     };
 
     wsService.on("early_train_card_played", handleEarlyTrainCardPlayed);
