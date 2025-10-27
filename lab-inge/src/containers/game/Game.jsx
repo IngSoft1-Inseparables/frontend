@@ -88,10 +88,14 @@ function Game() {
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
 
-  // Debug: Monitorear cambios en movedCardsCount
-
-
-  const { message } = useTurnMessages(turnData, myPlayerId, orderedPlayers, selectionAction, setSelectionAction, movedCardsCount);
+  const { message } = useTurnMessages(
+    turnData,
+    myPlayerId,
+    orderedPlayers,
+    selectionAction,
+    setSelectionAction,
+    movedCardsCount
+  );
 
   // WebSocket connection
   useWebSocket(
@@ -104,7 +108,9 @@ function Game() {
     setWinnerData,
     setShowEndDialog,
     fetchGameData,
-    reorderPlayers
+    reorderPlayers,
+    setSelectionAction,
+    setMovedCardsCount
   );
 
   // Selection effects
@@ -209,7 +215,6 @@ function Game() {
       navigate("/home", { replace: true });
     }
   }, [gameId, myPlayerId, navigate]);
-
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

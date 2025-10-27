@@ -34,7 +34,7 @@ export const useTurnMessages = (turnData, myPlayerId, orderedPlayers, selectionA
         setMessage("Esperá para continuar tu turno.");
         break;
       case "Discarding":
-        if (selectionAction === "paddington"){
+        if (selectionAction === "paddington" || selectionAction === "paddington-discarded"){
           const paddingtonMessage = movedCardsCount > 0 
             ? `Se ${movedCardsCount === 1 ? 'ha movido' : 'han movido'} ${movedCardsCount} ${movedCardsCount === 1 ? 'carta' : 'cartas'} del mazo de robo al mazo de descarte.`
             : 'Se han movido cartas del mazo de robo al mazo de descarte.';

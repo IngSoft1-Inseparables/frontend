@@ -13,7 +13,9 @@ export const useWebSocket = (
   setWinnerData,
   setShowEndDialog,
   fetchGameData,
-  reorderPlayers
+  reorderPlayers,
+  setSelectionAction,
+  setMovedCardsCount
 ) => {
   const [showConnectionError, setShowConnectionError] = useState(false);
 
@@ -93,6 +95,23 @@ export const useWebSocket = (
       wsService.disconnect();
     };
   }, [gameId, myPlayerId]);
+
+  useEffect(() => {
+    if (!wsService || !setSelectionAction || !setMovedCardsCount) return;
+
+    const handleEarlyTrainCardPlayed = (payload) => {
+      const data = typeof payload === "string" ? JSON.parse(payload) : payload;
+
+      setMovedCardsCount(data.moved_count);
+      setSelectionAction("paddington-discarded");
+    };
+
+    wsService.on("early_train_card_played", handleEarlyTrainCardPlayed);
+
+    return () => {
+      wsService.off("early_train_card_played", handleEarlyTrainCardPlayed);
+    };
+  }, [wsService, setSelectionAction, setMovedCardsCount]);
 
   return { showConnectionError };
 };
