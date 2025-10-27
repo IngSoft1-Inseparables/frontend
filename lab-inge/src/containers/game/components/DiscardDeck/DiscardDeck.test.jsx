@@ -227,141 +227,54 @@ describe('DiscardDeck', () => {
     expect(imgs[4]).toHaveAttribute('src', '/cards/08-detective_marple.png')
   })
 
-  // ===== TESTS PARA DETECCIÓN DE "EARLY TRAIN TO PADDINGTON" =====
+  // ===== TESTS PARA RENDERIZADO DE EARLY TRAIN TO PADDINGTON =====
   
-  describe('Detección de Early train to paddington', () => {
-    test('NO llama a setSelectionAction cuando se descarta una carta normal', () => {
-      const mockSetSelectionAction = vi.fn();
-      const normalCardDiscardPile = {
+  describe('Renderizado de Early train to paddington', () => {
+    test('renderiza correctamente cuando la última carta es "Early train to paddington"', () => {
+      const paddingtonDiscardPile = {
         count: 1,
-        last_card_image: "10-event_something",
-        last_card_name: "Some Card",
+        last_card_image: "24-event_earlytrain",
+        last_card_name: "Early train to paddington",
       };
 
       renderWithDnd(
         <DiscardDeck
-          discardpile={normalCardDiscardPile}
+          discardpile={paddingtonDiscardPile}
           turnData={mockTurnData}
           myPlayerId={myPlayerId}
-          setSelectionAction={mockSetSelectionAction}
         />
       );
 
-      expect(mockSetSelectionAction).not.toHaveBeenCalled();
+      const imgs = screen.getAllByRole('img')
+      const topCard = imgs[imgs.length - 1]
+      expect(topCard).toHaveAttribute('src', '/cards/24-event_earlytrain.png')
+      expect(topCard).toHaveAttribute('alt', 'Early train to paddington')
     });
 
-    test('llama a setSelectionAction("paddington") cuando se descarta "Early train to paddington"', () => {
+    test('NO llama a setSelectionAction cuando se renderiza cualquier carta', () => {
+      // Ya no hay lógica de detección en DiscardDeck, esto se maneja por WebSocket
       const mockSetSelectionAction = vi.fn();
       
-      const { rerender } = renderWithDnd(
-        <DiscardDeck
-          discardpile={{
-            count: 0,
-            last_card_image: null,
-            last_card_name: null,
-          }}
-          turnData={mockTurnData}
-          myPlayerId={myPlayerId}
-          setSelectionAction={mockSetSelectionAction}
-        />
-      );
+      const paddingtonDiscardPile = {
+        count: 1,
+        last_card_image: "24-event_earlytrain",
+        last_card_name: "Early train to paddington",
+      };
 
-      // Simular que se descarta la carta
-      rerender(
-        <DndContext>
-          <DiscardDeck
-            discardpile={{
-              count: 1,
-              last_card_image: "24-event_earlytrain",
-              last_card_name: "Early train to paddington",
-            }}
-            turnData={mockTurnData}
-            myPlayerId={myPlayerId}
-            setSelectionAction={mockSetSelectionAction}
-          />
-        </DndContext>
-      );
-
-      expect(mockSetSelectionAction).toHaveBeenCalledWith("paddington");
-      expect(mockSetSelectionAction).toHaveBeenCalledTimes(1);
-    });
-
-    test('NO llama a setSelectionAction si la carta ya estaba descartada (prevLastCardRef)', () => {
-      const mockSetSelectionAction = vi.fn();
-      
       renderWithDnd(
         <DiscardDeck
-          discardpile={{
-            count: 1,
-            last_card_image: "24-event_earlytrain",
-            last_card_name: "Early train to paddington",
-          }}
+          discardpile={paddingtonDiscardPile}
           turnData={mockTurnData}
           myPlayerId={myPlayerId}
           setSelectionAction={mockSetSelectionAction}
         />
       );
 
-      // La primera renderización ya tiene la carta, no debería llamar
+      // El componente no debe llamar a setSelectionAction, esto lo maneja el WebSocket
       expect(mockSetSelectionAction).not.toHaveBeenCalled();
     });
 
-    test('llama a setSelectionAction solo UNA VEZ cuando cambia de null a early train', () => {
-      const mockSetSelectionAction = vi.fn();
-      
-      const { rerender } = renderWithDnd(
-        <DiscardDeck
-          discardpile={{
-            count: 0,
-            last_card_image: null,
-            last_card_name: null,
-          }}
-          turnData={mockTurnData}
-          myPlayerId={myPlayerId}
-          setSelectionAction={mockSetSelectionAction}
-        />
-      );
-
-      // Primera actualización: se descarta early train
-      rerender(
-        <DndContext>
-          <DiscardDeck
-            discardpile={{
-              count: 1,
-              last_card_image: "24-event_earlytrain",
-              last_card_name: "Early train to paddington",
-            }}
-            turnData={mockTurnData}
-            myPlayerId={myPlayerId}
-            setSelectionAction={mockSetSelectionAction}
-          />
-        </DndContext>
-      );
-
-      expect(mockSetSelectionAction).toHaveBeenCalledTimes(1);
-
-      // Segunda renderización con la misma carta: NO debería llamar de nuevo
-      rerender(
-        <DndContext>
-          <DiscardDeck
-            discardpile={{
-              count: 1,
-              last_card_image: "24-event_earlytrain",
-              last_card_name: "Early train to paddington",
-            }}
-            turnData={mockTurnData}
-            myPlayerId={myPlayerId}
-            setSelectionAction={mockSetSelectionAction}
-          />
-        </DndContext>
-      );
-
-      expect(mockSetSelectionAction).toHaveBeenCalledTimes(1); // Todavía solo 1 vez
-    });
-
-    test('llama a setSelectionAction cuando cambia de otra carta a early train', () => {
-      const mockSetSelectionAction = vi.fn();
-      
+    test('renderiza correctamente cuando cambia la última carta a "Early train to paddington"', () => {
       const { rerender } = renderWithDnd(
         <DiscardDeck
           discardpile={{
@@ -371,11 +284,15 @@ describe('DiscardDeck', () => {
           }}
           turnData={mockTurnData}
           myPlayerId={myPlayerId}
-          setSelectionAction={mockSetSelectionAction}
         />
       );
 
-      // Ahora se descarta early train
+      // Verificar carta inicial
+      let imgs = screen.getAllByRole('img')
+      let topCard = imgs[imgs.length - 1]
+      expect(topCard).toHaveAttribute('src', '/cards/10-event_something.png')
+
+      // Cambiar a Early train to paddington
       rerender(
         <DndContext>
           <DiscardDeck
@@ -386,33 +303,15 @@ describe('DiscardDeck', () => {
             }}
             turnData={mockTurnData}
             myPlayerId={myPlayerId}
-            setSelectionAction={mockSetSelectionAction}
           />
         </DndContext>
       );
 
-      expect(mockSetSelectionAction).toHaveBeenCalledWith("paddington");
-      expect(mockSetSelectionAction).toHaveBeenCalledTimes(1);
-    });
-
-    test('NO falla si setSelectionAction no está definido', () => {
-      const discardPile = {
-        count: 1,
-        last_card_image: "24-event_earlytrain",
-        last_card_name: "Early train to paddington",
-      };
-
-      // No debería lanzar error aunque no haya setSelectionAction
-      expect(() => {
-        renderWithDnd(
-          <DiscardDeck
-            discardpile={discardPile}
-            turnData={mockTurnData}
-            myPlayerId={myPlayerId}
-            setSelectionAction={undefined}
-          />
-        );
-      }).not.toThrow();
+      // Verificar nueva carta
+      imgs = screen.getAllByRole('img')
+      topCard = imgs[imgs.length - 1]
+      expect(topCard).toHaveAttribute('src', '/cards/24-event_earlytrain.png')
+      expect(topCard).toHaveAttribute('alt', 'Early train to paddington')
     });
   });
 })

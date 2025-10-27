@@ -492,4 +492,203 @@ describe("useWebSocket", () => {
     expect(mockWsService.off).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(mockWsService.off).toHaveBeenCalledWith("connection_failed", expect.any(Function));
   });
+
+  describe("Early train to paddington WebSocket event", () => {
+    let mockSetSelectionAction;
+    let mockSetMovedCardsCount;
+
+    beforeEach(() => {
+      mockSetSelectionAction = vi.fn();
+      mockSetMovedCardsCount = vi.fn();
+    });
+
+    it("registers early_train_card_played event handler when setSelectionAction is provided", () => {
+      renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers,
+          mockSetSelectionAction,
+          mockSetMovedCardsCount
+        )
+      );
+
+      expect(mockWsService.on).toHaveBeenCalledWith(
+        "early_train_card_played",
+        expect.any(Function)
+      );
+    });
+
+    it("handles early_train_card_played event with string payload", async () => {
+      renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers,
+          mockSetSelectionAction,
+          mockSetMovedCardsCount
+        )
+      );
+
+      const handler = mockWsService.on.mock.calls.find(
+        (call) => call[0] === "early_train_card_played"
+      )[1];
+
+      const eventData = JSON.stringify({
+        type: "early_train",
+        moved_count: 6,
+      });
+
+      handler(eventData);
+
+      await waitFor(() => {
+        expect(mockSetSelectionAction).toHaveBeenCalledWith({
+          type: "paddington-discarded",
+          movedCount: 6,
+        });
+      });
+    });
+
+    it("handles early_train_card_played event with object payload", async () => {
+      renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers,
+          mockSetSelectionAction,
+          mockSetMovedCardsCount
+        )
+      );
+
+      const handler = mockWsService.on.mock.calls.find(
+        (call) => call[0] === "early_train_card_played"
+      )[1];
+
+      const eventData = {
+        type: "early_train",
+        moved_count: 6,
+      };
+
+      handler(eventData);
+
+      await waitFor(() => {
+        expect(mockSetSelectionAction).toHaveBeenCalledWith({
+          type: "paddington-discarded",
+          movedCount: 6,
+        });
+      });
+    });
+
+    it("does not register early_train_card_played handler if setSelectionAction is not provided", () => {
+      renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers
+        )
+      );
+
+      const earlyTrainCalls = mockWsService.on.mock.calls.filter(
+        (call) => call[0] === "early_train_card_played"
+      );
+
+      expect(earlyTrainCalls.length).toBe(0);
+    });
+
+    it("unregisters early_train_card_played handler on unmount", () => {
+      const { unmount } = renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers,
+          mockSetSelectionAction,
+          mockSetMovedCardsCount
+        )
+      );
+
+      unmount();
+
+      expect(mockWsService.off).toHaveBeenCalledWith(
+        "early_train_card_played",
+        expect.any(Function)
+      );
+    });
+
+    it("handles early_train_card_played event with different moved_count values", async () => {
+      renderHook(() =>
+        useWebSocket(
+          mockWsService,
+          1,
+          2,
+          mockSetTurnData,
+          mockSetPlayerData,
+          mockSetOrderedPlayers,
+          mockSetWinnerData,
+          mockSetShowEndDialog,
+          mockFetchGameData,
+          mockReorderPlayers,
+          mockSetSelectionAction,
+          mockSetMovedCardsCount
+        )
+      );
+
+      const handler = mockWsService.on.mock.calls.find(
+        (call) => call[0] === "early_train_card_played"
+      )[1];
+
+      // Probar con diferentes valores de moved_count
+      const testCases = [0, 3, 5, 6];
+
+      for (const count of testCases) {
+        mockSetSelectionAction.mockClear();
+
+        handler({
+          type: "early_train",
+          moved_count: count,
+        });
+
+        await waitFor(() => {
+          expect(mockSetSelectionAction).toHaveBeenCalledWith({
+            type: "paddington-discarded",
+            movedCount: count,
+          });
+        });
+      }
+    });
+  });
 });
