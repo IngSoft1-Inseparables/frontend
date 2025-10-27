@@ -137,6 +137,113 @@ describe("Game Container", () => {
       renderGame();
       expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
     });
+
+    it("hides loading screen after data is loaded", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame();
+
+      // Initially should show loading
+      expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
+
+      // After data loads, should show game board
+      await waitFor(() => {
+        expect(screen.queryByText("Cargando jugadores...")).not.toBeInTheDocument();
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+    });
+
+    it("does not show loading screen on manual refetch (hasLoadedOnce is true)", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame();
+
+      // Wait for initial load to complete
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+        expect(screen.queryByText("Cargando jugadores...")).not.toBeInTheDocument();
+      });
+
+      // Simulate WebSocket reconnection triggering fetchGameData
+      const connectionHandler = mockWS.on.mock.calls.find(
+        call => call[0] === "connection_status"
+      )?.[1];
+
+      expect(connectionHandler).toBeDefined();
+
+      // Mock a delayed response to ensure isLoading briefly becomes true
+      mockHttp.getPublicTurnData.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(mockTurnData), 50))
+      );
+      mockHttp.getPrivatePlayerData.mockImplementation(
+        () => new Promise((resolve) => setTimeout(() => resolve(mockPlayerData), 50))
+      );
+
+      // Trigger connection_status event (simulating reconnection)
+      await act(async () => {
+        connectionHandler({ status: "connected" });
+        // Give it a moment to start fetching
+        await new Promise(resolve => setTimeout(resolve, 10));
+      });
+
+      // Even though isLoading becomes true temporarily, the loading screen should NOT appear
+      // because hasLoadedOnce is true
+      expect(screen.queryByText("Cargando jugadores...")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-board")).toBeInTheDocument();
+
+      // Wait for refetch to complete
+      await waitFor(() => {
+        expect(mockHttp.getPublicTurnData).toHaveBeenCalledTimes(2); // Initial + refetch
+      });
+
+      // Still should not show loading screen
+      expect(screen.queryByText("Cargando jugadores...")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-board")).toBeInTheDocument();
+    });
+
+    it("shows loading screen if orderedPlayers is empty but only on first load", async () => {
+      const emptyPlayersData = { ...mockTurnData, players: [] };
+      mockHttp.getPublicTurnData.mockResolvedValue(emptyPlayersData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame();
+
+      // Should show loading because orderedPlayers.length === 0 AND hasLoadedOnce === false
+      await waitFor(() => {
+        expect(screen.getByText("Cargando jugadores...")).toBeInTheDocument();
+      });
+    });
+
+    it("does not show loading screen if orderedPlayers becomes empty after first load", async () => {
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnData);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerData);
+
+      renderGame();
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(screen.getByTestId("game-board")).toBeInTheDocument();
+      });
+
+      // Simulate a WebSocket update that temporarily has no players
+      const publicHandler = mockWS.on.mock.calls.find(
+        call => call[0] === "game_public_update"
+      )?.[1];
+
+      expect(publicHandler).toBeDefined();
+
+      const emptyPlayersUpdate = { ...mockTurnData, players: [] };
+
+      await act(async () => {
+        publicHandler(JSON.stringify(emptyPlayersUpdate));
+      });
+
+      // Should NOT show loading screen because hasLoadedOnce is true
+      // even though orderedPlayers.length === 0
+      expect(screen.queryByText("Cargando jugadores...")).not.toBeInTheDocument();
+    });
   });
 
   describe("HTTP Service Integration", () => {
