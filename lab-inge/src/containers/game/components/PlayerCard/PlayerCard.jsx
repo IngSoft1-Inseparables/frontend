@@ -66,21 +66,18 @@ const PlayerCard = ({
     <div
       onClick={isPlayerSelectable() ? handlePlayerClick : null}
       className={`
-                ${
-                  player.id === turnData.turn_owner_id
-                    ? "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
-                    : "w-72 h-48 flex flex-col items-center flex-shrink-0"
-                }
-                ${
-                  isPlayerSelectable()
-                    ? "border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid rounded-xl hover:border-yellow-400/80 hover:scale-101 transition-all"
-                    : ""
-                }
-                ${
-                  isThisPlayerSelected
-                    ? "border-2 border-solid rounded-xl border-yellow-400/80 scale-101"
-                    : ""
-                }
+                ${player.id === turnData.turn_owner_id
+          ? "w-72 h-48 flex flex-col items-center rounded-xl bg-orange-800/60 flex-shrink-0"
+          : "w-72 h-48 flex flex-col items-center flex-shrink-0"
+        }
+                ${isPlayerSelectable()
+          ? "border-2 border-gray-400/80 border-dashed cursor-pointer hover:border-solid rounded-xl hover:border-yellow-400/80 hover:scale-101 transition-all"
+          : ""
+        }
+                ${isThisPlayerSelected
+          ? "border-2 border-solid rounded-xl border-yellow-400/80 scale-101"
+          : ""
+        }
                 ${isOtherPlayerSelected ? "" : ""}
                 `}
     >
@@ -121,11 +118,10 @@ const PlayerCard = ({
         bg-[#b45f2a] text-white text-xs font-semi-bold 
         rounded-full h-6 w-6 flex items-center justify-center
         shadow-md border border-[#753a16]
-        ${
-          isLocalPlayer
-            ? "opacity-80"
-            : "group-hover:scale-110 transition-transform"
-        }
+        ${isLocalPlayer
+                  ? "opacity-80"
+                  : "group-hover:scale-110 transition-transform"
+                }
       `}
             >
               {player.setPlayed.length}
@@ -137,11 +133,16 @@ const PlayerCard = ({
                 canOpenSetModal ? () => openSetModal(player.id) : undefined
               }
               src="/icons/Sets.png"
-              className={`w-20 h-14 mx-auto transition-transform duration-300 ease-in-out drop-shadow-md ${
+              className={`w-10 ml-4 mx-auto transition-transform duration-300 ease-in-out drop-shadow-md ${
                 isLocalPlayer
                   ? "opacity-60"
                   : "cursor-pointer hover:scale-110 hover:drop-shadow-xl hover:brightness-110"
               }`}
+              style={
+                selectionMode === "select-set"
+                  ? { filter: "drop-shadow(0 0 8px rgba(250, 204, 21, 0.8))" }
+                  : {}
+              }
             />
           </div>
         )}
@@ -156,49 +157,46 @@ const PlayerCard = ({
               onClick={
                 isSecretSelectable(player.playerSecrets[index])
                   ? () =>
-                      handleSecretClick(player.playerSecrets[index].secret_id)
+                    handleSecretClick(player.playerSecrets[index].secret_id)
                   : null
               }
               className={`aspect-[734/1023] bg-cover bg-center border border-gray-400 rounded-sm flex-1 max-w-20 min-w-12 
-                                ${
-                                  player.id === parseInt(myPlayerId) &&
-                                  !secret?.revealed
-                                    ? "opacity-45"
-                                    : "transition-all"
-                                }
-                                ${
-                                  isSecretSelectable(
-                                    player.playerSecrets[index]
-                                  )
-                                    ? "border-2 border-gray-500 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all opacity-100"
-                                    : "transition-all"
-                                }
-                                ${
-                                  selectedSecret ===
-                                  player.playerSecrets[index].secret_id
-                                    ? "border-2 border-solid rounded-sm border-yellow-400/80 scale-101"
-                                    : ""
-                                }
+                                ${player.id === parseInt(myPlayerId) &&
+                  !secret?.revealed
+                  ? "opacity-45"
+                  : "transition-all"
+                }
+                                ${isSecretSelectable(
+                  player.playerSecrets[index]
+                )
+                  ? "border-2 border-gray-500 border-dashed cursor-pointer hover:border-solid hover:border-yellow-400/80 hover:scale-105 transition-all opacity-100"
+                  : "transition-all"
+                }
+                                ${selectedSecret ===
+                  player.playerSecrets[index].secret_id
+                  ? "border-2 border-solid rounded-sm border-yellow-400/80 scale-101"
+                  : ""
+                }
                                 `}
-                            style={{
-                                width: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
-                                backgroundImage: secret?.revealed || player.id === parseInt(myPlayerId)
-                                    ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
-                                    : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`
-                            }}>
-                            {
-                                (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
-                                    <div className="flex w-full h-full items-start justify-end">
-                                        <img src="/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
-                                    </div>
-                                )
-                            }
-                        </div>
-                    );
-                })}
+              style={{
+                width: `calc((100% - ${Math.max(0, secretCount - 1) * 0.25}rem) / ${secretCount})`,
+                backgroundImage: secret?.revealed || player.id === parseInt(myPlayerId)
+                  ? `url(/src/assets/game/secrets/${secret?.image_back_name}.png)`
+                  : `url(/src/assets/game/secrets/${secret?.image_front_name}.png)`
+              }}>
+              {
+                (player.id === parseInt(myPlayerId) && !secret?.revealed) && (
+                  <div className="flex w-full h-full items-start justify-end">
+                    <img src="/icons/eye-closed.svg" alt="eye-closed" className="w-[1.5em]" draggable="false" />
+                  </div>
+                )
+              }
             </div>
-        </div >
-    );
+          );
+        })}
+      </div>
+    </div >
+  );
 };
 
 export default PlayerCard;

@@ -85,6 +85,10 @@ function Game() {
     handleStealSecretEvent,
     handlePlayerSelection,
     handleSecretSelection,
+    handleSetSelection,
+    selectedSet,
+    setSelectedSet,
+    handleStealSet,
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
   const { message } = useTurnMessages(turnData, myPlayerId, orderedPlayers);
@@ -108,6 +112,7 @@ function Game() {
     selectionMode,
     selectedSecret,
     selectedPlayer,
+    selectedSet,
     selectionAction,
     fromPlayer,
     revealMySecret,
@@ -124,7 +129,8 @@ function Game() {
     setSelectionAction,
     setFromPlayer,
     setSelectedSecret,
-    setSelectionMode
+    setSelectionMode,
+    handleStealSet
   );
 
   // Steal secret logic
@@ -241,6 +247,8 @@ function Game() {
           selectedPlayer={selectedPlayer}
           onSecretSelect={handleSecretSelection}
           selectedSecret={selectedSecret}
+          onSetSelect={handleSetSelection}
+          selectedSet={selectedSet}
           selectionMode={selectionMode}
           setCards={handlePlaySetAction}
           playedActionCard={playedActionCard}

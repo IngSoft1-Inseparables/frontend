@@ -10,6 +10,9 @@ function PlayerSetsModal({
   modalPlayerId,
   orderedPlayers,
   closeSetModal,
+  onSetSelect,
+  selectedSet,
+  selectionMode,
 }) {
   if (!modalPlayerId) return null;
 
@@ -54,7 +57,13 @@ function PlayerSetsModal({
           {targetPlayer?.name} - Set Jugado
         </h2>
 
-        <SetDeck setPlayed={sets} />
+        <SetDeck 
+          setPlayed={sets}
+          onSetClick={onSetSelect}
+          selectedSetIndex={selectedSet}
+          playerId={modalPlayerId}
+          selectionMode={selectionMode}
+        />
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ export const useSecretActions = (
 ) => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);
+  const [selectedSet, setSelectedSet] = useState(null);
   const [selectionAction, setSelectionAction] = useState(null);
   const [selectionMode, setSelectionMode] = useState(null);
   const [stolenPlayer, setStolenPlayer] = useState(null);
@@ -148,6 +149,41 @@ export const useSecretActions = (
     console.log(`Secret selected: "${secretId}`);
   };
 
+  const handleSetSelection = (playerId, setIndex) => {
+    setSelectedPlayer(playerId);
+    setSelectedSet(setIndex);
+  };
+
+  const handleStealSet = async (fromPlayerId, setIndex) => {
+    if (!fromPlayerId || setIndex === null || setIndex === undefined) {
+      console.error("❌ No hay jugador o set seleccionado para robar");
+      return;
+    }
+
+    try {
+      console.log(`🎯 Robando set ${setIndex} del jugador ${fromPlayerId} hacia jugador ${myPlayerId}`);
+      
+      await httpService.stealSet(
+        gameId,
+        setIndex,
+        myPlayerId,
+        fromPlayerId
+      );
+
+      console.log("✅ Set robado exitosamente");
+      
+      // Actualizar los datos del juego
+      await fetchGameData();
+    } catch (error) {
+      console.error("❌ ERROR al robar set:", error);
+    } finally {
+      // Limpiar estados de selección
+      setSelectedPlayer(null);
+      setSelectedSet(null);
+      setSelectionMode(null);
+    }
+  };
+
   return {
     selectedPlayer,
     setSelectedPlayer,
@@ -172,5 +208,9 @@ export const useSecretActions = (
     handleStealSecretEvent,
     handlePlayerSelection,
     handleSecretSelection,
+    handleSetSelection,
+    selectedSet,
+    setSelectedSet,
+    handleStealSet
   };
 };
