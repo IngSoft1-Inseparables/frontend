@@ -193,6 +193,7 @@ export const useSelectionEffects = (
         selectedPlayer
       );
       handleStealSet(selectedPlayer, selectedSet);
+      
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 

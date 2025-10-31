@@ -162,16 +162,65 @@ export const useSecretActions = (
 
     try {
       console.log(`🎯 Robando set ${setIndex} del jugador ${fromPlayerId} hacia jugador ${myPlayerId}`);
-      
-      await httpService.stealSet(
-        gameId,
-        setIndex,
-        myPlayerId,
-        fromPlayerId
-      );
+
+      try {
+        const response = await httpService.stealSet(
+          gameId,
+          setIndex,
+          myPlayerId,
+          fromPlayerId
+        );
+        console.log("TIPO DE SET:", response);
+
+        switch (response.set_type?.toLowerCase()) {
+          case "poirot":
+          case "marple":
+            console.log("✅ Activando modo: select-not-revealed-secret");
+            setSelectionMode("select-other-not-revealed-secret");
+            break;
+
+          case "ladybrent":
+            console.log("✅ Activando modo: select-other-player");
+            setSelectionMode("select-other-player");
+            break;
+
+          case "tommyberestford":
+          case "tuppenceberestford":
+            console.log("✅ Activando modo: select-other-player");
+            setSelectionMode("select-other-player");
+            break;
+
+          case "tommytuppence":
+            console.log("✅ Activando modo: select-other-player (no cancelable)");
+            setSelectionMode("select-other-player");
+            break;
+
+          case "satterthwaite":
+            console.log("✅ Activando modo: select-other-player");
+            setSelectionMode("select-other-player");
+            break;
+
+          case "specialsatterthwaite":
+            console.log("✅ Activando modo: select-other-player");
+            setSelectionMode("select-other-player");
+            setSelectionAction("specials");
+            break;
+
+          case "pyne":
+            console.log("✅ Activando modo: select-revealed-secret");
+            setSelectionMode("select-revealed-secret");
+            break;
+
+          default:
+            console.log("⚠️ Set sin efecto:", response.set_type);
+            break;
+        }
+      } catch (error) {
+        console.error("Error al cargar los sets:", error);
+      }
 
       console.log("✅ Set robado exitosamente");
-      
+
       // Actualizar los datos del juego
       await fetchGameData();
     } catch (error) {
@@ -183,6 +232,7 @@ export const useSecretActions = (
       setSelectionMode(null);
     }
   };
+
 
   return {
     selectedPlayer,
