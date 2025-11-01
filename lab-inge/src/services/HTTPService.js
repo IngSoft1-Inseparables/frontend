@@ -230,7 +230,7 @@ const createHttpService = () => {
     });
   };
 
-  
+
   const replenishFromDraft = (gameId, playerId, carta) => {
     if (!gameId) {
       throw new Error("Game ID is required");
@@ -263,7 +263,22 @@ const createHttpService = () => {
     });
   };
 
+  const stealSet = (gameId, selectedSet, myPlayerId, selectedPlayer) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (selectedSet == null) throw new Error("Selected set is required");
+    if (!myPlayerId) throw new Error("My player ID is required");
+    if (!selectedPlayer) throw new Error("Selected Player ID is required");
 
+    return request("/sets/set/steal", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        selectedSet,
+        myPlayerId,
+        selectedPlayer
+      })
+    });
+  }
 
 
   return {
@@ -286,6 +301,7 @@ const createHttpService = () => {
     replenishFromDraft,
     getDiscardTop5,
     replenishFromDiscard,
+    stealSet
   };
 };
 

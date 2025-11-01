@@ -151,11 +151,7 @@ export const useCardActions = (
         return;
       }
 
-      if (
-        droppedCard.type.toLowerCase() != "event" &&
-        (cardName.toLowerCase() === "look into the ashes" ||
-          cardName.toLowerCase() === "and then there was one more")
-      ) {
+      if (droppedCard.type.toLowerCase() != "event") {
         console.log("Card played not valid.");
         return;
       }
@@ -191,6 +187,9 @@ export const useCardActions = (
           case "and then there was one more...":
             setSelectionMode("select-other-revealed-secret");
             setSelectionAction("one more");
+            break;
+          case "another victim":
+            setSelectionMode("select-set");
             break;
           default:
             break;

@@ -115,4 +115,213 @@ describe("SetDeck component", () => {
     const containerDiv = container.querySelector("div.w-full");
     expect(containerDiv).toBeInTheDocument();
   });
+
+  describe("Set selection functionality", () => {
+    it("no muestra borde de selección cuando selectionMode no es 'select-set'", () => {
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={vi.fn()}
+          selectionMode="select-player"
+          playerId={10}
+        />
+      );
+
+      // No debe tener borde dashed cuando selectionMode es diferente
+      const setContainer = container.querySelector("div.relative");
+      expect(setContainer).not.toHaveClass("border-dashed");
+    });
+
+    it("muestra borde de selección cuando selectionMode es 'select-set'", () => {
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={vi.fn()}
+          selectionMode="select-set"
+          playerId={10}
+        />
+      );
+
+      // Debe tener borde dashed cuando selectionMode es 'select-set'
+      const setContainer = container.querySelector("div.relative");
+      expect(setContainer).toHaveClass("border-dashed");
+      expect(setContainer).toHaveClass("cursor-pointer");
+    });
+
+    it("llama a onSetClick con los parámetros correctos cuando se hace click", () => {
+      const mockOnSetClick = vi.fn();
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+        {
+          cards: [
+            { card_id: 2, card_name: "Miss Marple", image_name: "08-detective_marple" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={mockOnSetClick}
+          selectionMode="select-set"
+          playerId={10}
+        />
+      );
+
+      // Hacer click en el segundo set
+      const setContainers = container.querySelectorAll("div.relative");
+      setContainers[1].click();
+
+      // Verificar que se llamó con playerId y setIndex correctos
+      expect(mockOnSetClick).toHaveBeenCalledWith(10, 1);
+      expect(mockOnSetClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("no llama a onSetClick cuando selectionMode no es 'select-set'", () => {
+      const mockOnSetClick = vi.fn();
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={mockOnSetClick}
+          selectionMode="select-player"
+          playerId={10}
+        />
+      );
+
+      // Intentar hacer click
+      const setContainer = container.querySelector("div.relative");
+      setContainer.click();
+
+      // No debe llamar a onSetClick
+      expect(mockOnSetClick).not.toHaveBeenCalled();
+    });
+
+    it("muestra borde amarillo cuando el set está seleccionado", () => {
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+        {
+          cards: [
+            { card_id: 2, card_name: "Miss Marple", image_name: "08-detective_marple" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={vi.fn()}
+          selectionMode="select-set"
+          playerId={10}
+          selectedSetIndex={1}
+        />
+      );
+
+      // El segundo set debe tener el borde amarillo
+      const setContainers = container.querySelectorAll("div.relative");
+      expect(setContainers[1]).toHaveClass("border-yellow-400");
+    });
+
+    it("no muestra borde amarillo en sets no seleccionados", () => {
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+        {
+          cards: [
+            { card_id: 2, card_name: "Miss Marple", image_name: "08-detective_marple" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={vi.fn()}
+          selectionMode="select-set"
+          playerId={10}
+          selectedSetIndex={1}
+        />
+      );
+
+      // El primer set NO debe tener el borde amarillo
+      const setContainers = container.querySelectorAll("div.relative");
+      expect(setContainers[0]).not.toHaveClass("border-yellow-400");
+    });
+
+    it("maneja múltiples clicks en diferentes sets", () => {
+      const mockOnSetClick = vi.fn();
+      const mockSet = [
+        {
+          cards: [
+            { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+        {
+          cards: [
+            { card_id: 2, card_name: "Miss Marple", image_name: "08-detective_marple" },
+          ],
+        },
+        {
+          cards: [
+            { card_id: 3, card_name: "Poirot", image_name: "07-detective_poirot" },
+          ],
+        },
+      ];
+
+      const { container } = render(
+        <SetDeck 
+          setPlayed={mockSet}
+          onSetClick={mockOnSetClick}
+          selectionMode="select-set"
+          playerId={10}
+        />
+      );
+
+      const setContainers = container.querySelectorAll("div.relative");
+      
+      // Click en el primer set
+      setContainers[0].click();
+      expect(mockOnSetClick).toHaveBeenCalledWith(10, 0);
+      
+      // Click en el tercer set
+      setContainers[2].click();
+      expect(mockOnSetClick).toHaveBeenCalledWith(10, 2);
+      
+      expect(mockOnSetClick).toHaveBeenCalledTimes(2);
+    });
+  });
 });

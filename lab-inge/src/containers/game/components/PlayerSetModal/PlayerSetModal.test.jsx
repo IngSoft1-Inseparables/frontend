@@ -4,8 +4,18 @@ import PlayerSetsModal from "./PlayerSetModal";
 // Mock de SetDeck
 vi.mock("../SetDeck/SetDeck", () => ({
   __esModule: true,
-  default: ({ setPlayed }) => (
-    <div data-testid="setdeck-mock">SetDeck - {setPlayed.length} sets</div>
+  default: ({ setPlayed, onSetClick, playerId }) => (
+    <div data-testid="setdeck-mock">
+      SetDeck - {setPlayed.length} sets
+      {onSetClick && (
+        <button 
+          data-testid="mock-set-button"
+          onClick={() => onSetClick(playerId, 0)}
+        >
+          Click Set
+        </button>
+      )}
+    </div>
   ),
 }));
 
@@ -128,5 +138,30 @@ describe("PlayerSetsModal", () => {
     fireEvent.click(innerDiv);
 
     expect(closeMock).not.toHaveBeenCalled();
+  });
+
+  it("cierra el modal y llama a onSetSelect cuando se selecciona un set", () => {
+    const closeMock = vi.fn();
+    const onSetSelectMock = vi.fn();
+    
+    render(
+      <PlayerSetsModal
+        modalPlayerId={1}
+        orderedPlayers={basePlayers}
+        closeSetModal={closeMock}
+        onSetSelect={onSetSelectMock}
+        selectionMode="select-set"
+      />
+    );
+
+    const setButton = screen.getByTestId("mock-set-button");
+    fireEvent.click(setButton);
+
+    // Debe llamar a onSetSelect con los parámetros correctos
+    expect(onSetSelectMock).toHaveBeenCalledWith(1, 0);
+    expect(onSetSelectMock).toHaveBeenCalledTimes(1);
+    
+    // Debe cerrar el modal
+    expect(closeMock).toHaveBeenCalledTimes(1);
   });
 });

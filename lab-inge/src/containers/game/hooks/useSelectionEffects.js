@@ -7,6 +7,7 @@ export const useSelectionEffects = (
   selectionMode,
   selectedSecret,
   selectedPlayer,
+  selectedSet,
   selectionAction,
   fromPlayer,
   revealMySecret,
@@ -23,7 +24,8 @@ export const useSelectionEffects = (
   setSelectionAction,
   setFromPlayer,
   setSelectedSecret,
-  setSelectionMode
+  setSelectionMode,
+  handleStealSet
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -172,8 +174,27 @@ export const useSelectionEffects = (
           setSelectionAction(null);
         }
       })();
-      
+
       setSelectionMode(null);
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
+
+  // Robar set seleccionado con "another victim"
+  useEffect(() => {
+    if (
+      selectionMode === "select-set" &&
+      selectedSet != null &&
+      selectedPlayer
+    ) {
+      console.log(
+        "🎯 Robando set:",
+        selectedSet,
+        "del jugador:",
+        selectedPlayer
+      );
+      handleStealSet(selectedPlayer, selectedSet);
+      
+    }
+  }, [selectionMode, selectedSet, selectedPlayer]);
+
 };
