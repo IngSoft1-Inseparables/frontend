@@ -230,7 +230,7 @@ const createHttpService = () => {
     });
   };
 
-  
+
   const replenishFromDraft = (gameId, playerId, carta) => {
     if (!gameId) {
       throw new Error("Game ID is required");
@@ -267,14 +267,30 @@ const createHttpService = () => {
      return request(`/games/${gameId}/fivecards`, {
       method: "PATCH",
     });
-  }
+  };
 
-const sixCardsToDiscardpile = (gameId) => {
+  const sixCardsToDiscardpile = (gameId) => {
      return request(`/games/${gameId}/sixcards`, {
       method: "PATCH",
     });
-  }
+  };
 
+  const stealSet = (gameId, selectedSet, myPlayerId, selectedPlayer) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (selectedSet == null) throw new Error("Selected set is required");
+    if (!myPlayerId) throw new Error("My player ID is required");
+    if (!selectedPlayer) throw new Error("Selected Player ID is required");
+
+    return request("/sets/set/steal", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        selectedSet,
+        myPlayerId,
+        selectedPlayer
+      })
+    });
+  };
 
   return {
     getGame,
@@ -297,7 +313,8 @@ const sixCardsToDiscardpile = (gameId) => {
     getDiscardTop5,
     replenishFromDiscard,
     fiveCardsToRegpile,
-    sixCardsToDiscardpile
+    sixCardsToDiscardpile,
+    stealSet
   };
 };
 

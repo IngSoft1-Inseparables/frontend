@@ -52,6 +52,8 @@ function GameBoard({
   selectedPlayer,
   onSecretSelect,
   selectedSecret,
+  onSetSelect,
+  selectedSet,
   selectionMode,
   playedActionCard,
   message,
@@ -282,6 +284,9 @@ function GameBoard({
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
+        onSetSelect={onSetSelect}
+        selectedSet={selectedSet}
+        selectionMode={selectionMode}
       />
     </div>
   );

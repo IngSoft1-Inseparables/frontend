@@ -1432,7 +1432,7 @@ it("handles player reordering when only 2 players", async () => {
       expect(mockHttp.playEvent).not.toHaveBeenCalled();
     });
 
-    it("should play card even if card type is not Event", async () => {
+    it("should NOT play card if card type is not Event", async () => {
       mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
       mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
       mockHttp.playEvent.mockResolvedValue({ success: true });
@@ -1461,13 +1461,14 @@ it("handles player reordering when only 2 players", async () => {
         capturedOnDragEnd(dragEvent);
       });
 
-      expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 1, "Carta1");
+      // No debe llamar a playEvent porque la carta no es de tipo Event
+      expect(mockHttp.playEvent).not.toHaveBeenCalled();
     });
 
-    it("should allow playing multiple events", async () => {
+    it("should NOT allow playing multiple events in the same turn", async () => {
       mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
       mockHttp.getPrivatePlayerData.mockResolvedValue(mockPlayerDataWithEventCard);
-      mockHttp.playEvent.mockResolvedValue({ success: true });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Look into the ashes" });
 
       renderGame({ gameId: 1, myPlayerId: 2 });
 
@@ -1519,8 +1520,9 @@ it("handles player reordering when only 2 players", async () => {
         capturedOnDragEnd(dragEvent2);
       });
 
-      // Se permite jugar múltiples cartas
-      expect(mockHttp.playEvent).toHaveBeenCalledTimes(2);
+      // NO se permite jugar múltiples cartas de evento en el mismo turno
+      // porque playedActionCard ya está establecido
+      expect(mockHttp.playEvent).toHaveBeenCalledTimes(1);
     });
 
     it("should rollback state if playEvent fails", async () => {

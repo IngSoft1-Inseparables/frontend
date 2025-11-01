@@ -1,7 +1,13 @@
 import BackCard from "../BackCard/BackCard";
 import { useRef, useEffect, useState } from "react";
 
-export default function SetDeck({ setPlayed = [] }) {
+export default function SetDeck({ 
+  setPlayed = [], 
+  onSetClick = null,
+  selectedSetIndex = null,
+  playerId = null,
+  selectionMode = null 
+}) {
   // const setPlayed = [
   //   {
   //     cards: [
@@ -110,6 +116,16 @@ export default function SetDeck({ setPlayed = [] }) {
     scaleFactor = perSetWidth / BASE_WIDTH;
   }
 
+  // Determinar si los sets son clicables
+  const isClickable = onSetClick && selectionMode === "select-set";
+
+  // Manejar click en un set
+  const handleSetClick = (index) => {
+    if (isClickable && onSetClick && playerId) {
+      onSetClick(playerId, index);
+    }
+  };
+
   return (
     <div ref={containerRef} className="w-full">
       {/* wrapper allows horizontal scrolling prevention and forces shrinking */}
@@ -117,13 +133,18 @@ export default function SetDeck({ setPlayed = [] }) {
         {setPlayed.filter((set) => set.cards && set.cards.length > 0).map((set, index) => (
           <div
             key={index}
-            className="relative"
+            className={`relative ${
+              isClickable ? "border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-yellow-400 transition-transform" : ""
+            } ${
+              selectedSetIndex === index ? "border-2 border-yellow-400 rounded-lg" : ""
+            }`}
             style={{
               // Keep full size until we need to shrink
               flex: `0 0 ${perSetWidth}px`,
               width: `${perSetWidth}px`,
               overflow: "hidden",
             }}
+            onClick={() => handleSetClick(index)}
           >
             <BackCard
               type="set"
