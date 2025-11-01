@@ -46,8 +46,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(), // setSelectionAction
           vi.fn(), // setFromPlayer
-          mockSetSelectedSet,
+          vi.fn(), // setSelectedSecret
           mockSetSelectionMode,
+          vi.fn(), // setMovedCardsCount
           mockHandleStealSet
         )
       );
@@ -83,8 +84,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(),
           vi.fn(),
-          mockSetSelectedSet,
+          vi.fn(),
           mockSetSelectionMode,
+          vi.fn(),
           mockHandleStealSet
         )
       );
@@ -121,8 +123,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(),
           vi.fn(),
-          mockSetSelectedSet,
+          vi.fn(),
           mockSetSelectionMode,
+          vi.fn(),
           mockHandleStealSet
         )
       );
@@ -158,8 +161,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(),
           vi.fn(),
-          mockSetSelectedSet,
+          vi.fn(),
           mockSetSelectionMode,
+          vi.fn(),
           mockHandleStealSet
         )
       );
@@ -195,8 +199,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(),
           vi.fn(),
-          mockSetSelectedSet,
+          vi.fn(),
           mockSetSelectionMode,
+          vi.fn(),
           mockHandleStealSet
         )
       );
@@ -229,8 +234,9 @@ describe("useSelectionEffects hook", () => {
             mockSetSelectedPlayer,
             vi.fn(),
             vi.fn(),
-            mockSetSelectedSet,
+            vi.fn(),
             mockSetSelectionMode,
+            vi.fn(),
             mockHandleStealSet
           ),
         {
@@ -282,8 +288,9 @@ describe("useSelectionEffects hook", () => {
             mockSetSelectedPlayer,
             vi.fn(),
             vi.fn(),
-            mockSetSelectedSet,
+            vi.fn(),
             mockSetSelectionMode,
+            vi.fn(),
             mockHandleStealSet
           ),
         {
@@ -339,8 +346,9 @@ describe("useSelectionEffects hook", () => {
           mockSetSelectedPlayer,
           vi.fn(),
           vi.fn(),
-          mockSetSelectedSet,
+          vi.fn(),
           mockSetSelectionMode,
+          vi.fn(),
           mockHandleStealSet
         )
       );
