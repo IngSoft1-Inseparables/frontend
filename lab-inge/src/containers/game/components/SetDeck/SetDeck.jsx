@@ -8,65 +8,7 @@ export default function SetDeck({
   playerId = null,
   selectionMode = null 
 }) {
-  // const setPlayed = [
-  //   {
-  //     cards: [
-  //       { card_id: 1, card_name: "Poirot", image_name: "07-detective_poirot" },
-  //       { card_id: 2, card_name: "Poirot", image_name: "07-detective_poirot" },
-  //       { card_id: 3, card_name: "Poirot", image_name: "07-detective_poirot" },
-  //     ],
-  //   },
-  //   {
-  //     cards: [
-  //       {
-  //         card_id: 4,
-  //         card_name: "Miss Marple",
-  //         image_name: "07-detective_poirot",
-  //       },
-  //       {
-  //         card_id: 5,
-  //         card_name: "Miss Marple",
-  //         image_name: "07-detective_poirot",
-  //       },
-  //     ],
-  //   },
-  //   {
-  //     cards: [
-  //       { card_id: 1, card_name: "Poirot", image_name: "08-detective_marple" },
-  //       { card_id: 2, card_name: "Poirot", image_name: "08-detective_marple" },
-  //       { card_id: 3, card_name: "Harley Quin Wildcard", image_name: "14-detective_quin" },
-  //     ],
-  //   },
-  //   {
-  //     cards: [
-  //       {
-  //         card_id: 4,
-  //         card_name: "Tommy Beresford",
-  //         image_name: "12-detective_tommyberesford",
-  //       },
-  //       {
-  //         card_id: 5,
-  //         card_name: "Tuppence Beresford",
-  //         image_name: "13-detective_tuppenceberesford",
-  //       },
-  //     ],
-  //   },
 
-  //   {
-  //     cards: [
-  //       {
-  //         card_id: 4,
-  //         card_name: "Miss Marple",
-  //         image_name: "08-detective_marple",
-  //       },
-  //       {
-  //         card_id: 5,
-  //         card_name: "Miss Marple",
-  //         image_name: "08-detective_marple",
-  //       },
-  //     ],
-  //   },
-  // ];
 
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);

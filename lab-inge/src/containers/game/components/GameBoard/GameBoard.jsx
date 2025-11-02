@@ -75,10 +75,15 @@ function GameBoard({
   const [modalPlayerId, setModalPlayerId] = useState(null);
   const openSetModal = (playerId) => setModalPlayerId(playerId);
   const closeSetModal = () => setModalPlayerId(null);
+  const [addToSet, setAddToSet] = useState(false);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
     return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
     );
+  }
+  const handleCardSelected = (tempMatches)  =>  {
+      console.log("🔍 Matches recibidos:", tempMatches);
+   tempMatches.length > 0 ? setAddToSet(true) : setAddToSet(false)
   }
 
   const handleSetStateChange = (isPlayable, cards) => {
@@ -255,6 +260,8 @@ function GameBoard({
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            onCardStateChange={handleCardSelected}
+            setsPlayed={turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []}
           />
 
           <div>
@@ -273,6 +280,14 @@ function GameBoard({
               {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
                 ? currentSetCards[1]?.card_name.toUpperCase()
                 : currentSetCards[0]?.card_name.toUpperCase()}
+            </button>
+          )}
+          {addToSet && (
+            <button
+              onClick={handlePlaySetClick}
+              className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
+            >
+              hola
             </button>
           )}
         </div>
