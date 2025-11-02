@@ -29,7 +29,51 @@ export const useCardActions = (
       console.error("Failed to update hand:", error);
     }
   };
+  const handleSwitch = (response) => {
+    switch (response.toLowerCase()) {
+      case "poirot":
+      case "marple":
+        console.log("✅ Activando modo: select-not-revealed-secret");
+        setSelectionMode("select-other-not-revealed-secret");
+        break;
 
+      case "ladybrent":
+        console.log("✅ Activando modo: select-other-player");
+        setSelectionMode("select-other-player");
+        break;
+
+      case "tommyberestford":
+      case "tuppenceberestford":
+        console.log("✅ Activando modo: select-other-player");
+        setSelectionMode("select-other-player");
+        break;
+
+      case "tommytuppence":
+        console.log("✅ Activando modo: select-other-player (no cancelable)");
+        setSelectionMode("select-other-player");
+        break;
+
+      case "satterthwaite":
+        console.log("✅ Activando modo: select-other-player");
+        setSelectionMode("select-other-player");
+        break;
+
+      case "specialsatterthwaite":
+        console.log("✅ Activando modo: select-other-player");
+        setSelectionMode("select-other-player");
+        setSelectionAction("specials");
+        break;
+
+      case "pyne":
+        console.log("✅ Activando modo: select-revealed-secret");
+        setSelectionMode("select-revealed-secret");
+        break;
+
+      default:
+        console.log("⚠️ Set sin efecto:", response.set_type);
+        break;
+    }
+  };
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
@@ -38,50 +82,7 @@ export const useCardActions = (
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
       console.log("TIPO DE SET:", response);
-
-      switch (response.set_type?.toLowerCase()) {
-        case "poirot":
-        case "marple":
-          console.log("✅ Activando modo: select-not-revealed-secret");
-          setSelectionMode("select-other-not-revealed-secret");
-          break;
-
-        case "ladybrent":
-          console.log("✅ Activando modo: select-other-player");
-          setSelectionMode("select-other-player");
-          break;
-
-        case "tommyberestford":
-        case "tuppenceberestford":
-          console.log("✅ Activando modo: select-other-player");
-          setSelectionMode("select-other-player");
-          break;
-
-        case "tommytuppence":
-          console.log("✅ Activando modo: select-other-player (no cancelable)");
-          setSelectionMode("select-other-player");
-          break;
-
-        case "satterthwaite":
-          console.log("✅ Activando modo: select-other-player");
-          setSelectionMode("select-other-player");
-          break;
-
-        case "specialsatterthwaite":
-          console.log("✅ Activando modo: select-other-player");
-          setSelectionMode("select-other-player");
-          setSelectionAction("specials");
-          break;
-
-        case "pyne":
-          console.log("✅ Activando modo: select-revealed-secret");
-          setSelectionMode("select-revealed-secret");
-          break;
-
-        default:
-          console.log("⚠️ Set sin efecto:", response.set_type);
-          break;
-      }
+      handleSwitch(response.set_type);
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
@@ -202,9 +203,76 @@ export const useCardActions = (
     }
   };
 
+  const handleAddCardToSet = async (
+    setIndex,
+    matchingSets,
+    currentSetCards
+  ) => {
+    // Verificar que el set esté en matchingSets
+    const matchingSet = matchingSets.find(
+      (match) => match.setIndex === setIndex
+    );
+
+    if (!matchingSet || currentSetCards.length !== 1) {
+      console.log("❌ Click en set inválido o no hay carta seleccionada");
+      return;
+    }
+
+    const card = currentSetCards[0];
+    const setType = matchingSet.setType; // Obtener el tipo de set
+    console.log("✅ Agregando carta al set:", { card, setIndex, setType });
+
+    // TODO: Llamar al backend
+    try {
+      // const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setIndex);
+      // handleSwitch(response.set_type);
+
+      // Por ahora usamos el setType del matching set
+      handleSwitch(setType);
+
+      // Actualización optimista: remover de mano
+      setPlayerData((prevData) => ({
+        ...prevData,
+        playerCards: prevData.playerCards.filter(
+          (c) => c.card_id !== card.card_id
+        ),
+      }));
+
+      // Actualización optimista: agregar al set
+      setTurnData((prevTurnData) => ({
+        ...prevTurnData,
+        players: prevTurnData.players.map((player) =>
+          player.id === myPlayerId
+            ? {
+                ...player,
+                setPlayed: player.setPlayed.map((set, idx) =>
+                  idx === setIndex
+                    ? {
+                        ...set,
+                        cards: [
+                          ...set.cards,
+                          {
+                            card_id: card.card_id,
+                            card_name: card.card_name,
+                            image_name: card.image_name,
+                          },
+                        ],
+                      }
+                    : set
+                ),
+              }
+            : player
+        ),
+      }));
+
+      // Activar efecto según el tipo de set
+    } catch (error) {}
+  };
+
   return {
     handleCardClick,
     handlePlaySetAction,
     handleDragEnd,
+    handleAddCardToSet,
   };
 };

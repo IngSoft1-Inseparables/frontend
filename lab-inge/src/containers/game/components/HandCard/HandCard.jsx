@@ -169,7 +169,7 @@ function HandCard({
         console.log(`🔎 Comparando: "${cardNameLower}" vs set "${setTypeLower}"`);
 
         const isMatch =
-          cardNameLower.includes(setTypeLower) ||
+          cardNameLower.includes(setTypeLower) || setTypeLower.includes(cardNameLower.split(" ").pop()) ||
           ((cardNameLower.includes("tommy") || cardNameLower.includes("tuppence")) && (setTypeLower.includes("tommy") ||setTypeLower.includes("tuppence")));
 
         console.log(`   ${isMatch ? "✅ MATCH" : "❌ NO match"}`);

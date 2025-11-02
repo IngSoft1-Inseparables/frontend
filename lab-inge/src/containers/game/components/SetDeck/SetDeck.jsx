@@ -6,7 +6,10 @@ export default function SetDeck({
   onSetClick = null,
   selectedSetIndex = null,
   playerId = null,
-  selectionMode = null 
+  selectionMode = null,
+  availableToPlay = false,
+  turnState,
+  matchingSets = []
 }) {
 
 
@@ -60,9 +63,23 @@ export default function SetDeck({
 
   // Determinar si los sets son clicables
   const isClickable = onSetClick && selectionMode === "select-set";
+  
+  // NUEVO: Verificar si un set puede recibir una carta detective
+  const isSetValid = (index) => {
+    return matchingSets.some(m => m.setIndex === index) && 
+           availableToPlay && 
+           turnState?.toLowerCase() === "none";
+  };
 
   // Manejar click en un set
   const handleSetClick = (index) => {
+    // Modo agregar carta detective
+    if (isSetValid(index) && onSetClick) {
+      onSetClick(index);
+      return;
+    }
+    
+    // Modo select-set (robar set - lógica vieja)
     if (isClickable && onSetClick && playerId) {
       onSetClick(playerId, index);
     }
@@ -79,6 +96,8 @@ export default function SetDeck({
               isClickable ? "border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:border-yellow-400 transition-transform" : ""
             } ${
               selectedSetIndex === index ? "border-2 border-yellow-400 rounded-lg" : ""
+            } ${
+              isSetValid(index) ? "border-2 border-dashed border-yellow-600 rounded-lg cursor-pointer hover:border-green-400 transition-transform hover:scale-98" : ""
             }`}
             style={{
               // Keep full size until we need to shrink
