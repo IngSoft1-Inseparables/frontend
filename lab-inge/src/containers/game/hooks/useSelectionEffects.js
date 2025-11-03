@@ -165,13 +165,15 @@ export const useSelectionEffects = (
 
           await fetchGameData();
 
+          setSelectedPlayer(null);
+          setSelectionAction(null);
+          setFromPlayer(null);
+
         } catch (error) {
           console.error("Error al asignar secreto:", error);
-        } finally {
-          setSelectedPlayer(null);
-          setSelectedSecret(null);
           setFromPlayer(null);
           setSelectionAction(null);
+          setSelectedSecret(null);
         }
       })();
 
@@ -193,7 +195,7 @@ export const useSelectionEffects = (
         selectedPlayer
       );
       handleStealSet(selectedPlayer, selectedSet);
-      
+
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 
