@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 /**
  * Hook para manejar las acciones de las cartas (jugar, descartar, drag and drop)
@@ -18,6 +18,15 @@ export const useCardActions = (
   setSelectionAction,
   startDiscardTop5Action
 ) => {
+
+  // si estoy en desgracia social
+
+  const inDisgrace = useMemo(() => {
+    if (!turnData?.players || !myPlayerId) return false;
+    const me = turnData.players.find(p => p.id === parseInt(myPlayerId));
+    return !!me?.in_disgrace;
+  }, [turnData, myPlayerId]);
+
   const handleCardClick = async () => {
     try {
       const hand = await httpService.updateHand(
@@ -30,8 +39,17 @@ export const useCardActions = (
     }
   };
 
+  const [disgraceDiscarded, setDisgraceDiscarded] = useState(false);
+
+  useEffect(() => {
+    setDisgraceDiscarded(false);
+  }, [turnData?.turn_owner_id]);
+
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
+
+    // En desgracia social no se puede jugar sets
+    if (inDisgrace) return;
 
     const cardIds = currentSetCards.map((card) => card.card_id);
 
@@ -95,10 +113,23 @@ export const useCardActions = (
     const cardName = active.data.current?.cardName;
     const imageName = active.data.current?.imageName;
 
+    //En desgracia no se pueden jugar cartas de evento
+
+    if (inDisgrace && (over.id === "play-card-zone" || over.id === "set-play-area")) {
+      console.log("No se puede jugar cartas mientras estás en desgracia social.");
+      return;
+    }
+
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
       if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
         return;
+
+      // En desgracia social, solo se puede descartar una carta por turno
+      if (inDisgrace && disgraceDiscarded) {
+        console.log("Ya descartaste (desgracia): no podés descartar otra.");
+        return;
+      }
 
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
@@ -126,16 +157,65 @@ export const useCardActions = (
       });
 
       try {
+        // 1) Descartar
         await httpService.discardCard(myPlayerId, cardId);
+
+        if (inDisgrace) {
+          // 2) Marcar que ya descarté en desgracia
+          setDisgraceDiscarded(true);
+
+          // 3) Reponer hasta 6 o hasta que el turno cambie
+          for (let i = 0; i < 6; i++) {
+            try {
+              await httpService.updateHand(gameId, myPlayerId);
+            } catch (e) {
+              // falla si ya tenés 6 o ya no es tu turno → cortamos
+              break;
+            }
+
+          
+            let refreshed;
+            try {
+              refreshed = await fetchGameData();
+            } catch (e) {
+              // si falla, continuamos; WS puede actualizar
+            }
+
+            const newTurnOwner = refreshed?.turnData?.turn_owner_id;
+            const myHandSize = refreshed?.playerData?.playerCards?.length;
+
+            // Si ya no es mi turno, corto
+            if (newTurnOwner !== parseInt(myPlayerId)) break;
+
+            // Si ya llegué a 6, el próximo updateHand hará end_turn → corto
+            if (typeof myHandSize === "number" && myHandSize >= 6) break;
+          }
+        } else {
+          // No auto-reponer; que el jugador elija (evento/set/reponer manual)
+          try {
+            await fetchGameData();
+          } catch (e) {
+            console.error("Falló fetchGameData post-descartar (no desgracia):", e);
+          }
+        }
+
+        // 4) Refrescar datos de juego
+        try {
+          await fetchGameData();
+        } catch (e) {
+          console.error("Falló fetchGameData post-acción:", e);
+        }
       } catch (error) {
         console.error("Error al descartar carta:", error);
         setPlayerData(previousPlayerData);
         setTurnData(previousTurnData);
       }
+
     }
 
     // Si se soltó sobre la zona de eventos
     if (over.id === "play-card-zone") {
+      if (inDisgrace) return;
       if (turnData.turn_state != "None") return;
 
       if (playedActionCard) {
