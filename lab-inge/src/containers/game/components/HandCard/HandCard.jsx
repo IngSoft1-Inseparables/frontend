@@ -179,6 +179,7 @@ function HandCard({
             setIndex: index,
             setType: set.set_type,
             cards: set.cards,
+            setId: set.set_id
           });
         }
       });
@@ -187,14 +188,21 @@ function HandCard({
       if (onCardStateChange) {
         onCardStateChange(tempMatches);
       }
-    } else {
-      console.log("❌ No cumple condiciones - enviando array vacío");
-      // Notificar que está vacío
+    } else if (selectedCards.length === 0 && matchingSets.length === 0) {
+      // Solo limpiar si ya estaba vacío (evita limpiar después de agregar carta)
+      console.log("⚪ selectedCards vacío y sin matches previos");
+      if (onCardStateChange) {
+        onCardStateChange([]);
+      }
+    } else if (selectedCards.length > 1) {
+      // Si hay más de 1 carta, limpiar matches
+      console.log("❌ Más de 1 carta seleccionada - limpiando matches");
+      setMatchingSets([]);
       if (onCardStateChange) {
         onCardStateChange([]);
       }
     }
-  }, [selectedCards, setsPlayed, onCardStateChange]);
+  }, [selectedCards, setsPlayed, onCardStateChange, matchingSets.length]);
  
   useEffect(() => {
     const updatedSelected = selectedCards.filter((c) =>

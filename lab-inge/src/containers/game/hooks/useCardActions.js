@@ -220,53 +220,20 @@ export const useCardActions = (
 
     const card = currentSetCards[0];
     const setType = matchingSet.setType; // Obtener el tipo de set
-    console.log("✅ Agregando carta al set:", { card, setIndex, setType });
+    const setId = matchingSet.setId;
+    console.log("✅ Agregando carta al set:", { card, setIndex, setType, setId });
 
-    // TODO: Llamar al backend
     try {
-      // const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setIndex);
-      // handleSwitch(response.set_type);
-
-      // Por ahora usamos el setType del matching set
-      handleSwitch(setType);
-
-      // Actualización optimista: remover de mano
-      setPlayerData((prevData) => ({
-        ...prevData,
-        playerCards: prevData.playerCards.filter(
-          (c) => c.card_id !== card.card_id
-        ),
-      }));
-
-      // Actualización optimista: agregar al set
-      setTurnData((prevTurnData) => ({
-        ...prevTurnData,
-        players: prevTurnData.players.map((player) =>
-          player.id === myPlayerId
-            ? {
-                ...player,
-                setPlayed: player.setPlayed.map((set, idx) =>
-                  idx === setIndex
-                    ? {
-                        ...set,
-                        cards: [
-                          ...set.cards,
-                          {
-                            card_id: card.card_id,
-                            card_name: card.card_name,
-                            image_name: card.image_name,
-                          },
-                        ],
-                      }
-                    : set
-                ),
-              }
-            : player
-        ),
-      }));
-
-      // Activar efecto según el tipo de set
-    } catch (error) {}
+      const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setId);
+      
+      // Actualizar datos del juego desde el backend
+      await fetchGameData();
+      
+      // Activar efecto del set
+      handleSwitch(response.set_type);
+    } catch (error) {
+      console.error("Error al agregar carta al set:", error);
+    }
   };
 
   return {
