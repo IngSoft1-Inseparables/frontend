@@ -56,7 +56,8 @@ function GameBoard({
   selectedSet,
   selectionMode,
   playedActionCard,
-  message
+  message,
+  setSelectionAction
 }) {
   const playerCount = turnData.players_amount;
 
@@ -198,6 +199,7 @@ function GameBoard({
                   discardpile={turnData?.discardpile}
                   turnData={turnData}
                   myPlayerId={myPlayerId}
+                  setSelectionAction={setSelectionAction}
                 />
               </div>
             </div>

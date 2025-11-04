@@ -178,7 +178,6 @@ export const useCardActions = (
           cardId,
           cardName
         );
-
         switch (response.cardName.toLowerCase()) {
           case "look into the ashes":
             await fetchGameData();
@@ -188,6 +187,11 @@ export const useCardActions = (
             setSelectionMode("select-other-revealed-secret");
             setSelectionAction("one more");
             break;
+          case "early train to paddington":
+            setSelectionAction("paddington");
+            break;
+          case "delay the murderer's escape!":
+            setSelectionAction("delay");
           case "another victim":
             setSelectionMode("select-set");
             break;
