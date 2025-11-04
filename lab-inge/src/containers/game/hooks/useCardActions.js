@@ -228,6 +228,8 @@ export const useCardActions = (
       
       // Actualizar datos del juego desde el backend
       await fetchGameData();
+           // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Activar efecto del set
       handleSwitch(response.set_type);

@@ -22,12 +22,16 @@ function HandCard({
       if (handRef.current && !handRef.current.contains(event.target)) {
         setSelectedCards([]);
         setMaxAllowed(0);
+        setMatchingSets([]);
+         if (onCardStateChange) {
+          onCardStateChange([]);
+        }
       }
     };
 
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [onCardStateChange]);
 
   const getSetSize = (cardName) => {
     switch (cardName) {
@@ -67,11 +71,16 @@ function HandCard({
         (c) => c.card_id !== card.card_id
       );
       setSelectedCards(newSelected);
-      // **Ajuste:** Si al deseleccionar queda 1 carta, re-evaluamos el maxAllowed
+      // Si al deseleccionar queda 1 carta, re-evaluamos el maxAllowed
       if (newSelected.length === 1 && !isWildcard(newSelected[0].card_name)) {
         setMaxAllowed(getSetSize(newSelected[0].card_name));
       } else if (newSelected.length === 0) {
         setMaxAllowed(0);
+        // Limpiar matchingSets cuando no hay cartas seleccionadas
+        setMatchingSets([]);
+        if (onCardStateChange) {
+          onCardStateChange([]);
+        }
       }
       return;
     }
@@ -188,9 +197,12 @@ function HandCard({
       if (onCardStateChange) {
         onCardStateChange(tempMatches);
       }
-    } else if (selectedCards.length === 0 && matchingSets.length === 0) {
-      // Solo limpiar si ya estaba vacío (evita limpiar después de agregar carta)
-      console.log("⚪ selectedCards vacío y sin matches previos");
+    } else if (selectedCards.length === 0) {
+      // Limpiar cuando no hay cartas seleccionadas (independientemente de si había matches)
+      console.log("⚪ selectedCards vacío - limpiando matches");
+      if (matchingSets.length > 0) {
+        setMatchingSets([]);
+      }
       if (onCardStateChange) {
         onCardStateChange([]);
       }
