@@ -5,6 +5,22 @@ import { MemoryRouter } from "react-router-dom";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import Game from "./Game";
 
+// Helper para crear mock del HTTPService
+const createMockHttpService = () => ({
+  getPublicTurnData: vi.fn(),
+  getPrivatePlayerData: vi.fn(),
+  updateHand: vi.fn(),
+  discardCard: vi.fn(),
+  playSets: vi.fn(),
+  addCardToSet: vi.fn(),
+  revealSecret: vi.fn(),
+  hideSecret: vi.fn(),
+  forcePlayerReveal: vi.fn(),
+  stealSecret: vi.fn(),
+  playEvent: vi.fn(),
+  replenishFromDiscard: vi.fn(),
+});
+
 
 // Variable global para capturar el handler onDragEnd
 let capturedOnDragEnd = null;
