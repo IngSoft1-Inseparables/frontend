@@ -75,12 +75,12 @@ export const useStealSecretLogic = (
 
           await fetchGameData();
 
+          setSelectedPlayer(null);
+          setSelectionAction(null);
+          setStolenPlayer(null);
         } catch (error) {
           console.error("❌ ERROR al robar secreto:", error);
           console.error("Detalles del error:", error.message);
-        } finally {
-          setSelectedPlayer(null);
-          setSelectedSecret(null);
           setStolenPlayer(null);
           setSelectionAction(null);
         }
