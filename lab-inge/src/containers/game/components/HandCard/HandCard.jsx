@@ -10,11 +10,20 @@ function HandCard({
   availableToPlay,
   turnState,
   setsPlayed,
+  inDisgrace = false,
 }) {
   const [selectedCards, setSelectedCards] = useState([]); // array donde se van guardando las cartas seleccionadas por el usuario.
   const [maxAllowed, setMaxAllowed] = useState(0);
   const handRef = useRef(null);
   const [matchingSets, setMatchingSets] = useState([]);
+
+  useEffect(() => {
+    if (inDisgrace) {
+      setSelectedCards([]);
+      setMaxAllowed(0);
+      if (onSetStateChange) onSetStateChange(false, []);
+    }
+  }, [inDisgrace]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -57,6 +66,9 @@ function HandCard({
   };
 
   const handleSelect = (card) => {
+    //si el jugador está en desgracia social, no puede seleccionar cartas para jugar sets
+    if (inDisgrace) return;
+
     if (!availableToPlay || turnState.toLowerCase() !== "None".toLowerCase())
       return;
 
@@ -228,7 +240,15 @@ function HandCard({
   }, [playerCards]);
 
   return (
-    <div className="hand-card" ref={handRef}>
+    <div
+      className={`hand-card ${inDisgrace ? "hand-card--disgrace" : ""}`}
+      ref={handRef}
+      title={
+        inDisgrace
+          ? "Estás en desgracia social: no podés seleccionar cartas para sets."
+          : undefined
+      }
+    >
       {playerCards.map((card) => (
         <FaceCard
           key={card.card_id}

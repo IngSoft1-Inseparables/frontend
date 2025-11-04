@@ -59,6 +59,7 @@ function GameBoard({
   message,
   setSelectionMode,
   onAddCardToSet,
+  setSelectionAction
 }) {
   const playerCount = turnData.players_amount;
 
@@ -224,6 +225,7 @@ function GameBoard({
                   discardpile={turnData?.discardpile}
                   turnData={turnData}
                   myPlayerId={myPlayerId}
+                  setSelectionAction={setSelectionAction}
                 />
               </div>
             </div>
@@ -292,6 +294,9 @@ function GameBoard({
               turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []
             }
               setSelectionMode={setSelectionMode}
+            inDisgrace={
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
+            }
           />
 
           <div>

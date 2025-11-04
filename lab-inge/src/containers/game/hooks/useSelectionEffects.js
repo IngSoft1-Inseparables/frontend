@@ -25,6 +25,7 @@ export const useSelectionEffects = (
   setFromPlayer,
   setSelectedSecret,
   setSelectionMode,
+  setMovedCardsCount,
   handleStealSet
 ) => {
   // Revelar secreto propio
@@ -165,13 +166,15 @@ export const useSelectionEffects = (
 
           await fetchGameData();
 
+          setSelectedPlayer(null);
+          setSelectionAction(null);
+          setFromPlayer(null);
+
         } catch (error) {
           console.error("Error al asignar secreto:", error);
-        } finally {
-          setSelectedPlayer(null);
-          setSelectedSecret(null);
           setFromPlayer(null);
           setSelectionAction(null);
+          setSelectedSecret(null);
         }
       })();
 
@@ -179,6 +182,29 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
+  useEffect(() => {
+    if (selectionAction === "paddington" || selectionAction === "delay") {
+      (async () => {
+        try {
+          let response;
+          if (selectionAction === "paddington") {
+            response = await httpService.sixCardsToDiscardpile(gameId);
+          } else {
+            response = await httpService.fiveCardsToRegpile(gameId);
+          }
+          // Guardar la cantidad de cartas movidas
+          if (response && response.moved_count !== undefined) {
+            setMovedCardsCount(response.moved_count);
+          }
+          await fetchGameData();
+        } catch (error) {
+          setSelectionAction(null);
+        }
+      })();
+    } else if (selectionAction !== null) {
+      setMovedCardsCount(null);
+    }
+  }, [selectionAction]);
   // Robar set seleccionado con "another victim"
   useEffect(() => {
     if (
@@ -193,7 +219,7 @@ export const useSelectionEffects = (
         selectedPlayer
       );
       handleStealSet(selectedPlayer, selectedSet);
-      
+
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 

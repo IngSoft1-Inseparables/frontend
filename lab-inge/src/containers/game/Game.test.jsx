@@ -81,9 +81,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction };
     
     return (
       <div data-testid="game-board">
@@ -3028,6 +3028,105 @@ it("handles player reordering when only 2 players", async () => {
 
       // La función se ejecuta sin lanzar error
       expect(true).toBe(true);
+    });
+
+    // -----------------------------
+    // Tests para 'Desgracia social'
+    // -----------------------------
+    describe("Desgracia social (jugador con in_disgrace=true)", () => {
+      it("no permite jugar carta de evento cuando el jugador está en desgracia social", async () => {
+        const mockTurnDataDisgrace = {
+          ...mockTurnData,
+          gameId: 1,
+          turn_owner_id: 2,
+          players: [
+            { id: 1, name: "Jugador1", turn: 1, playerSecrets: [{}, {}], in_disgrace: false },
+            { id: 2, name: "Jugador2", turn: 2, playerSecrets: [{}, {}], in_disgrace: true },
+          ],
+          turn_state: "None",
+        };
+
+        const mockPlayerDataEvent = {
+          id: 2,
+          name: "Jugador2",
+          playerSecrets: [{}, {}],
+          playerCards: [
+            { card_id: 10, card_name: "Look into the ashes", type: "Event", image_name: "event.png" },
+          ],
+        };
+
+        mockHttp.getPublicTurnData.mockResolvedValueOnce(mockTurnDataDisgrace);
+        mockHttp.getPrivatePlayerData.mockResolvedValueOnce(mockPlayerDataEvent);
+        mockHttp.playEvent = vi.fn();
+
+        renderGame({ gameId: 1, myPlayerId: 2 });
+
+        await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+        // Simular arrastrar la carta de evento sobre la zona de play
+        await act(async () => {
+          capturedOnDragEnd({
+            active: { data: { current: { cardId: 10, cardName: "Look into the ashes", imageName: "event.png" } } },
+            over: { id: "play-card-zone" },
+          });
+        });
+
+        // No debe haberse llamado al endpoint playEvent
+        expect(mockHttp.playEvent).not.toHaveBeenCalled();
+      });
+
+      it("permite un solo descarte cuando el jugador está en desgracia social y bloquea el segundo", async () => {
+        const mockTurnDataDisgrace = {
+          ...mockTurnData,
+          gameId: 1,
+          turn_owner_id: 2,
+          players: [
+            { id: 1, name: "Jugador1", turn: 1, playerSecrets: [{}, {}], in_disgrace: false },
+            { id: 2, name: "Jugador2", turn: 2, playerSecrets: [{}, {}], in_disgrace: true },
+          ],
+          turn_state: "None",
+        };
+
+        const mockPlayerDataTwoCards = {
+          id: 2,
+          name: "Jugador2",
+          playerSecrets: [{}, {}],
+          playerCards: [
+            { card_id: 21, card_name: "CartaA", type: "Action", image_name: "a.png" },
+            { card_id: 22, card_name: "CartaB", type: "Action", image_name: "b.png" },
+          ],
+        };
+
+        mockHttp.getPublicTurnData.mockResolvedValueOnce(mockTurnDataDisgrace);
+        mockHttp.getPrivatePlayerData.mockResolvedValueOnce(mockPlayerDataTwoCards);
+        mockHttp.discardCard = vi.fn().mockResolvedValue({ success: true });
+        // fetchGameData no hace nada crítico aquí
+        mockHttp.updateHand = vi.fn().mockRejectedValue(new Error("no-replenish"));
+
+        renderGame({ gameId: 1, myPlayerId: 2 });
+
+        await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+        // Primer descarte: debe llamar al endpoint
+        await act(async () => {
+          capturedOnDragEnd({
+            active: { data: { current: { cardId: 21, cardName: "CartaA", imageName: "a.png" } } },
+            over: { id: "discard-deck" },
+          });
+        });
+
+        expect(mockHttp.discardCard).toHaveBeenCalledTimes(1);
+
+        // Segundo intento de descarte en el mismo turno: no debe llamar de nuevo
+        await act(async () => {
+          capturedOnDragEnd({
+            active: { data: { current: { cardId: 22, cardName: "CartaB", imageName: "b.png" } } },
+            over: { id: "discard-deck" },
+          });
+        });
+
+        expect(mockHttp.discardCard).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });
