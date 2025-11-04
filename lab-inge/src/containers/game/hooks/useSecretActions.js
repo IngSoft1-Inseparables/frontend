@@ -163,15 +163,20 @@ export const useSecretActions = (
     try {
       console.log(`🎯 Robando set ${setIndex} del jugador ${fromPlayerId} hacia jugador ${myPlayerId}`);
 
-      try {
-        const response = await httpService.stealSet(
-          gameId,
-          setIndex,
-          myPlayerId,
-          fromPlayerId
-        );
-        console.log("TIPO DE SET:", response);
+      const response = await httpService.stealSet(
+        gameId,
+        setIndex,
+        myPlayerId,
+        fromPlayerId
+      );
+      console.log("TIPO DE SET:", response);
+      console.log("✅ Set robado exitosamente");
 
+      setSelectedPlayer(null);
+      setSelectedSet(null);
+      setSelectionMode(null);
+
+      try {
         switch (response.set_type?.toLowerCase()) {
           case "poirot":
           case "marple":
@@ -216,17 +221,13 @@ export const useSecretActions = (
             break;
         }
       } catch (error) {
-        console.error("Error al cargar los sets:", error);
+        console.error("Error al ejecutar accion de set:", error);
       }
-
-      console.log("✅ Set robado exitosamente");
 
       // Actualizar los datos del juego
       await fetchGameData();
     } catch (error) {
       console.error("❌ ERROR al robar set:", error);
-    } finally {
-      // Limpiar estados de selección
       setSelectedPlayer(null);
       setSelectedSet(null);
       setSelectionMode(null);
