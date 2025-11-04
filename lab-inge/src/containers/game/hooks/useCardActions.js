@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 /**
  * Hook para manejar las acciones de las cartas (jugar, descartar, drag and drop)
@@ -40,9 +40,13 @@ export const useCardActions = (
   };
 
   const [disgraceDiscarded, setDisgraceDiscarded] = useState(false);
+  const disgraceDiscardedRef = useRef(false);
+  const disgraceLockedRef = useRef(false);
 
   useEffect(() => {
     setDisgraceDiscarded(false);
+    disgraceDiscardedRef.current = false;
+    disgraceLockedRef.current = false;
   }, [turnData?.turn_owner_id]);
 
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
@@ -125,8 +129,8 @@ export const useCardActions = (
       if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
         return;
 
-      // En desgracia social, solo se puede descartar una carta por turno
-      if (inDisgrace && disgraceDiscarded) {
+      // Si ya hay un bloqueo de descarte (previo) evitamos otra llamada.
+      if (disgraceLockedRef.current) {
         console.log("Ya descartaste (desgracia): no podés descartar otra.");
         return;
       }
@@ -157,14 +161,20 @@ export const useCardActions = (
       });
 
       try {
-        // 1) Descartar
+        // 1) Marcar inmediatamente en los refs para evitar llamadas concurrentes
+        if (inDisgrace) {
+          disgraceDiscardedRef.current = true;
+          disgraceLockedRef.current = true;
+        }
+
+        // 2) Descartar
         await httpService.discardCard(myPlayerId, cardId);
 
         if (inDisgrace) {
-          // 2) Marcar que ya descarté en desgracia
+          // 3) Marcar que ya descarté en desgracia (estado react)
           setDisgraceDiscarded(true);
 
-          // 3) Reponer hasta 6 o hasta que el turno cambie
+          // 4) Reponer hasta 6 o hasta que el turno cambie
           for (let i = 0; i < 6; i++) {
             try {
               await httpService.updateHand(gameId, myPlayerId);
@@ -173,7 +183,6 @@ export const useCardActions = (
               break;
             }
 
-          
             let refreshed;
             try {
               refreshed = await fetchGameData();
