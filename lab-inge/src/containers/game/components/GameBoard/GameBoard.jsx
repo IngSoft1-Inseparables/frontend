@@ -255,6 +255,9 @@ function GameBoard({
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            inDisgrace={
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
+            }
           />
 
           <div>
