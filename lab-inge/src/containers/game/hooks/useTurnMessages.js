@@ -15,6 +15,21 @@ export const useTurnMessages = (turnData, myPlayerId, orderedPlayers) => {
   useEffect(() => {
     if (!turnData) return;
 
+
+    // Detectar si YO estoy en desgracia social
+    const me = turnData.players?.find(
+      (p) => p.id === parseInt(myPlayerId)
+    );
+    const inDisgrace = !!me?.in_disgrace;
+
+    // Si es mi turno y estoy en desgracia, mostrar mensaje prioritario
+    if (turnData.turn_owner_id === myPlayerId && inDisgrace) {
+      setMessage(
+        "⚠️ Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
+      );
+      return; 
+    }
+
     if (turnData.turn_owner_id !== myPlayerId) {
       const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
       setMessage(`${currentPlayerName} está jugando su turno.`);
