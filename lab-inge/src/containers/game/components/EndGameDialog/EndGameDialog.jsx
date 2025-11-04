@@ -19,11 +19,15 @@ export default function EndGameDialog({ onClose, winners }) {
   const regpileCount = winners.regpileCount ?? 0;
 
   let victoryMessage = "";
-  if(regpileCount === 0) {
-    victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";  
+
+  if (winners.type === "social_disgrace") {
+    victoryMessage = "El asesino ha ganado.";
+  } else if (regpileCount === 0) {
+    victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";
   } else {
     victoryMessage = "Los Detectives descubrieron al Asesino.";
   }
+
 
   return (
     <div className="dialog-backdrop">

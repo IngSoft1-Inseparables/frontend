@@ -88,6 +88,25 @@ export const useGameDialogs = (
     };
   }, [wsService, myPlayerId]);
 
+  // Detectar fin de partida por desgracia social
+  useEffect(() => {
+    if (!turnData || turnData.game_state !== "Finished") return;
+
+    const players = turnData.players || [];
+    const murderer = players.find((p) => p.role === "MURDERER");
+    const others = players.filter((p) => p.id !== murderer?.id);
+
+    // Si todos los demás jugadores están en desgracia social
+    const allInDisgrace =
+      others.length > 0 && others.every((p) => p.in_disgrace === true);
+
+    if (allInDisgrace) {
+      setWinnerData({ type: "social_disgrace" });
+      setShowEndDialog(true);
+    }
+  }, [turnData]);
+
+
   return {
     showEndDialog,
     setShowEndDialog,
