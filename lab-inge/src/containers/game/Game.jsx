@@ -93,7 +93,16 @@ function Game() {
     handleStealSet,
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
-  const { message } = useTurnMessages(turnData, myPlayerId, orderedPlayers);
+  const [movedCardsCount, setMovedCardsCount] = useState(0);
+
+  const { message } = useTurnMessages(
+    turnData,
+    myPlayerId,
+    orderedPlayers,
+    selectionAction,
+    setSelectionAction,
+    movedCardsCount
+  );
 
   // WebSocket connection
   useWebSocket(
@@ -107,6 +116,8 @@ function Game() {
     setShowEndDialog,
     fetchGameData,
     reorderPlayers,
+    setSelectionAction,
+    setMovedCardsCount,
     timer,
     setTimer
   );
@@ -134,6 +145,7 @@ function Game() {
     setFromPlayer,
     setSelectedSecret,
     setSelectionMode,
+    setMovedCardsCount,
     handleStealSet
   );
 
@@ -215,7 +227,6 @@ function Game() {
     }
   }, [gameId, myPlayerId, navigate]);
 
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -257,6 +268,7 @@ function Game() {
           setCards={handlePlaySetAction}
           playedActionCard={playedActionCard}
           message={message}
+          setSelectionAction={setSelectionAction}
           timer={timer}
         />
 

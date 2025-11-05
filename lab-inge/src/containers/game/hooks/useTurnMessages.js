@@ -3,7 +3,14 @@ import { useState, useEffect } from "react";
 /**
  * Hook para manejar los mensajes mostrados al usuario según el estado del turno
  */
-export const useTurnMessages = (turnData, myPlayerId, orderedPlayers) => {
+export const useTurnMessages = (
+  turnData,
+  myPlayerId,
+  orderedPlayers,
+  selectionAction,
+  setSelectionAction,
+  movedCardsCount
+) => {
   const [message, setMessage] = useState(" ");
 
   const getPlayerNameById = (playerId) => {
@@ -14,6 +21,21 @@ export const useTurnMessages = (turnData, myPlayerId, orderedPlayers) => {
 
   useEffect(() => {
     if (!turnData) return;
+
+
+    // Detectar si YO estoy en desgracia social
+    const me = turnData.players?.find(
+      (p) => p.id === parseInt(myPlayerId)
+    );
+    const inDisgrace = !!me?.in_disgrace;
+
+    // Si es mi turno y estoy en desgracia, mostrar mensaje prioritario
+    if (turnData.turn_owner_id === myPlayerId && inDisgrace) {
+      setMessage(
+        " Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
+      );
+      return; 
+    }
 
     if (turnData.turn_owner_id !== myPlayerId) {
       const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
@@ -34,7 +56,49 @@ export const useTurnMessages = (turnData, myPlayerId, orderedPlayers) => {
         setMessage("Esperá para continuar tu turno.");
         break;
       case "Discarding":
-        setMessage("Podés reponer o seguir descartando.");
+        const actionType =
+          typeof selectionAction === "object"
+            ? selectionAction?.type
+            : selectionAction;
+        const effectiveMovedCount =
+          typeof selectionAction === "object"
+            ? selectionAction?.movedCount
+            : movedCardsCount;
+        if (
+          actionType === "paddington" ||
+          actionType === "paddington-discarded"
+        ) {
+          const paddingtonMessage =
+            effectiveMovedCount > 0
+              ? `Se ${
+                  effectiveMovedCount === 1 ? "ha movido" : "han movido"
+                } ${effectiveMovedCount} ${
+                  effectiveMovedCount === 1 ? "carta" : "cartas"
+                } del mazo de robo al mazo de descarte.`
+              : "Se han movido cartas del mazo de robo al mazo de descarte.";
+          const fullMessage = `${paddingtonMessage} Ahora podés reponer o seguir descartando.`;
+          setMessage(fullMessage);
+          // Limpiar después de mostrar el mensaje (más tiempo para que se vea)
+          setTimeout(() => {
+            setSelectionAction(null);
+          }, 4500);
+        } else if (selectionAction === "delay") {
+          const delayMessage =
+            movedCardsCount > 0
+              ? `Se ${
+                  movedCardsCount === 1 ? "ha movido" : "han movido"
+                } ${movedCardsCount} ${
+                  movedCardsCount === 1 ? "carta" : "cartas"
+                } del mazo de descarte al mazo de robo.`
+              : "Se han movido cartas del mazo de descarte al mazo de robo.";
+          setMessage(
+            `${delayMessage} Ahora podés reponer o seguir descartando.`
+          );
+          // Limpiar después de mostrar el mensaje
+          setTimeout(() => setSelectionAction(null), 4500);
+        } else {
+          setMessage("Podés reponer o seguir descartando.");
+        }
         break;
       case "Replenish":
         setMessage("Debés tener seis cartas en mano para terminar el turno.");
@@ -49,8 +113,11 @@ export const useTurnMessages = (turnData, myPlayerId, orderedPlayers) => {
   }, [
     turnData?.turn_state,
     turnData?.turn_owner_id,
+    turnData?.players,
     myPlayerId,
     orderedPlayers,
+    selectionAction,
+    movedCardsCount,
   ]);
 
   return { message, getPlayerNameById };

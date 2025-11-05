@@ -57,6 +57,7 @@ function GameBoard({
   selectionMode,
   playedActionCard,
   message,
+  setSelectionAction,
   timer
 }) {
   const playerCount = turnData.players_amount;
@@ -199,6 +200,7 @@ function GameBoard({
                   discardpile={turnData?.discardpile}
                   turnData={turnData}
                   myPlayerId={myPlayerId}
+                  setSelectionAction={setSelectionAction}
                 />
               </div>
             </div>
@@ -256,6 +258,9 @@ function GameBoard({
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            inDisgrace={
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
+            }
           />
 
           <div>
