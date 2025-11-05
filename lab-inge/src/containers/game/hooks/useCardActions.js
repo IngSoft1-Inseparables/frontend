@@ -1,4 +1,4 @@
-import { useEffect, useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 
 /**
  * Hook para manejar las acciones de las cartas (jugar, descartar, drag and drop)
@@ -266,11 +266,12 @@ export const useCardActions = (
               setSelectionMode("select-other-revealed-secret");
               setSelectionAction("one more");
               break;
-          case "early train to paddington":
-            setSelectionAction("paddington");
-            break;
-          case "delay the murderer's escape!":
-            setSelectionAction("delay");
+            case "early train to paddington":
+              setSelectionAction("paddington");
+              break;
+            case "delay the murderer's escape!":
+              setSelectionAction("delay");
+              break;
             case "another victim":
               setSelectionMode("select-set");
               break;
@@ -285,7 +286,7 @@ export const useCardActions = (
 
       } else if (droppedCard.type.toLowerCase() === "instant") {
         if (timer <= 0) return;
-        if (turnData.turn_state.toLowerCase() != "playing" && turnData.turn_state.toLowerCase() != "replenish") return;
+        if (turnData.turn_state.toLowerCase() != "playing" && turnData.turn_state.toLowerCase() != "discarding") return;
         try {
           await httpService.playNotSoFast(gameId, myPlayerId, cardId);
         } catch {

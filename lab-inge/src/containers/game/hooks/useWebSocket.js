@@ -109,7 +109,7 @@ export const useWebSocket = (
 
     const handleEarlyTrainCardPlayed = (payload) => {
       const data = typeof payload === "string" ? JSON.parse(payload) : payload;
-       setSelectionAction({ type: "paddington-discarded", movedCount: data.moved_count });
+      setSelectionAction({ type: "paddington-discarded", movedCount: data.moved_count });
     };
 
     wsService.on("early_train_card_played", handleEarlyTrainCardPlayed);
