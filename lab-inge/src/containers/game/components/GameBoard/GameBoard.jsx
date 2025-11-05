@@ -56,7 +56,8 @@ function GameBoard({
   selectedSet,
   selectionMode,
   playedActionCard,
-  message
+  message,
+  timer
 }) {
   const playerCount = turnData.players_amount;
 
@@ -189,7 +190,7 @@ function GameBoard({
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
-                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} timer={timer} />
               </div>
 
               {/* Grupo derecho: mazo de descarte */}

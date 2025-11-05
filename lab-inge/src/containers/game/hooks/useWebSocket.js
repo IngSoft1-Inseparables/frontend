@@ -13,7 +13,9 @@ export const useWebSocket = (
   setWinnerData,
   setShowEndDialog,
   fetchGameData,
-  reorderPlayers
+  reorderPlayers,
+  timer,
+  setTimer
 ) => {
   const [showConnectionError, setShowConnectionError] = useState(false);
 
@@ -75,11 +77,16 @@ export const useWebSocket = (
       setShowConnectionError(true);
     };
 
+    const handleTimer = (payload) => {
+      setTimer(payload.timer);
+    };
+
     wsService.on("game_public_update", handleGamePublicUpdate);
     wsService.on("player_private_update", handlePlayerPrivateUpdate);
     wsService.on("connection_status", handleConnectionStatus);
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
+    wsService.on("game_timer", handleTimer);
 
     return () => {
       console.log("Limpiando conexión WebSocket...");
@@ -89,6 +96,7 @@ export const useWebSocket = (
       wsService.off("connection_status", handleConnectionStatus);
       wsService.off("reconnecting", handleReconnecting);
       wsService.off("connection_failed", handleConnectionFailed);
+      wsService.off("game_timer", handleTimer);
 
       wsService.disconnect();
     };

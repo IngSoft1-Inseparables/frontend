@@ -278,7 +278,18 @@ const createHttpService = () => {
         selectedPlayer
       })
     });
-  }
+  };
+
+  const playNotSoFast = (gameId, playerId, cardId) => {
+    return request("/players/play/cancel", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId
+      })
+    });
+  };
 
 
   return {
@@ -301,7 +312,8 @@ const createHttpService = () => {
     replenishFromDraft,
     getDiscardTop5,
     replenishFromDiscard,
-    stealSet
+    stealSet,
+    playNotSoFast
   };
 };
 

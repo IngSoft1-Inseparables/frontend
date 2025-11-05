@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Hook para manejar las acciones de las cartas (jugar, descartar, drag and drop)
@@ -16,7 +16,9 @@ export const useCardActions = (
   setPlayedActionCard,
   setSelectionMode,
   setSelectionAction,
-  startDiscardTop5Action
+  startDiscardTop5Action,
+  timer,
+  setTimer
 ) => {
   const handleCardClick = async () => {
     try {
@@ -136,68 +138,68 @@ export const useCardActions = (
 
     // Si se soltó sobre la zona de eventos
     if (over.id === "play-card-zone") {
-      if (turnData.turn_state != "None") return;
-
-      if (playedActionCard) {
-        return;
-      }
 
       const droppedCard = playerData?.playerCards?.find(
         (card) => card.card_id === cardId
       );
 
-      if (!droppedCard) {
-        console.error("Card not found in player's hand");
-        return;
-      }
+      if (droppedCard?.type.toLowerCase() === "event") {
+        if (turnData.turn_state != "None" || playedActionCard) return;
 
-      if (droppedCard.type.toLowerCase() != "event") {
-        console.log("Card played not valid.");
-        return;
-      }
+        const previousPlayerData = playerData;
 
-      const previousPlayerData = playerData;
+        setPlayerData((prevData) => {
+          if (!prevData) return prevData;
 
-      setPlayerData((prevData) => {
-        if (!prevData) return prevData;
+          return {
+            ...prevData,
+            playerCards: prevData.playerCards.filter(
+              (card) => card.card_id !== cardId
+            ),
+          };
+        });
 
-        return {
-          ...prevData,
-          playerCards: prevData.playerCards.filter(
-            (card) => card.card_id !== cardId
-          ),
-        };
-      });
+        setPlayedActionCard(droppedCard);
 
-      setPlayedActionCard(droppedCard);
+        try {
+          const response = await httpService.playEvent(
+            gameId,
+            myPlayerId,
+            cardId,
+            cardName
+          );
 
-      try {
-        const response = await httpService.playEvent(
-          gameId,
-          myPlayerId,
-          cardId,
-          cardName
-        );
-
-        switch (response.cardName.toLowerCase()) {
-          case "look into the ashes":
-            await fetchGameData();
-            startDiscardTop5Action();
-            break;
-          case "and then there was one more...":
-            setSelectionMode("select-other-revealed-secret");
-            setSelectionAction("one more");
-            break;
-          case "another victim":
-            setSelectionMode("select-set");
-            break;
-          default:
-            break;
+          switch (response.cardName.toLowerCase()) {
+            case "look into the ashes":
+              await fetchGameData();
+              startDiscardTop5Action();
+              break;
+            case "and then there was one more...":
+              setSelectionMode("select-other-revealed-secret");
+              setSelectionAction("one more");
+              break;
+            case "another victim":
+              setSelectionMode("select-set");
+              break;
+            default:
+              break;
+          }
+        } catch (error) {
+          console.error("Failed playing event card:", error);
+          setPlayerData(previousPlayerData);
+          setPlayedActionCard(null);
         }
-      } catch (error) {
-        console.error("Failed playing event card:", error);
-        setPlayerData(previousPlayerData);
-        setPlayedActionCard(null);
+
+      } else if (droppedCard.type.toLowerCase() === "instant") {
+        if (timer <= 0) return;
+        if (turnData.turn_state.toLowerCase() != "playing" && turnData.turn_state.toLowerCase() != "replenish") return;
+        try {
+          await httpService.playNotSoFast(gameId, myPlayerId, cardId);
+        } catch {
+          console.log("Failed playing Not So Fast...")
+        }
+      } else {
+        console.log("Card played not valid.");
       }
     }
   };

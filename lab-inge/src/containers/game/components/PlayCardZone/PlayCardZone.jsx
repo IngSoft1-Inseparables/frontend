@@ -1,6 +1,6 @@
 import { useDroppable, useDndContext } from '@dnd-kit/core'
 
-export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerData }) {
+export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerData, timer }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'play-card-zone',
   });
@@ -16,42 +16,48 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
     (card) => card.card_id === draggingCardId
   );
 
-  console.log("carta:", draggingCard);
-  const isEventCard = draggingCard?.type === "Event";
+  console.log("Card:", draggingCard);
+  const isPlayableCard = draggingCard?.type.toLowerCase() === "event" || draggingCard?.type.toLowerCase() === "instant";
 
 
   if (!actionCard) {
     return (
-      <div ref={setNodeRef} className="relative w-24 h-36">
-        <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${isMyTurn && isOver && isEventCard ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
-          <img
-            src="/icons/event-icon.png"
-            className='rem-0.8 opacity-95 transition-all'
-            alt="Card Zone"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "scale(1.1)")
-            }
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-          />
+      <div>
+        <p>{timer}</p>
+        <div ref={setNodeRef} className="relative w-24 h-36">
+          <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${isMyTurn && isOver && isPlayableCard ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
+            <img
+              src="/icons/event-icon.png"
+              className='rem-0.8 opacity-95 transition-all'
+              alt="Card Zone"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "scale(1.1)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      ref={setNodeRef}
-      className="relative w-24 h-36 overflow-hidden"
-      style={{
-        padding: '0',
-        transition: 'all 0.2s ease',
-      }}>
-      <img
-        src={`/cards/${actionCard.image_name}.png`}
-        alt={actionCard.card_name}
-        className="w-full h-full "
-        style={{ pointerEvents: 'none' }}
-      />
+    <div>
+      <p>{timer}</p>
+      <div
+        ref={setNodeRef}
+        className="relative w-24 h-36 overflow-hidden"
+        style={{
+          padding: '0',
+          transition: 'all 0.2s ease',
+        }}>
+        <img
+          src={`/cards/${actionCard.image_name}.png`}
+          alt={actionCard.card_name}
+          className="w-full h-full "
+          style={{ pointerEvents: 'none' }}
+        />
+      </div>
     </div>
   );
 }
