@@ -26,7 +26,9 @@ export const useSelectionEffects = (
   setSelectedSecret,
   setSelectionMode,
   setMovedCardsCount,
-  handleStealSet
+  handleStealSet,
+  setShowTradeDialog, 
+  setOpponentId   
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -59,18 +61,26 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-  // Forzar revelación de secreto
+  // Forzar revelación de secreto (solo si la acción NO es Card Trade ni Specials)
   useEffect(() => {
-    if (selectionMode === "select-other-player" && selectedPlayer) {
-      console.log(
-        "jugador seleccionado para forzar revelación:",
-        selectedPlayer
-      );
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      (
+        !selectionAction || 
+        (
+          selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials"
+        )
+      )
+    ) {
+      console.log("Jugador seleccionado para forzar revelación:", selectedPlayer);
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
-  }, [selectionMode, selectedPlayer]);
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -222,5 +232,21 @@ export const useSelectionEffects = (
 
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
+
+  // Card Trade → seleccionar jugador y abrir diálogo
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardtrade"
+    ) {
+      console.log("Jugador seleccionado para Card Trade:", selectedPlayer);
+      setSelectionMode(null);
+      setShowTradeDialog(true);
+      setOpponentId(selectedPlayer);
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
 
 };

@@ -292,6 +292,18 @@ const createHttpService = () => {
     });
   };
 
+  const getOpponentHand = (gameId, fromPlayerId, playerId) => {
+    return request(`/players/${gameId}/hand/${fromPlayerId}/${playerId}`);
+  };
+
+  const exchangeCards = ({ game_id, player1_id, player2_id, card1_id, card2_id }) => {
+    return request("/players/exchangeCards", {
+      method: "PATCH",
+      body: JSON.stringify({ game_id, player1_id, player2_id, card1_id, card2_id }),
+    });
+  };
+
+
   return {
     getGame,
     getGames,
@@ -314,7 +326,9 @@ const createHttpService = () => {
     replenishFromDiscard,
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
-    stealSet
+    stealSet,
+    getOpponentHand,
+    exchangeCards,
   };
 };
 
