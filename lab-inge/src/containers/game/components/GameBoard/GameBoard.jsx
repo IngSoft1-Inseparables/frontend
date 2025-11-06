@@ -8,7 +8,7 @@ import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
 import { createHttpService } from "../../../../services/HTTPService";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -57,6 +57,8 @@ function GameBoard({
   selectionMode,
   playedActionCard,
   message,
+  setSelectionMode,
+  onAddCardToSet,
   setSelectionAction
 }) {
   const playerCount = turnData.players_amount;
@@ -76,11 +78,21 @@ function GameBoard({
   const [modalPlayerId, setModalPlayerId] = useState(null);
   const openSetModal = (playerId) => setModalPlayerId(playerId);
   const closeSetModal = () => setModalPlayerId(null);
+  const [matchingSets, setMatchingSets] = useState([]);
+  const [addToSet, setAddToSet] = useState(false);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
-    return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    return (
+      console.log("info publica:", turnData),
+      console.log("info privada:", playerData),
+      console.log("orden de los jugadores:", orderedPlayers)
     );
   }
+  const handleCardSelected = useCallback((tempMatches) => {
+    console.log("🔍 Matches recibidos:", tempMatches);
+    setMatchingSets(tempMatches);
+    
+  }, [setSelectionMode]);
 
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
@@ -95,15 +107,25 @@ function GameBoard({
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
   };
-
-
+  
+  const handleSetClick = (setIndex) => {
+    if (onAddCardToSet) {
+      onAddCardToSet(setIndex, matchingSets, currentSetCards);
+      // Limpiar selección
+      setMatchingSets([]);
+      setAddToSet(false);
+    }
+  };
 
   const handleReplenishFromDraft = async (carta) => {
     try {
       console.log("→ Robando carta del mazo de draft...");
 
-      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
-
+      const res = await httpService.replenishFromDraft(
+        turnData.gameId,
+        myPlayerId,
+        carta
+      );
 
       // Actualizar el draft con las nuevas cartas
       setTurnData((prev) => ({
@@ -186,11 +208,15 @@ function GameBoard({
                   }
                   onCardClick={handleReplenishFromDraft}
                 />
-
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
-                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                <PlayCardZone
+                  actionCard={playedActionCard}
+                  turnData={turnData}
+                  myPlayerId={myPlayerId}
+                  playerData={playerData}
+                />
               </div>
 
               {/* Grupo derecho: mazo de descarte */}
@@ -210,6 +236,11 @@ function GameBoard({
                   turnData.players.find((p) => p.id === myPlayerId)
                     ?.setPlayed || []
                 }
+                matchingSets={matchingSets}
+                onSetClick={handleSetClick}
+                availableToPlay={availableToPlay}
+                turnState={currentTurnState}
+              
               />
             </div>
           </div>
@@ -249,23 +280,27 @@ function GameBoard({
           openSetModal={openSetModal}
         />
         <div
-          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
-            }`}
+          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
+            playerCount < 6 ? "z-20" : ""
+          }`}
         >
           <HandCard
             playerCards={playerData?.playerCards || []}
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            onCardStateChange={handleCardSelected}
+            setsPlayed={
+              turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []
+            }
+              setSelectionMode={setSelectionMode}
             inDisgrace={
               turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
             }
           />
 
           <div>
-            <p className="text-white text-center">
-              {message}
-            </p>
+            <p className="text-white text-center">{message}</p>
           </div>
         </div>
         <div className=" flex justify-rigth mr-12 mb-6">
@@ -280,6 +315,7 @@ function GameBoard({
                 : currentSetCards[0]?.card_name.toUpperCase()}
             </button>
           )}
+         
         </div>
       </div>
 
