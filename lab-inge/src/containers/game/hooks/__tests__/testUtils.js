@@ -36,6 +36,7 @@ export const createMockHttpService = () => ({
   updateHand: vi.fn(),
   discardCard: vi.fn(),
   playSets: vi.fn(),
+  addCardToSet: vi.fn(),
   revealSecret: vi.fn(),
   hideSecret: vi.fn(),
   forcePlayerReveal: vi.fn(),

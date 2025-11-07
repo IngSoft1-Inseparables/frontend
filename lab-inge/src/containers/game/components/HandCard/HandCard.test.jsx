@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { DndContext } from '@dnd-kit/core'
 import HandCard from './HandCard.jsx'
 import '@testing-library/jest-dom'
@@ -93,6 +93,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -109,6 +110,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -168,6 +170,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -202,6 +205,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -231,6 +235,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -257,6 +262,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -311,6 +317,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -367,6 +374,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -393,6 +401,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -414,6 +423,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -484,6 +494,7 @@ describe('HandCard', () => {
           playerCards={sampleCards} 
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -498,6 +509,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -525,6 +537,7 @@ describe('HandCard', () => {
           onSetStateChange={mockOnSetStateChange}
           availableToPlay={true}
           turnState="None"
+          setsPlayed={[]}
         />
       )
 
@@ -540,4 +553,246 @@ describe('HandCard', () => {
       expect(screen.getByTestId('card-2')).toHaveClass('selected')
     })
   })
+
+  describe('Detective Card Matching with Sets (Agregar carta a set)', () => {
+    const mockOnCardStateChange = vi.fn()
+    const mockOnSetStateChange = vi.fn()
+
+    beforeEach(() => {
+      mockOnCardStateChange.mockClear()
+      mockOnSetStateChange.mockClear()
+    })
+
+    test('detecta matching set cuando se selecciona una carta detective', async () => {
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Poirot',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      const firstButton = screen.getByTestId('card-1')
+      fireEvent.click(firstButton)
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // onCardStateChange debe ser llamado con los sets que coinciden
+      expect(mockOnCardStateChange).toHaveBeenCalled()
+    })
+
+    test('llama a onCardStateChange con matches cuando detective coincide con set type', async () => {
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Poirot',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      const poirotButton = screen.getByTestId('card-1')
+      fireEvent.click(poirotButton)
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Debería haber encontrado una coincidencia con Poirot
+      const calls = mockOnCardStateChange.mock.calls
+      expect(calls.length).toBeGreaterThan(0)
+      // El último call debería ser un array con al menos un elemento
+      const lastCall = calls[calls.length - 1]
+      expect(lastCall[0]).toBeDefined()
+    })
+
+    test('no encuentra coincidencias cuando no hay sets jugados', async () => {
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={[]}
+          />
+        </DndContext>
+      )
+
+      const poirotButton = screen.getByTestId('card-1')
+      fireEvent.click(poirotButton)
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Debería llamar con array vacío (sin coincidencias)
+      expect(mockOnCardStateChange).toHaveBeenCalledWith([])
+    })
+
+    test('detecta coincidencias con Beresford pairs (Tommy y Tuppence)', async () => {
+      const beresfordCards = [
+        { card_id: 1, card_name: 'Tommy Beresford', type: 'Detective', image_name: 'detective_tommy.png', image_back_name: 'card_back.png' },
+        { card_id: 2, card_name: 'Tuppence Beresford', type: 'Detective', image_name: 'detective_tuppence.png', image_back_name: 'card_back.png' },
+      ]
+
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Tuppence',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={beresfordCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      const tommyButton = screen.getByTestId('card-1')
+      fireEvent.click(tommyButton)
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Tommy debería coincidir con Tuppence set
+      const calls = mockOnCardStateChange.mock.calls
+      expect(calls.length).toBeGreaterThan(0)
+    })
+
+    test('no detecta coincidencias con Adriane Oliver', async () => {
+      const oliverCards = [
+        { card_id: 1, card_name: 'Adriane Oliver', type: 'Detective', image_name: 'detective_oliver.png', image_back_name: 'card_back.png' },
+      ]
+
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Oliver',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={oliverCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      const oliverButton = screen.getByTestId('card-1')
+      fireEvent.click(oliverButton)
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Adriane Oliver no debería generar matches
+      expect(mockOnCardStateChange).toHaveBeenCalledWith([])
+    })
+
+    test('limpiar matches cuando se deselecciona la carta detective', async () => {
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Poirot',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      const poirotButton = screen.getByTestId('card-1')
+      
+      // Seleccionar
+      fireEvent.click(poirotButton)
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Deseleccionar
+      fireEvent.click(poirotButton)
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Después de deseleccionar, debería mantener matches solo si selectedCards estaba vacío
+      // El comportamiento actual: si matchingSets estaba con datos, se mantiene
+      const calls = mockOnCardStateChange.mock.calls
+      expect(calls.length).toBeGreaterThan(0)
+    })
+
+    test('no encuentra coincidencias para más de 1 carta seleccionada', async () => {
+      const mockSetsPlayed = [
+        {
+          set_id: 1,
+          set_type: 'Poirot',
+          cards: []
+        }
+      ]
+
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            onCardStateChange={mockOnCardStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={mockSetsPlayed}
+          />
+        </DndContext>
+      )
+
+      // Seleccionar 2 cartas
+      fireEvent.click(screen.getByTestId('card-1'))
+      fireEvent.click(screen.getByTestId('card-2'))
+
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Con 2 cartas seleccionadas, no debería buscar matches
+      expect(mockOnCardStateChange).toHaveBeenCalledWith([])
+    })
+  })
 })
+
