@@ -89,6 +89,7 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
+    handleCardAriadneOliver
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
@@ -142,7 +143,8 @@ function Game() {
     setSelectedSecret,
     setSelectionMode,
     setMovedCardsCount,
-    handleStealSet
+    handleStealSet,
+    handleCardAriadneOliver
   );
 
   // Steal secret logic
@@ -267,6 +269,7 @@ function Game() {
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}
+          cardAriadne={handleCardAriadneOliver}
         />
 
         {showEndDialog && winnerData && (

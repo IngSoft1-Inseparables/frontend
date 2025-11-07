@@ -26,7 +26,8 @@ export const useSelectionEffects = (
   setSelectedSecret,
   setSelectionMode,
   setMovedCardsCount,
-  handleStealSet
+  handleStealSet,
+  handleCardAriadneOliver
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -210,7 +211,7 @@ export const useSelectionEffects = (
     if (
       selectionMode === "select-set" &&
       selectedSet != null &&
-      selectedPlayer
+      selectedPlayer && selectionAction === "another"
     ) {
       console.log(
         "🎯 Robando set:",
@@ -219,6 +220,23 @@ export const useSelectionEffects = (
         selectedPlayer
       );
       handleStealSet(selectedPlayer, selectedSet);
+
+    }
+  }, [selectionMode, selectedSet, selectedPlayer]);
+
+ useEffect(() => {
+    if (
+      selectionMode === "select-set" &&
+      selectedSet != null &&
+      selectedPlayer && selectionAction === "ariadne"
+    ) {
+      console.log(
+        "🎯 Robando set:",
+        selectedSet,
+        "del jugador:",
+        selectedPlayer
+      );
+      handleCardAriadneOliver(selectedPlayer, selectedSet);
 
     }
   }, [selectionMode, selectedSet, selectedPlayer]);

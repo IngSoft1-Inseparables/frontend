@@ -282,8 +282,10 @@ export const useCardActions = (
             break;
           case "delay the murderer's escape!":
             setSelectionAction("delay");
+            break;
           case "another victim":
             setSelectionMode("select-set");
+            setSelectionAction("another");
             break;
           default:
             break;

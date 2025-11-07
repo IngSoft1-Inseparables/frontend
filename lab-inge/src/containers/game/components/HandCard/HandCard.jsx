@@ -11,6 +11,7 @@ function HandCard({
   turnState,
   setsPlayed,
   inDisgrace = false,
+  setSelectionMode,
 }) {
   const [selectedCards, setSelectedCards] = useState([]); // array donde se van guardando las cartas seleccionadas por el usuario.
   const [maxAllowed, setMaxAllowed] = useState(0);
@@ -32,7 +33,7 @@ function HandCard({
         setSelectedCards([]);
         setMaxAllowed(0);
         setMatchingSets([]);
-         if (onCardStateChange) {
+        if (onCardStateChange) {
           onCardStateChange([]);
         }
       }
@@ -74,8 +75,9 @@ function HandCard({
 
     const cardName = card.card_name.toLowerCase();
     const isNewWildcard = isWildcard(card.card_name);
+    const isAriadneOliver = cardName === "adriane oliver";
     const isDetective =
-      card.type.toLowerCase() === "detective" && cardName !== "adriane oliver";
+      card.type.toLowerCase() === "detective" && !isAriadneOliver;
 
     // 1. Deseleccionar si ya estaba seleccionada
     if (selectedCards.some((c) => c.card_id === card.card_id)) {
@@ -99,6 +101,14 @@ function HandCard({
 
     // 2. Si la selección está vacía
     if (selectedCards.length === 0) {
+      // Permitir seleccionar Ariadne Oliver sola
+      if (isAriadneOliver) {
+        setSelectedCards([card]);
+        setMaxAllowed(1); // Solo se puede seleccionar Ariadne sola
+        
+        return;
+      }
+
       if (!isDetective && !isNewWildcard) return; // No se puede empezar con cartas que no sean set.
 
       setSelectedCards([card]);
@@ -172,26 +182,53 @@ function HandCard({
   useEffect(() => {
     console.log("🔍 useEffect disparado - selectedCards:", selectedCards);
     console.log("🔍 setsPlayed:", setsPlayed);
-    
-    // Si hay exactamente 1 carta detective seleccionada → buscar coincidencias
+    // Si hay exactamente 1 carta detective seleccionada => buscar coincidencias
+if (selectedCards.length === 1) {
+      // 2. Si hay 1, define la lógica de Ariadne Oliver AQUÍ
+      const card = selectedCards[0];
+      const cardNameLower = card.card_name.toLowerCase();
+      const isAriadneOliver = cardNameLower === "adriane oliver";
+
+      // 3. Ahora SÍ puedes usar tu 'if'
+      if (isAriadneOliver) {
+        console.log("✅ Ariadne Oliver detectada - activando select-player");
+        if (onCardStateChange) {
+          onCardStateChange([
+            {
+              isAriadne: true,
+              card: card,
+            },
+          ]);
+        }
+        // Importante: salimos del hook para no ejecutar la lógica de 'setsPlayed'
+        return;
+      }
+    }
     if (
       selectedCards.length === 1 &&
       !isWildcard(selectedCards[0].card_name) &&
       selectedCards[0].type.toLowerCase() === "detective" &&
-      selectedCards[0].card_name.toLowerCase() !== "adriane oliver" &&
       setsPlayed.length > 0
     ) {
+      const cardNameLower = selectedCards[0].card_name.toLowerCase();
+
+   
       console.log("✅ Cumple condiciones - buscando coincidencias...");
       const tempMatches = [];
       setsPlayed.forEach((set, index) => {
         const setTypeLower = set.set_type.toLowerCase();
-        const cardNameLower = selectedCards[0].card_name.toLowerCase();
-        
-        console.log(`🔎 Comparando: "${cardNameLower}" vs set "${setTypeLower}"`);
+
+        console.log(
+          `🔎 Comparando: "${cardNameLower}" vs set "${setTypeLower}"`
+        );
 
         const isMatch =
-          cardNameLower.includes(setTypeLower) || setTypeLower.includes(cardNameLower.split(" ").pop()) ||
-          ((cardNameLower.includes("tommy") || cardNameLower.includes("tuppence")) && (setTypeLower.includes("tommy") ||setTypeLower.includes("tuppence")));
+          cardNameLower.includes(setTypeLower) ||
+          setTypeLower.includes(cardNameLower.split(" ").pop()) ||
+          ((cardNameLower.includes("tommy") ||
+            cardNameLower.includes("tuppence")) &&
+            (setTypeLower.includes("tommy") ||
+              setTypeLower.includes("tuppence")));
 
         console.log(`   ${isMatch ? "✅ MATCH" : "❌ NO match"}`);
 
@@ -200,7 +237,7 @@ function HandCard({
             setIndex: index,
             setType: set.set_type,
             cards: set.cards,
-            setId: set.set_id
+            setId: set.set_id,
           });
         }
       });
@@ -227,7 +264,7 @@ function HandCard({
       }
     }
   }, [selectedCards, setsPlayed, onCardStateChange, matchingSets.length]);
- 
+
   useEffect(() => {
     const updatedSelected = selectedCards.filter((c) =>
       playerCards.some((pc) => pc.card_id === c.card_id)

@@ -59,7 +59,8 @@ function GameBoard({
   message,
   setSelectionMode,
   onAddCardToSet,
-  setSelectionAction
+  setSelectionAction,
+  cardAriadne
 }) {
   const playerCount = turnData.players_amount;
 
@@ -91,7 +92,11 @@ function GameBoard({
   const handleCardSelected = useCallback((tempMatches) => {
     console.log("🔍 Matches recibidos:", tempMatches);
     setMatchingSets(tempMatches);
-    
+    if(tempMatches.length > 0 && tempMatches[0]?.isAriadne){
+      setSelectionMode("select-set")
+      setSelectionAction("ariadne")
+      cardAriadne(tempMatches.card.car_id)
+    }
   }, [setSelectionMode]);
 
   const handleSetStateChange = (isPlayable, cards) => {
@@ -304,7 +309,7 @@ function GameBoard({
           </div>
         </div>
         <div className=" flex justify-rigth mr-12 mb-6">
-          {isSetReady && availableToPlay && (
+          {isSetReady && availableToPlay && currentSetCards[0]?.card_name.toLowerCase() !== "adriane oliver" && (
             <button
               onClick={handlePlaySetClick}
               className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
