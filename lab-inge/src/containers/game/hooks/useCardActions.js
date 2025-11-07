@@ -21,7 +21,6 @@ export const useCardActions = (
   setTimer
 ) => {
 
-  // Estado para guardar el efecto pendiente hasta que el timer llegue a 0
   const [pendingEffect, setPendingEffect] = useState(null);
 
   // si estoy en desgracia social
@@ -47,44 +46,36 @@ export const useCardActions = (
     switch (response.toLowerCase()) {
       case "poirot":
       case "marple":
-        console.log("✅ Activando modo: select-not-revealed-secret");
         setSelectionMode("select-other-not-revealed-secret");
         break;
 
       case "ladybrent":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "tommyberestford":
       case "tuppenceberestford":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "tommytuppence":
-        console.log("✅ Activando modo: select-other-player (no cancelable)");
         setSelectionMode("select-other-player");
         break;
 
       case "satterthwaite":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "specialsatterthwaite":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         setSelectionAction("specials");
         break;
 
       case "pyne":
-        console.log("✅ Activando modo: select-revealed-secret");
         setSelectionMode("select-revealed-secret");
         break;
 
       default:
-        console.log("⚠️ Set sin efecto:", response.set_type);
         break;
     }
   };
@@ -98,16 +89,13 @@ export const useCardActions = (
     disgraceLockedRef.current = false;
   }, [turnData?.turn_owner_id]);
 
-  // useEffect para ejecutar efectos pendientes cuando el timer llegue a 0
   useEffect(() => {
     const executePendingEffect = async () => {
-      if (timer === 0 && pendingEffect) {
-        console.log("⏰ Timer llegó a 0, ejecutando efecto pendiente automáticamente");
+      if (timer === 0 && pendingEffect && turnData?.turn_state.toLowerCase() === "playing") {
         const { type, response, droppedCard } = pendingEffect;
         
         try {
           if (type === "event") {
-            // Activar los efectos según el tipo de carta de evento
             switch (response.cardName.toLowerCase()) {
               case "look into the ashes":
                 await fetchGameData();
@@ -129,23 +117,19 @@ export const useCardActions = (
               default:
                 break;
             }
-            console.log("✅ Efecto de carta de evento ejecutado exitosamente");
           } else if (type === "set") {
-            // Activar los efectos según el tipo de set
             handleSwitch(response);
-            console.log("✅ Efecto de set ejecutado exitosamente");
           }
         } catch (error) {
-          console.error("❌ Error ejecutando efecto pendiente:", error);
+          console.error("Error ejecutando efecto pendiente:", error);
         } finally {
-          setPendingEffect(null); // Limpiar el efecto pendiente
+          setPendingEffect(null);
         }
       }
     };
 
     executePendingEffect();
   }, [timer, pendingEffect, setSelectionMode, setSelectionAction, fetchGameData, startDiscardTop5Action, handleSwitch]);
-
 
 
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
@@ -157,19 +141,15 @@ export const useCardActions = (
     const cardIds = currentSetCards.map((card) => card.card_id);
 
     try {
-      // 1. Enviar endpoint inmediatamente
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
       console.log("TIPO DE SET:", response);
       console.log("✅ Set enviado al backend, iniciando temporizador...");
       setTimer(5);
       
-      // 2. Guardar el efecto para ejecutarlo cuando el timer llegue a 0
       setPendingEffect({
         type: "set",
         response: response.set_type,
       });
-      
-      // NO ejecutar handleSwitch aquí, se ejecutará cuando timer === 0
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
@@ -317,7 +297,6 @@ export const useCardActions = (
         setPlayedActionCard(droppedCard);
 
         try {
-          // 1. Enviar endpoint inmediatamente
           const response = await httpService.playEvent(
             gameId,
             myPlayerId,
@@ -327,14 +306,11 @@ export const useCardActions = (
           setTimer(5);
           console.log("✅ Carta de evento enviada al backend, iniciando temporizador...");
           
-          // 2. Guardar el efecto para ejecutarlo cuando el timer llegue a 0
           setPendingEffect({
             type: "event",
             response: response,
             droppedCard
           });
-          
-          // NO ejecutar los efectos aquí, se ejecutarán cuando timer === 0
         } catch (error) {
           console.error("Failed playing event card:", error);
           setPlayerData(previousPlayerData);
@@ -342,30 +318,21 @@ export const useCardActions = (
         }
 
       } else if (droppedCard.type.toLowerCase() === "instant") {
-        // Not So Fast se ejecuta INMEDIATAMENTE, no espera al timer
-        // Solo validamos que el timer esté activo y el estado del turno sea válido
         if (timer <= 0) {
-          console.log("⏰ Timer ya expiró, no se puede jugar Not So Fast");
           return;
         }
         
-        // Validar estado del turno
         if (turnData.turn_state.toLowerCase() !== "playing" && 
             turnData.turn_state.toLowerCase() !== "discarding") {
-          console.log("⚠️ Estado del turno inválido para jugar Not So Fast");
           return;
         }
         
-        console.log("⚡ Ejecutando Not So Fast inmediatamente...");
-        console.log("Timer actual:", timer);
-        
-        // Ejecutar la carta inmediatamente
         try {
           await httpService.playNotSoFast(gameId, myPlayerId, cardId);
           setTimer(5);
           console.log("✅ Not So Fast ejecutado exitosamente");
         } catch (error) {
-          console.error("❌ Error ejecutando Not So Fast:", error);
+          console.error("Error ejecutando Not So Fast:", error);
         }
         
       } else {
@@ -385,32 +352,23 @@ export const useCardActions = (
     );
 
     if (!matchingSet || currentSetCards.length !== 1) {
-      console.log("❌ Click en set inválido o no hay carta seleccionada");
       return;
     }
 
     const card = currentSetCards[0];
-    const setType = matchingSet.setType; // Obtener el tipo de set
+    const setType = matchingSet.setType;
     const setId = matchingSet.setId;
-    console.log("✅ Agregando carta al set:", { card, setIndex, setType, setId });
 
     try {
-      // 1. Enviar endpoint inmediatamente
       const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setId);
-      console.log("✅ Carta agregada al set, iniciando temporizador...");
       
-      // Actualizar datos del juego desde el backend
       await fetchGameData();
-      // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // 2. Guardar el efecto para ejecutarlo cuando el timer llegue a 0
       setPendingEffect({
         type: "set",
         response: response.set_type,
       });
-      
-      // NO ejecutar handleSwitch aquí, se ejecutará cuando timer === 0
     } catch (error) {
       console.error("Error al agregar carta al set:", error);
     }

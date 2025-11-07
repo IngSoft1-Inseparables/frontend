@@ -19,23 +19,17 @@ export const useSecretActions = (
   const [stolenPlayer, setStolenPlayer] = useState(null);
   const [fromPlayer, setFromPlayer] = useState(null);
   const [prevData, setPrevData] = useState(null);
-  
-  // Estado para guardar el efecto pendiente de actualización de datos cuando el timer llegue a 0
   const [pendingSecretEffect, setPendingSecretEffect] = useState(null);
 
-  // useEffect para ejecutar efectos pendientes cuando el timer llegue a 0
   useEffect(() => {
     const executePendingSecretEffect = async () => {
-      if (timer === 0 && pendingSecretEffect) {
-        console.log("⏰ Timer llegó a 0, actualizando datos del juego después de revelar detective");
-        
+      if (timer === 0 && pendingSecretEffect  && turnData?.turn_state.toLowerCase() === "playing") {
         try {
           await fetchGameData();
-          console.log("✅ Datos actualizados exitosamente después de revelar detective");
         } catch (error) {
-          console.error("❌ Error actualizando datos después de revelar detective:", error);
+          console.error("Error actualizando datos después de revelar detective:", error);
         } finally {
-          setPendingSecretEffect(null); // Limpiar el efecto pendiente
+          setPendingSecretEffect(null);
         }
       }
     };
@@ -47,18 +41,13 @@ export const useSecretActions = (
     try {
       console.log("revelando secreto propio:", secretId);
 
-      // 1. Enviar endpoint inmediatamente
       await httpService.revealSecret({
         gameId,
         playerId: myPlayerId,
         secretId,
       });
-      console.log("✅ Detective revelado, iniciando temporizador...");
 
-      // 2. Guardar efecto para actualizar datos cuando el timer llegue a 0
       setPendingSecretEffect({ action: "reveal" });
-      
-      // NO ejecutar fetchGameData aquí, se ejecutará cuando timer === 0
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {
@@ -76,18 +65,13 @@ export const useSecretActions = (
         playerId
       );
       
-      // 1. Enviar endpoint inmediatamente
       await httpService.revealSecret({
         gameId,
         playerId,
         secretId,
       });
-      console.log("✅ Detective ajeno revelado, iniciando temporizador...");
       
-      // 2. Guardar efecto para actualizar datos cuando el timer llegue a 0
       setPendingSecretEffect({ action: "reveal" });
-      
-      // NO ejecutar fetchGameData aquí, se ejecutará cuando timer === 0
     } catch (err) {
       console.log("error al revelar secreto ajeno:", err);
     }
@@ -97,18 +81,13 @@ export const useSecretActions = (
     try {
       console.log("forzando al jugador a revelar secreto:", playerId);
 
-      // 1. Enviar endpoint inmediatamente
       const response = await httpService.forcePlayerReveal({
         gameId,
         playerId,
       });
-      console.log("✅ Forzar revelación enviado, iniciando temporizador...");
       console.log("respuesta del backend:", response);
       
-      // 2. Guardar efecto para actualizar datos cuando el timer llegue a 0
       setPendingSecretEffect({ action: "force-reveal" });
-      
-      // NO ejecutar fetchGameData aquí, se ejecutará cuando timer === 0
     } catch (err) {
       console.log("error al forzar revelacion de secreto:", err);
     } finally {
@@ -120,18 +99,13 @@ export const useSecretActions = (
     try {
       console.log("ocultando secreto propio:", secretId);
 
-      // 1. Enviar endpoint inmediatamente
       await httpService.hideSecret({
         gameId,
         playerId: myPlayerId,
         secretId,
       });
-      console.log("✅ Detective ocultado, iniciando temporizador...");
 
-      // 2. Guardar efecto para actualizar datos cuando el timer llegue a 0
       setPendingSecretEffect({ action: "hide" });
-      
-      // NO ejecutar fetchGameData aquí, se ejecutará cuando timer === 0
     } catch (err) {
       console.log("error al ocultar secreto propio:", err);
     }
@@ -146,18 +120,13 @@ export const useSecretActions = (
         playerId
       );
       
-      // 1. Enviar endpoint inmediatamente
       await httpService.hideSecret({
         gameId,
         playerId,
         secretId,
       });
-      console.log("✅ Detective ajeno ocultado, iniciando temporizador...");
 
-      // 2. Guardar efecto para actualizar datos cuando el timer llegue a 0
       setPendingSecretEffect({ action: "hide" });
-      
-      // NO ejecutar fetchGameData aquí, se ejecutará cuando timer === 0
     } catch (err) {
       console.log("error al ocultar secreto ajeno:", err);
     }
