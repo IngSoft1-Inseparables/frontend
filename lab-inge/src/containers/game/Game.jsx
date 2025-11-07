@@ -179,7 +179,9 @@ function Game() {
       setPlayedActionCard,
       setSelectionMode,
       setSelectionAction,
-      startDiscardTop5Action
+      startDiscardTop5Action,
+      timer,
+      setTimer
     );
 
   const handleReplenishFromDiscard = (card) => {

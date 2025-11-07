@@ -224,7 +224,7 @@ export const useCardActions = (
 
     }
 
-    // Si se soltó sobre la zona de eventos
+    // Si se soltó sobre la zona de juego
     if (over.id === "play-card-zone") {
       if (inDisgrace) return;
 
@@ -286,6 +286,7 @@ export const useCardActions = (
 
       } else if (droppedCard.type.toLowerCase() === "instant") {
         if (timer <= 0) return;
+        console.log("timer:", timer);
         if (turnData.turn_state.toLowerCase() != "playing" && turnData.turn_state.toLowerCase() != "discarding") return;
         try {
           await httpService.playNotSoFast(gameId, myPlayerId, cardId);
