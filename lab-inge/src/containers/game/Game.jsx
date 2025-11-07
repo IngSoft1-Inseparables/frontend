@@ -91,7 +91,7 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
 
