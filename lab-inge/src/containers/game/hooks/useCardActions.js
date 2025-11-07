@@ -144,7 +144,8 @@ export const useCardActions = (
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
       console.log("TIPO DE SET:", response);
       console.log("✅ Set enviado al backend, iniciando temporizador...");
-      setTimer(5);
+
+      if (response.toLowerCase() != "tommytuppence") setTimer(5);
       
       setPendingEffect({
         type: "set",
@@ -303,7 +304,7 @@ export const useCardActions = (
             cardId,
             cardName
           );
-          setTimer(5);
+          if (response.cardName.toLowerCase() != "cards off the table") setTimer(5);
           console.log("✅ Carta de evento enviada al backend, iniciando temporizador...");
           
           setPendingEffect({
