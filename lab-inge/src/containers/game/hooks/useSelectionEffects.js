@@ -223,4 +223,31 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 
+  // Cards off the Table
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardsoffthetable"
+    ) {
+      console.log("Ejecutando efecto de Cards off the Table en jugador:", selectedPlayer);
+
+      (async () => {
+        try {
+          await httpService.removeNotSoFast(gameId, selectedPlayer);
+          await fetchGameData();
+          console.log("Not So Fast eliminadas del jugador:", selectedPlayer);
+        } catch (error) {
+          console.error(" Error en Cards off the Table:", error);
+        } finally {
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+          setSelectionAction(null);
+        }
+      })();
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
+
 };

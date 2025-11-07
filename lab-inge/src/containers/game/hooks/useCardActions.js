@@ -285,6 +285,10 @@ export const useCardActions = (
           case "another victim":
             setSelectionMode("select-set");
             break;
+          case "cards off the table":
+            setSelectionMode("select-other-player");
+            setSelectionAction("cards off the table");
+          break;
           default:
             break;
         }
