@@ -26,7 +26,9 @@ export const useSelectionEffects = (
   setSelectedSecret,
   setSelectionMode,
   setMovedCardsCount,
-  handleStealSet
+  handleStealSet,
+  setShowTradeDialog, 
+  setOpponentId   
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -59,18 +61,27 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-  // Forzar revelación de secreto
+  // Forzar revelación de secreto (solo si la acción NO es Card Trade ni Specials)
   useEffect(() => {
-    if (selectionMode === "select-other-player" && selectedPlayer) {
-      console.log(
-        "jugador seleccionado para forzar revelación:",
-        selectedPlayer
-      );
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      (
+        !selectionAction || 
+        (
+          selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials" &&
+          selectionAction.toLowerCase() !== "cards off the table"
+        )
+      )
+    ) {
+      console.log("Jugador seleccionado para forzar revelación:", selectedPlayer);
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
-  }, [selectionMode, selectedPlayer]);
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -223,7 +234,22 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 
-  // Cards off the Table
+  // Card Trade → seleccionar jugador y abrir diálogo
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardtrade"
+    ) {
+      console.log("Jugador seleccionado para Card Trade:", selectedPlayer);
+      setSelectionMode(null);
+      setShowTradeDialog(true);
+      setOpponentId(selectedPlayer);
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
+  // Cards off the Table → eliminar Not So Fast! del jugador seleccionado
   useEffect(() => {
     if (
       selectionMode === "select-other-player" &&
@@ -239,7 +265,7 @@ export const useSelectionEffects = (
           await fetchGameData();
           console.log("Not So Fast eliminadas del jugador:", selectedPlayer);
         } catch (error) {
-          console.error(" Error en Cards off the Table:", error);
+          console.error("Error en Cards off the Table:", error);
         } finally {
           setSelectedPlayer(null);
           setSelectionMode(null);
@@ -248,6 +274,5 @@ export const useSelectionEffects = (
       })();
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
-
 
 };

@@ -101,6 +101,18 @@ vi.mock("./components/GameBoard/GameBoard", () => ({
   },
 }));
 
+// Mock TradeDialog globally for tests that exercise the card-trade flow (we'll pass specific onConfirm usage in tests)
+vi.mock("./components/TradeDialog/TradeDialog", () => ({
+  __esModule: true,
+  default: ({ onConfirm }) => (
+    <div>
+      <button data-testid="mock-trade-confirm" onClick={() => onConfirm({ card_id: 101 }, { card_id: 201 })}>
+        MOCK TRADE CONFIRM
+      </button>
+    </div>
+  ),
+}));
+
 
 describe("Game Container", () => {
   const renderGame = (initialState = { gameId: 1, myPlayerId: 2 }) => {
@@ -1319,6 +1331,71 @@ it("handles player reordering when only 2 players", async () => {
 
       await waitFor(() => {
         expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 2, "Look into the ashes");
+      });
+    });
+
+    it("triggers Card Trade flow: opens TradeDialog and calls exchangeCards on confirm (mocked TradeDialog)", async () => {
+      // Prepare turn & player data where player has the 'Card Trade' event
+      const turnDataTrade = { ...mockTurnDataWithNoneState };
+      const playerWithCardTrade = {
+        ...mockPlayerData,
+        playerCards: [
+          { card_id: 50, card_name: "Card Trade", type: "Event", image_name: "cardtrade.png" },
+        ],
+      };
+
+      // Ensure the mocked HTTP methods resolve appropriately
+      mockHttp.getPublicTurnData.mockResolvedValue(turnDataTrade);
+      mockHttp.getPrivatePlayerData.mockResolvedValue(playerWithCardTrade);
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Card Trade" });
+      mockHttp.exchangeCards = vi.fn().mockResolvedValue({ success: true });
+
+      // Using the globally mocked TradeDialog (defined at top of this file)
+
+      renderGame({ gameId: 1, myPlayerId: 2 });
+
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Play the Card Trade event via drag end
+      const dragEvent = {
+        active: {
+          id: "card-50",
+          data: {
+            current: {
+              cardId: 50,
+              cardName: "Card Trade",
+              imageName: "cardtrade.png",
+            },
+          },
+        },
+        over: { id: "play-card-zone" },
+      };
+
+      await act(async () => {
+        await capturedOnDragEnd(dragEvent);
+      });
+
+      // At this point playEvent should have been called
+      await waitFor(() => expect(mockHttp.playEvent).toHaveBeenCalled());
+
+      // Simulate selecting another player via GameBoard's onPlayerSelect
+      await act(async () => {
+        gameBoardProps.onPlayerSelect(1);
+      });
+
+      // Now the mocked TradeDialog should be rendered; click its confirm button
+      const confirmBtn = await screen.findByTestId("mock-trade-confirm");
+      fireEvent.click(confirmBtn);
+
+      // Confirm exchangeCards was called with expected parameters
+      await waitFor(() => {
+        expect(mockHttp.exchangeCards).toHaveBeenCalledWith({
+          game_id: 1,
+          player1_id: 2,
+          player2_id: 1,
+          card1_id: 201,
+          card2_id: 101,
+        });
       });
     });
 
