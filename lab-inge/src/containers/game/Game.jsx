@@ -165,7 +165,7 @@ function Game() {
     setPrevData
   );
 
-  const { handleCardClick, handlePlaySetAction, handleDragEnd } =
+  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
     useCardActions(
       httpService,
       gameId,
@@ -267,7 +267,9 @@ function Game() {
           onSetSelect={handleSetSelection}
           selectedSet={selectedSet}
           selectionMode={selectionMode}
+          setSelectionMode={setSelectionMode}
           setCards={handlePlaySetAction}
+          onAddCardToSet={handleAddCardToSet}
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}

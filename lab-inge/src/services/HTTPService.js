@@ -230,7 +230,6 @@ const createHttpService = () => {
     });
   };
 
-
   const replenishFromDraft = (gameId, playerId, carta) => {
     if (!gameId) {
       throw new Error("Game ID is required");
@@ -287,8 +286,22 @@ const createHttpService = () => {
         gameId,
         selectedSet,
         myPlayerId,
-        selectedPlayer
-      })
+        selectedPlayer,
+      }),
+    });
+  };
+
+  const addCardToSet = (gameId, myPlayerId, card_id, set_id) => {
+    if (!set_id) throw new Error("Set Id is required");
+    if (!myPlayerId) throw new Error("My player ID is required");
+    if (!card_id) throw new Error("Card ID is required");
+
+    return request(`/sets/${set_id}/AddToSet`, {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: myPlayerId,
+        cardId: card_id,
+      }),
     });
   };
 
@@ -324,6 +337,8 @@ const createHttpService = () => {
     replenishFromDraft,
     getDiscardTop5,
     replenishFromDiscard,
+    stealSet,
+    addCardToSet,
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
     stealSet,
