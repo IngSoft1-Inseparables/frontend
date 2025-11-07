@@ -57,9 +57,9 @@ export default function TradeDialog({
             <FaceCard
               key={c.card_id}
               cardId={c.card_id}
-              imageName={c.image_back_name.replace(".png", "")}     // ✅ agrega imagen del dorso
-              imageBackName={c.image_back_name.replace(".png", "")} // ✅ mantiene dorso
-              showBack={true}                                       // ✅ fuerza mostrar dorso
+              imageName={c.image_back_name.replace(".png", "")}     
+              imageBackName={c.image_back_name.replace(".png", "")} 
+              showBack={true}                                       
               isSelected={selectedOpponentCard?.card_id === c.card_id}
               onSelect={() => setSelectedOpponentCard(c)}
               isStatic={false}
