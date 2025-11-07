@@ -23,7 +23,11 @@ export const useSecretActions = (
 
   useEffect(() => {
     const executePendingSecretEffect = async () => {
-      if (timer === 0 && pendingSecretEffect  && turnData?.turn_state.toLowerCase() === "playing") {
+      if (timer === 0 && pendingSecretEffect) {
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingEffect(null);
+          return;
+        }
         try {
           await fetchGameData();
         } catch (error) {
@@ -64,13 +68,13 @@ export const useSecretActions = (
         "del jugador:",
         playerId
       );
-      
+
       await httpService.revealSecret({
         gameId,
         playerId,
         secretId,
       });
-      
+
       setPendingSecretEffect({ action: "reveal" });
     } catch (err) {
       console.log("error al revelar secreto ajeno:", err);
@@ -86,7 +90,7 @@ export const useSecretActions = (
         playerId,
       });
       console.log("respuesta del backend:", response);
-      
+
       setPendingSecretEffect({ action: "force-reveal" });
     } catch (err) {
       console.log("error al forzar revelacion de secreto:", err);
@@ -119,7 +123,7 @@ export const useSecretActions = (
         "del jugador:",
         playerId
       );
-      
+
       await httpService.hideSecret({
         gameId,
         playerId,

@@ -91,9 +91,15 @@ export const useCardActions = (
 
   useEffect(() => {
     const executePendingEffect = async () => {
-      if (timer === 0 && pendingEffect && turnData?.turn_state.toLowerCase() === "playing") {
+      if (timer === 0 && pendingEffect) {
+
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingEffect(null);
+          return;
+        }
+
         const { type, response, droppedCard } = pendingEffect;
-        
+
         try {
           if (type === "event") {
             switch (response.cardName.toLowerCase()) {
@@ -145,8 +151,8 @@ export const useCardActions = (
       console.log("TIPO DE SET:", response);
       console.log("✅ Set enviado al backend, iniciando temporizador...");
 
-      if (response.toLowerCase() != "tommytuppence") setTimer(5);
-      
+      if (response.set_type.toLowerCase() != "tommytuppence") setTimer(5);
+
       setPendingEffect({
         type: "set",
         response: response.set_type,
@@ -306,7 +312,7 @@ export const useCardActions = (
           );
           if (response.cardName.toLowerCase() != "cards off the table") setTimer(5);
           console.log("✅ Carta de evento enviada al backend, iniciando temporizador...");
-          
+
           setPendingEffect({
             type: "event",
             response: response,
@@ -322,12 +328,12 @@ export const useCardActions = (
         if (timer <= 0) {
           return;
         }
-        
-        if (turnData.turn_state.toLowerCase() !== "playing" && 
-            turnData.turn_state.toLowerCase() !== "discarding") {
+
+        if (turnData.turn_state.toLowerCase() !== "playing" &&
+          turnData.turn_state.toLowerCase() !== "discarding") {
           return;
         }
-        
+
         try {
           await httpService.playNotSoFast(gameId, myPlayerId, cardId);
           setTimer(5);
@@ -335,7 +341,7 @@ export const useCardActions = (
         } catch (error) {
           console.error("Error ejecutando Not So Fast:", error);
         }
-        
+
       } else {
         console.log("Card played not valid.");
       }
@@ -362,10 +368,10 @@ export const useCardActions = (
 
     try {
       const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setId);
-      
+
       await fetchGameData();
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       setPendingEffect({
         type: "set",
         response: response.set_type,

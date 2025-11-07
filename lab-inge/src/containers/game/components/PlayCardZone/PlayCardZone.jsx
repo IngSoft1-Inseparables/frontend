@@ -9,7 +9,11 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
 
   const isMyTurn = turnData && turnData.turn_owner_id === myPlayerId;
 
-  if (!isMyTurn && turnData?.event_card_played) actionCard = turnData.event_card_played;
+  if (turnData?.instant_played) {
+    actionCard = turnData.instant_played;
+  } else if (!isMyTurn && turnData?.event_card_played) {
+    actionCard = turnData.event_card_played;
+  }
 
   const draggingCardId = active?.data?.current?.cardId;
   const draggingCard = playerData?.playerCards?.find(
