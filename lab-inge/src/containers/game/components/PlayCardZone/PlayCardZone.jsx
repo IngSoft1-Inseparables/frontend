@@ -26,8 +26,12 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
 
   if (!actionCard) {
     return (
-      <div>
-        <p>{timer}</p>
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+          <span className="text-xl font-semibold text-white">
+            {timer > 0 ? timer : "-"}
+          </span>
+        </div>
         <div ref={setNodeRef} className="relative w-24 h-36">
           <div className={`w-full h-full rounded flex items-center justify-center bg-red-500/20 ${isMyTurn && isOver && isPlayableCard ? "border border-2 border-dashed border-[#facc15] scale-105 transition-all" : "border-2 border-dashed border-white/40 transition-all"}`}>
             <img
@@ -46,8 +50,12 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
   }
 
   return (
-    <div>
-      <p>{timer}</p>
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+        <span className="text-xl font-semibold text-white">
+          {timer > 0 ? timer : "-"}
+        </span>
+      </div>
       <div
         ref={setNodeRef}
         className="relative w-24 h-36 overflow-hidden"

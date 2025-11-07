@@ -148,10 +148,10 @@ export const useCardActions = (
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+      setTimer(response?.timer);
       console.log("TIPO DE SET:", response);
       console.log("✅ Set enviado al backend, iniciando temporizador...");
 
-      if (response.set_type.toLowerCase() != "tommytuppence") setTimer(5);
 
       setPendingEffect({
         type: "set",
@@ -164,7 +164,7 @@ export const useCardActions = (
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    if (!over || myPlayerId != turnData.turn_owner_id) return;
+    if (!over) return;
 
     const cardId = active.data.current?.cardId;
     const cardName = active.data.current?.cardName;
@@ -179,7 +179,7 @@ export const useCardActions = (
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding" || myPlayerId != turnData.turn_owner_id)
         return;
 
       // Si ya hay un bloqueo de descarte (previo) evitamos otra llamada.
@@ -279,13 +279,12 @@ export const useCardActions = (
     if (over.id === "play-card-zone") {
       if (inDisgrace) return;
 
-
       const droppedCard = playerData?.playerCards?.find(
         (card) => card.card_id === cardId
       );
 
       if (droppedCard?.type.toLowerCase() === "event") {
-        if (turnData.turn_state != "None" || playedActionCard) return;
+        if (turnData.turn_state != "None" || playedActionCard || myPlayerId != turnData.turn_owner_id) return;
 
         const previousPlayerData = playerData;
 
@@ -310,7 +309,8 @@ export const useCardActions = (
             cardId,
             cardName
           );
-          if (response.cardName.toLowerCase() != "cards off the table") setTimer(5);
+          setTimer(response?.timer);
+
           console.log("✅ Carta de evento enviada al backend, iniciando temporizador...");
 
           setPendingEffect({
@@ -335,8 +335,8 @@ export const useCardActions = (
         }
 
         try {
-          await httpService.playNotSoFast(gameId, myPlayerId, cardId);
-          setTimer(5);
+          const response = await httpService.playNotSoFast(gameId, myPlayerId, cardId);
+          setTimer(response?.timer);
           console.log("✅ Not So Fast ejecutado exitosamente");
         } catch (error) {
           console.error("Error ejecutando Not So Fast:", error);
@@ -386,6 +386,6 @@ export const useCardActions = (
     handlePlaySetAction,
     handleDragEnd,
     handleAddCardToSet,
-    pendingEffect, // Exportar para feedback visual de efecto pendiente
+    pendingEffect,
   };
 };
