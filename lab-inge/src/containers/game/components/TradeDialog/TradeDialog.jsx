@@ -7,6 +7,7 @@ export default function TradeDialog({
   gameId,
   myPlayerId,
   opponentId,
+  turnOwnerId,
   onConfirm,
   onClose,
 }) {
@@ -21,16 +22,24 @@ export default function TradeDialog({
 
     const fetchData = async () => {
       try {
-        const opp = await http.getOpponentHand(gameId, myPlayerId, opponentId);
+        const opp = await http.getOpponentHand(gameId, turnOwnerId, opponentId);
         const mine = await http.getPrivatePlayerData(gameId, myPlayerId);
-        setOpponentCards(opp.cards || []);
+
+        // El back devuelve IDs, así que creamos objetos visibles
+        const oppCards = (opp.hand || []).map((id) => ({
+          card_id: id,
+          image_back_name: opp.image_back_name || "01-card_back",
+        }));
+
+        setOpponentCards(oppCards);
         setMyCards(mine.playerCards || []);
       } catch (err) {
         console.error("Error al cargar cartas para Card Trade:", err);
       }
     };
+
     fetchData();
-  }, [open, opponentId]);
+  }, [open, opponentId, gameId, turnOwnerId, myPlayerId]);
 
   if (!open) return null;
 
@@ -41,48 +50,50 @@ export default function TradeDialog({
           Intercambio de cartas
         </h2>
 
+        {/* Cartas del oponente */}
         <p className="text-white text-center mb-2">Cartas del oponente:</p>
         <div className="flex justify-center gap-3 flex-wrap mb-6">
           {opponentCards.map((c) => (
             <FaceCard
               key={c.card_id}
               cardId={c.card_id}
-              imageBackName={c.image_back_name.replace(".png", "")}
-              showBack={true}
+              imageName={c.image_back_name.replace(".png", "")}     // ✅ agrega imagen del dorso
+              imageBackName={c.image_back_name.replace(".png", "")} // ✅ mantiene dorso
+              showBack={true}                                       // ✅ fuerza mostrar dorso
               isSelected={selectedOpponentCard?.card_id === c.card_id}
               onSelect={() => setSelectedOpponentCard(c)}
-              isStatic={true}
+              isStatic={false}
             />
           ))}
         </div>
 
+        {/* Tus cartas */}
         <p className="text-white text-center mb-2">Tus cartas:</p>
         <div className="flex justify-center gap-3 flex-wrap mb-6">
           {myCards.map((c) => (
             <FaceCard
               key={c.card_id}
               cardId={c.card_id}
-              imageName={c.image_name.replace(".png", "")}
-              isSelected={selectedMyCard?.card_id === c.card_id}
-              onSelect={() => setSelectedMyCard(c)}
+              imageName={c.image_name.replace(".png", "")}           
+              isSelected={selectedMyCard?.card_id === c.card_id}    
+              onSelect={() => setSelectedMyCard(c)}                  
               isStatic={false}
             />
           ))}
         </div>
 
+        {/* Botones */}
         <div className="flex justify-center gap-4">
           <button
             disabled={!selectedOpponentCard || !selectedMyCard}
             onClick={() => onConfirm(selectedOpponentCard, selectedMyCard)}
-            className="px-6 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg"
+            className={`px-6 py-2 rounded-lg text-white ${
+              !selectedOpponentCard || !selectedMyCard
+                ? "bg-gray-600 cursor-not-allowed"
+                : "bg-green-700 hover:bg-green-800"
+            }`}
           >
             Confirmar intercambio
-          </button>
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg"
-          >
-            Cancelar
           </button>
         </div>
       </div>

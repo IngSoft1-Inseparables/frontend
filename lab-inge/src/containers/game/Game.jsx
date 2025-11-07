@@ -298,6 +298,7 @@ function Game() {
             gameId={gameId}
             myPlayerId={myPlayerId}
             opponentId={opponentId}
+            turnOwnerId={turnData?.turn_owner_id}
             onConfirm={(opponentCard, myCard) =>
               startCardTrade(opponentCard, myCard, httpService, gameId, myPlayerId, fetchGameData)
             }
