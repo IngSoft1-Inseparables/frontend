@@ -135,7 +135,7 @@ export const useCardActions = (
     };
 
     executePendingEffect();
-  }, [timer, pendingEffect, setSelectionMode, setSelectionAction, fetchGameData, startDiscardTop5Action, handleSwitch]);
+  }, [timer, pendingEffect, turnData, setSelectionMode, setSelectionAction, fetchGameData, startDiscardTop5Action, handleSwitch]);
 
 
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
@@ -164,6 +164,7 @@ export const useCardActions = (
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
+
     if (!over) return;
 
     const cardId = active.data.current?.cardId;
@@ -324,7 +325,7 @@ export const useCardActions = (
           setPlayedActionCard(null);
         }
 
-      } else if (droppedCard.type.toLowerCase() === "instant") {
+      } else if (droppedCard?.type?.toLowerCase() === "instant") {
         if (timer <= 0) {
           return;
         }

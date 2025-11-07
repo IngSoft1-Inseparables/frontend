@@ -21,7 +21,7 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
   );
 
   console.log("Card:", draggingCard);
-  const isPlayableCard = draggingCard?.type.toLowerCase() === "event" || draggingCard?.type.toLowerCase() === "instant";
+  const isPlayableCard = draggingCard?.type?.toLowerCase() === "event" || draggingCard?.type?.toLowerCase() === "instant";
 
 
   if (!actionCard) {
