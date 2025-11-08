@@ -27,6 +27,11 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
   if (!actionCard) {
     return (
       <div className="flex flex-col items-center gap-3">
+        {timer > 0 && (
+          <div className="text-xs font-medium text-white">
+            ¡Podés jugar Not So Fast!
+          </div>
+        )}
         <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
           <span className="text-xl font-semibold text-white">
             {timer > 0 ? timer : "-"}
@@ -51,6 +56,11 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
 
   return (
     <div className="flex flex-col items-center gap-3">
+      {timer > 0 && (
+        <div className="text-xs font-medium text-white">
+          ¡Podés jugar Not So Fast!
+        </div>
+      )}
       <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
         <span className="text-xl font-semibold text-white">
           {timer > 0 ? timer : "-"}
