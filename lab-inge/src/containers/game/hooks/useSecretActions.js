@@ -7,7 +7,9 @@ export const useSecretActions = (
   httpService,
   gameId,
   myPlayerId,
-  fetchGameData
+  fetchGameData,
+  timer,
+  setTimer
 ) => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);
@@ -17,6 +19,27 @@ export const useSecretActions = (
   const [stolenPlayer, setStolenPlayer] = useState(null);
   const [fromPlayer, setFromPlayer] = useState(null);
   const [prevData, setPrevData] = useState(null);
+  const [pendingSecretEffect, setPendingSecretEffect] = useState(null);
+
+  useEffect(() => {
+    const executePendingSecretEffect = async () => {
+      if (timer === 0 && pendingSecretEffect) {
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingEffect(null);
+          return;
+        }
+        try {
+          await fetchGameData();
+        } catch (error) {
+          console.error("Error actualizando datos después de revelar detective:", error);
+        } finally {
+          setPendingSecretEffect(null);
+        }
+      }
+    };
+
+    executePendingSecretEffect();
+  }, [timer, pendingSecretEffect, fetchGameData]);
 
   const revealMySecret = async (secretId) => {
     try {
@@ -28,7 +51,7 @@ export const useSecretActions = (
         secretId,
       });
 
-      await fetchGameData();
+      setPendingSecretEffect({ action: "reveal" });
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {
@@ -45,12 +68,14 @@ export const useSecretActions = (
         "del jugador:",
         playerId
       );
+
       await httpService.revealSecret({
         gameId,
         playerId,
         secretId,
       });
-      await fetchGameData();
+
+      setPendingSecretEffect({ action: "reveal" });
     } catch (err) {
       console.log("error al revelar secreto ajeno:", err);
     }
@@ -64,8 +89,9 @@ export const useSecretActions = (
         gameId,
         playerId,
       });
-
       console.log("respuesta del backend:", response);
+
+      setPendingSecretEffect({ action: "force-reveal" });
     } catch (err) {
       console.log("error al forzar revelacion de secreto:", err);
     } finally {
@@ -83,7 +109,7 @@ export const useSecretActions = (
         secretId,
       });
 
-      await fetchGameData();
+      setPendingSecretEffect({ action: "hide" });
     } catch (err) {
       console.log("error al ocultar secreto propio:", err);
     }
@@ -104,7 +130,7 @@ export const useSecretActions = (
         secretId,
       });
 
-      await fetchGameData();
+      setPendingSecretEffect({ action: "hide" });
     } catch (err) {
       console.log("error al ocultar secreto ajeno:", err);
     }
@@ -262,6 +288,7 @@ export const useSecretActions = (
     handleSetSelection,
     selectedSet,
     setSelectedSet,
-    handleStealSet
+    handleStealSet,
+    pendingSecretEffect, // Exportar para feedback visual
   };
 };

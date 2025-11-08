@@ -65,7 +65,7 @@ describe("useWebSocket", () => {
 
     unmount();
 
-    expect(mockWsService.off).toHaveBeenCalledTimes(5); // 5 eventos registrados
+    expect(mockWsService.off).toHaveBeenCalledTimes(6); // 6 eventos registrados (incluyendo game_timer)
     expect(mockWsService.disconnect).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith("Limpiando conexión WebSocket...");
   });

@@ -261,15 +261,15 @@ const createHttpService = () => {
       body: JSON.stringify({ gameId, playerId, cardId }),
     });
   };
- //post games/{gameId}/fivecards
+  //post games/{gameId}/fivecards
   const fiveCardsToRegpile = (gameId) => {
-     return request(`/games/${gameId}/fivecards`, {
+    return request(`/games/${gameId}/fivecards`, {
       method: "PATCH",
     });
   };
 
   const sixCardsToDiscardpile = (gameId) => {
-     return request(`/games/${gameId}/sixcards`, {
+    return request(`/games/${gameId}/sixcards`, {
       method: "PATCH",
     });
   };
@@ -304,6 +304,18 @@ const createHttpService = () => {
       }),
     });
   };
+
+  const playNotSoFast = (gameId, playerId, cardId) => {
+    return request("/players/play/cancel", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId
+      })
+    });
+  };
+
 
   const getOpponentHand = (gameId, currentPlayerId, opponentId) => {
     // currentPlayerId = turn_owner_id
@@ -345,6 +357,7 @@ const createHttpService = () => {
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
     stealSet,
+    playNotSoFast,
     getOpponentHand,
     exchangeCards,
   };
