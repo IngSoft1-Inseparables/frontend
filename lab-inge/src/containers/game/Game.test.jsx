@@ -1348,7 +1348,7 @@ it("handles player reordering when only 2 players", async () => {
       // Ensure the mocked HTTP methods resolve appropriately
       mockHttp.getPublicTurnData.mockResolvedValue(turnDataTrade);
       mockHttp.getPrivatePlayerData.mockResolvedValue(playerWithCardTrade);
-      mockHttp.playEvent.mockResolvedValue({ cardName: "Card Trade" });
+      mockHttp.playEvent.mockResolvedValue({ cardName: "Card Trade", timer: 5 });
       mockHttp.exchangeCards = vi.fn().mockResolvedValue({ success: true });
 
       // Using the globally mocked TradeDialog (defined at top of this file)
@@ -1378,6 +1378,22 @@ it("handles player reordering when only 2 players", async () => {
 
       // At this point playEvent should have been called
       await waitFor(() => expect(mockHttp.playEvent).toHaveBeenCalled());
+
+      // Simular actualización del estado del turno a "playing" via WebSocket
+      const publicUpdateHandler = mockWS.on.mock.calls.find(call => call[0] === "game_public_update")?.[1];
+      if (publicUpdateHandler) {
+        await act(async () => {
+          publicUpdateHandler({ ...turnDataTrade, turn_state: "playing" });
+        });
+      }
+
+      // Simular que el timer llega a 0 para activar el efecto
+      const timerHandler = mockWS.on.mock.calls.find(call => call[0] === "game_timer")?.[1];
+      if (timerHandler) {
+        await act(async () => {
+          timerHandler({ timer: 0 });
+        });
+      }
 
       // Simulate selecting another player via GameBoard's onPlayerSelect
       await act(async () => {
