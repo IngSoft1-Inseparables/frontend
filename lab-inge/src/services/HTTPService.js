@@ -319,6 +319,16 @@ const createHttpService = () => {
     });
   };
 
+  const voteSuspicion = (gameId, voterId, suspectId) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (!voterId) throw new Error("Voter ID is required");
+    if (!suspectId) throw new Error("Suspect ID is required");
+
+    return request(`/games/${gameId}/vote_suspicion`, {
+      method: "POST",
+      body: JSON.stringify({ voterId, suspectId }),
+    });
+  };
 
   return {
     getGame,
@@ -347,6 +357,7 @@ const createHttpService = () => {
     stealSet,
     getOpponentHand,
     exchangeCards,
+    voteSuspicion,
   };
 };
 

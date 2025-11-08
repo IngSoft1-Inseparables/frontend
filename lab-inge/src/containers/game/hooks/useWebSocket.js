@@ -15,7 +15,10 @@ export const useWebSocket = (
   fetchGameData,
   reorderPlayers,
   setSelectionAction,
-  setMovedCardsCount
+  setMovedCardsCount,
+  setSelectionMode,
+  setHasVotedInCurrentRound,
+  hasVotedInCurrentRound
 ) => {
   const [showConnectionError, setShowConnectionError] = useState(false);
 
@@ -37,6 +40,38 @@ export const useWebSocket = (
         setShowEndDialog(true);
       }
     };
+    const handlePlayedCardEvent = (dataPublic) => {
+      // Verificar si hay una carta de evento jugada
+      const playedEvent = dataPublic?.event_card_played;
+
+      if (!playedEvent) {
+        console.log("📋 No hay carta jugada actualmente");
+        if (setHasVotedInCurrentRound) {
+          setHasVotedInCurrentRound(false);
+        }
+        return;
+      }
+
+      console.log("🎴 Carta detectada:", playedEvent);
+      if (playedEvent.card_name?.toLowerCase() === "point your suspicions") {
+        console.log("🎯 Activando selección de jugador");
+        if (!hasVotedInCurrentRound && setSelectionMode) {
+          console.log("🎯 Activando selección de jugador");
+          setSelectionMode("select-other-player");
+          setSelectionAction("point");
+        }
+      }
+    };
+
+    // const handleHasToReveal = (payload) => {
+    //   console.log("🎯 Evento hasToReveal recibido:", payload);
+    //   const playerId = payload?.playerId;
+      
+    //   if (playerId === myPlayerId) {
+    //     console.log("🎯 Debo revelar un secreto");
+    //     setSelectionMode("select-my-not-revealed-secret");
+    //   }
+    // };
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =
@@ -50,6 +85,7 @@ export const useWebSocket = (
         );
         setOrderedPlayers(reorderedPlayersData);
       }
+      handlePlayedCardEvent(dataPublic);
 
       handleEndGameEvent(dataPublic);
     };
@@ -82,6 +118,7 @@ export const useWebSocket = (
     wsService.on("connection_status", handleConnectionStatus);
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
+    // wsService.on("hasToReveal", handleHasToReveal);
 
     return () => {
       console.log("Limpiando conexión WebSocket...");
@@ -91,6 +128,7 @@ export const useWebSocket = (
       wsService.off("connection_status", handleConnectionStatus);
       wsService.off("reconnecting", handleReconnecting);
       wsService.off("connection_failed", handleConnectionFailed);
+      // wsService.off("hasToReveal", handleHasToReveal);
 
       wsService.disconnect();
     };
@@ -101,7 +139,10 @@ export const useWebSocket = (
 
     const handleEarlyTrainCardPlayed = (payload) => {
       const data = typeof payload === "string" ? JSON.parse(payload) : payload;
-       setSelectionAction({ type: "paddington-discarded", movedCount: data.moved_count });
+      setSelectionAction({
+        type: "paddington-discarded",
+        movedCount: data.moved_count,
+      });
     };
 
     wsService.on("early_train_card_played", handleEarlyTrainCardPlayed);

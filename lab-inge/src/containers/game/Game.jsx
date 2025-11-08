@@ -15,7 +15,6 @@ import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
 import TradeDialog from "./components/TradeDialog/TradeDialog.jsx";
 
-
 // Importar los custom hooks
 import {
   useGameData,
@@ -99,7 +98,7 @@ function Game() {
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
-
+  const [hasVotedInCurrentRound, setHasVotedInCurrentRound] = useState(false);
   const { message } = useTurnMessages(
     turnData,
     myPlayerId,
@@ -108,6 +107,8 @@ function Game() {
     setSelectionAction,
     movedCardsCount
   );
+
+
 
   // WebSocket connection
   useWebSocket(
@@ -122,7 +123,10 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     setSelectionAction,
-    setMovedCardsCount
+    setMovedCardsCount,
+    setSelectionMode,
+    setHasVotedInCurrentRound,
+    hasVotedInCurrentRound
   );
 
   // Selection effects
@@ -150,8 +154,10 @@ function Game() {
     setSelectionMode,
     setMovedCardsCount,
     handleStealSet,
-    setShowTradeDialog, 
+    setShowTradeDialog,
     setOpponentId,
+    myPlayerId,
+    setHasVotedInCurrentRound
   );
 
   // Steal secret logic
@@ -170,22 +176,26 @@ function Game() {
     setPrevData
   );
 
-  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
-    useCardActions(
-      httpService,
-      gameId,
-      myPlayerId,
-      turnData,
-      playerData,
-      setPlayerData,
-      setTurnData,
-      fetchGameData,
-      playedActionCard,
-      setPlayedActionCard,
-      setSelectionMode,
-      setSelectionAction,
-      startDiscardTop5Action
-    );
+  const {
+    handleCardClick,
+    handlePlaySetAction,
+    handleDragEnd,
+    handleAddCardToSet,
+  } = useCardActions(
+    httpService,
+    gameId,
+    myPlayerId,
+    turnData,
+    playerData,
+    setPlayerData,
+    setTurnData,
+    fetchGameData,
+    playedActionCard,
+    setPlayedActionCard,
+    setSelectionMode,
+    setSelectionAction,
+    startDiscardTop5Action
+  );
 
   const handleReplenishFromDiscard = (card) => {
     return replenishFromDiscard(
@@ -196,6 +206,12 @@ function Game() {
       fetchGameData
     );
   };
+  useEffect(() => {
+  if (turnData?.turn_owner_id) {
+    setHasVotedInCurrentRound(false);
+  }
+}, [turnData?.turn_owner_id]);
+
 
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
@@ -212,7 +228,7 @@ function Game() {
     return () => {
       wsService.off("hasToReveal", handleHasToReveal);
     };
-  }, [wsService, myPlayerId]);
+  }, [wsService, myPlayerId, setSelectionMode]);
 
   // Handle steal secret when data updates
   useEffect(() => {
@@ -240,7 +256,7 @@ function Game() {
     })
   );
 
-    if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
+  if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl">Cargando jugadores...</p>
@@ -302,12 +318,18 @@ function Game() {
             opponentId={opponentId}
             turnOwnerId={turnData?.turn_owner_id}
             onConfirm={(opponentCard, myCard) =>
-              startCardTrade(opponentCard, myCard, httpService, gameId, myPlayerId, fetchGameData)
+              startCardTrade(
+                opponentCard,
+                myCard,
+                httpService,
+                gameId,
+                myPlayerId,
+                fetchGameData
+              )
             }
             onClose={() => setShowTradeDialog(false)}
           />
         )}
-
       </DndContext>
     </div>
   );
