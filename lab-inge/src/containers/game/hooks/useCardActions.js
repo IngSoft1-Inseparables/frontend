@@ -120,10 +120,10 @@ export const useCardActions = (
               case "another victim":
                 setSelectionMode("select-set");
                 break;
-                          case "card trade":
-            setSelectionMode("select-other-player");
-            setSelectionAction("card trade");
-            break;
+              case "card trade":
+                setSelectionMode("select-other-player");
+                setSelectionAction("card trade");
+                break;
               default:
                 break;
             }
