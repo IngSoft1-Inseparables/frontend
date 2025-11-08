@@ -13,6 +13,8 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
+import TradeDialog from "./components/TradeDialog/TradeDialog.jsx";
+
 
 // Importar los custom hooks
 import {
@@ -59,6 +61,11 @@ function Game() {
     setPlayedActionCard,
     startDiscardTop5Action,
     handleReplenishFromDiscard: replenishFromDiscard,
+    showTradeDialog,
+    setShowTradeDialog,
+    opponentId,
+    setOpponentId,
+    startCardTrade,
   } = useGameDialogs(turnData, myPlayerId, null, wsService);
 
   const {
@@ -149,7 +156,9 @@ function Game() {
     ariadneCardId,
     turnData,
     setSelectedSet,
-    selectionAction
+    selectionAction,
+    setShowTradeDialog, 
+    setOpponentId,
   );
 
   // Steal secret logic
@@ -294,6 +303,21 @@ function Game() {
             onSelect={handleReplenishFromDiscard}
           />
         )}
+
+        {showTradeDialog && (
+          <TradeDialog
+            open={showTradeDialog}
+            gameId={gameId}
+            myPlayerId={myPlayerId}
+            opponentId={opponentId}
+            turnOwnerId={turnData?.turn_owner_id}
+            onConfirm={(opponentCard, myCard) =>
+              startCardTrade(opponentCard, myCard, httpService, gameId, myPlayerId, fetchGameData)
+            }
+            onClose={() => setShowTradeDialog(false)}
+          />
+        )}
+
       </DndContext>
     </div>
   );

@@ -31,8 +31,9 @@ export const useSelectionEffects = (
   ariadneCardId,
   turnData,
   setSelectedSet,
-  setAriadneCardId
-
+  setAriadneCardId,
+  setShowTradeDialog, 
+  setOpponentId   
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -65,18 +66,26 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-  // Forzar revelación de secreto
+  // Forzar revelación de secreto (solo si la acción NO es Card Trade ni Specials)
   useEffect(() => {
-    if (selectionMode === "select-other-player" && selectedPlayer) {
-      console.log(
-        "jugador seleccionado para forzar revelación:",
-        selectedPlayer
-      );
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      (
+        !selectionAction || 
+        (
+          selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials"
+        )
+      )
+    ) {
+      console.log("Jugador seleccionado para forzar revelación:", selectedPlayer);
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
-  }, [selectionMode, selectedPlayer]);
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -251,7 +260,7 @@ export const useSelectionEffects = (
         return;
       }
 
-      // 🎯 Obtener el set usando el índice
+      // Obtener el set usando el índice
       const targetSet = targetPlayer.setPlayed[selectedSet];
 
       if (!targetSet || !targetSet.set_id) {
@@ -260,17 +269,17 @@ export const useSelectionEffects = (
       }
 
       const setId = targetSet.set_id;
-      console.log("🎯 Ejecutando Ariadne con cardId:", ariadneCardId);
-      console.log("🎯 Parámetros:", { selectedPlayer, setId, ariadneCardId });
+      console.log("Ejecutando Ariadne con cardId:", ariadneCardId);
+      console.log("Parámetros:", { selectedPlayer, setId, ariadneCardId });
       
-      // 🎯 Marcar como ejecutando
+      // Marcar como ejecutando
       ariadneExecutingRef.current = true;
       
-      // 🎯 Llamar a la función
+      // Llamar a la función
       handleCardAriadneOliver(selectedPlayer, setId, ariadneCardId).finally(() => {
-        // 🎯 Resetear el flag cuando termine (éxito o error)
+        // Resetear el flag cuando termine (éxito o error)
         ariadneExecutingRef.current = false;
-        // 🎯 Limpiar estados
+        // Limpiar estados
         setSelectedPlayer(null);
         setSelectedSet(null);
         setSelectionMode(null);
@@ -280,4 +289,20 @@ export const useSelectionEffects = (
       
     }
   }, [selectionMode, selectedSet, selectedPlayer, selectionAction, ariadneCardId, turnData]);
+  // Card Trade → seleccionar jugador y abrir diálogo
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardtrade"
+    ) {
+      console.log("Jugador seleccionado para Card Trade:", selectedPlayer);
+      setSelectionMode(null);
+      setShowTradeDialog(true);
+      setOpponentId(selectedPlayer);
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
+
 };

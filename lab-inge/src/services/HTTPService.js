@@ -305,6 +305,21 @@ const createHttpService = () => {
     });
   };
 
+  const getOpponentHand = (gameId, currentPlayerId, opponentId) => {
+    // currentPlayerId = turn_owner_id
+    // opponentId = jugador del cual quiero ver las cartas
+    return request(`/players/${gameId}/hand/${opponentId}/${currentPlayerId}`);
+  };
+
+
+  const exchangeCards = ({ game_id, player1_id, player2_id, card1_id, card2_id }) => {
+    return request("/players/exchangeCards", {
+      method: "PATCH",
+      body: JSON.stringify({ game_id, player1_id, player2_id, card1_id, card2_id }),
+    });
+  };
+
+
   return {
     getGame,
     getGames,
@@ -329,7 +344,9 @@ const createHttpService = () => {
     addCardToSet,
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
-    stealSet
+    stealSet,
+    getOpponentHand,
+    exchangeCards,
   };
 };
 
