@@ -40,38 +40,11 @@ export const useWebSocket = (
         setShowEndDialog(true);
       }
     };
-    const handlePlayedCardEvent = (dataPublic) => {
-      // Verificar si hay una carta de evento jugada
-      const playedEvent = dataPublic?.event_card_played;
-
-      if (!playedEvent) {
-        console.log("📋 No hay carta jugada actualmente");
-        if (setHasVotedInCurrentRound) {
-          setHasVotedInCurrentRound(false);
-        }
-        return;
-      }
-
-      console.log("🎴 Carta detectada:", playedEvent);
-      if (playedEvent.card_name?.toLowerCase() === "point your suspicions") {
-        console.log("🎯 Activando selección de jugador");
-        if (!hasVotedInCurrentRound && setSelectionMode) {
-          console.log("🎯 Activando selección de jugador");
-          setSelectionMode("select-other-player");
-          setSelectionAction("point");
-        }
-      }
-    };
-
-    // const handleHasToReveal = (payload) => {
-    //   console.log("🎯 Evento hasToReveal recibido:", payload);
-    //   const playerId = payload?.playerId;
-      
-    //   if (playerId === myPlayerId) {
-    //     console.log("🎯 Debo revelar un secreto");
-    //     setSelectionMode("select-my-not-revealed-secret");
-    //   }
-    // };
+   const handlePointSuspicionsPlayed = (payload) => {
+  console.log("🎯 Point Your Suspicions detectado");
+  setSelectionMode("select-other-player");
+  setSelectionAction("point");
+};
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =
@@ -118,7 +91,7 @@ export const useWebSocket = (
     wsService.on("connection_status", handleConnectionStatus);
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
-    // wsService.on("hasToReveal", handleHasToReveal);
+    wsService.on("point_suspicions_played", handlePointSuspicionsPlayed);
 
     return () => {
       console.log("Limpiando conexión WebSocket...");
@@ -128,7 +101,7 @@ export const useWebSocket = (
       wsService.off("connection_status", handleConnectionStatus);
       wsService.off("reconnecting", handleReconnecting);
       wsService.off("connection_failed", handleConnectionFailed);
-      // wsService.off("hasToReveal", handleHasToReveal);
+      wsService.off("point_suspicions_played", handlePointSuspicionsPlayed);
 
       wsService.disconnect();
     };

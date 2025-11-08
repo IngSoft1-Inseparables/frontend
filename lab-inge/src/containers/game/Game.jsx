@@ -34,7 +34,7 @@ function Game() {
   const { gameId, myPlayerId } = location.state || {};
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
-
+  
   // Usar los custom hooks
   const {
     turnData,
@@ -98,7 +98,6 @@ function Game() {
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
-  const [hasVotedInCurrentRound, setHasVotedInCurrentRound] = useState(false);
   const { message } = useTurnMessages(
     turnData,
     myPlayerId,
@@ -125,8 +124,6 @@ function Game() {
     setSelectionAction,
     setMovedCardsCount,
     setSelectionMode,
-    setHasVotedInCurrentRound,
-    hasVotedInCurrentRound
   );
 
   // Selection effects
@@ -157,7 +154,6 @@ function Game() {
     setShowTradeDialog,
     setOpponentId,
     myPlayerId,
-    setHasVotedInCurrentRound
   );
 
   // Steal secret logic
@@ -206,11 +202,6 @@ function Game() {
       fetchGameData
     );
   };
-  useEffect(() => {
-  if (turnData?.turn_owner_id) {
-    setHasVotedInCurrentRound(false);
-  }
-}, [turnData?.turn_owner_id]);
 
 
   // Configurar listener para forzar revelación desde WebSocket
