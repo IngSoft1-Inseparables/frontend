@@ -93,6 +93,7 @@ function Game() {
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
+  const [ariadneCardId, setAriadneCardId] = useState(null);
 
   const { message } = useTurnMessages(
     turnData,
@@ -144,7 +145,11 @@ function Game() {
     setSelectionMode,
     setMovedCardsCount,
     handleStealSet,
-    handleCardAriadneOliver
+    handleCardAriadneOliver,
+    ariadneCardId,
+    turnData,
+    setSelectedSet,
+    selectionAction
   );
 
   // Steal secret logic
@@ -189,6 +194,7 @@ function Game() {
       fetchGameData
     );
   };
+
 
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
@@ -269,7 +275,8 @@ function Game() {
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}
-          cardAriadne={handleCardAriadneOliver}
+          setAriadneCardId={setAriadneCardId}
+          
         />
 
         {showEndDialog && winnerData && (

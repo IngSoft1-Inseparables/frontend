@@ -200,7 +200,6 @@ if (selectedCards.length === 1) {
             },
           ]);
         }
-        // Importante: salimos del hook para no ejecutar la lógica de 'setsPlayed'
         return;
       }
     }
