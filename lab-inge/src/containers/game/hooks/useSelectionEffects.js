@@ -27,8 +27,10 @@ export const useSelectionEffects = (
   setSelectionMode,
   setMovedCardsCount,
   handleStealSet,
-  setShowTradeDialog, 
-  setOpponentId   
+  setShowTradeDialog,
+  setOpponentId,
+  myPlayerId,
+  setHasVotedInCurrentRound
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -66,21 +68,20 @@ export const useSelectionEffects = (
     if (
       selectionMode === "select-other-player" &&
       selectedPlayer &&
-      (
-        !selectionAction || 
-        (
-          selectionAction.toLowerCase() !== "card trade" &&
-          selectionAction.toLowerCase() !== "specials"
-        )
-      )
+      (!selectionAction ||
+        (selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials" &&
+          selectionAction.toLowerCase() !== "point"))
     ) {
-      console.log("Jugador seleccionado para forzar revelación:", selectedPlayer);
+      console.log(
+        "Jugador seleccionado para forzar revelación:",
+        selectedPlayer
+      );
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
-
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -179,7 +180,6 @@ export const useSelectionEffects = (
           setSelectedPlayer(null);
           setSelectionAction(null);
           setFromPlayer(null);
-
         } catch (error) {
           console.error("Error al asignar secreto:", error);
           setFromPlayer(null);
@@ -223,15 +223,44 @@ export const useSelectionEffects = (
       selectedPlayer
     ) {
       console.log(
-        "🎯 Robando set:",
+        "Robando set:",
         selectedSet,
         "del jugador:",
         selectedPlayer
       );
       handleStealSet(selectedPlayer, selectedSet);
-
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase() === "point"
+    ) {
+      const votedPlayerId = selectedPlayer;
+
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+      setSelectionAction(null);
+
+      httpService
+        .voteSuspicion(gameId, myPlayerId, votedPlayerId)
+        .then((response) => {
+          console.log("Voto registrado:", response);
+        })
+        .catch((error) => {
+          console.error("Error al votar:", error);
+          if (
+            error.status === 400 &&
+            error.data?.detail?.includes("already voted")
+          ) {
+            console.error("Error al votar:", error);
+          }
+        });
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
 
   // Card Trade → seleccionar jugador y abrir diálogo
   useEffect(() => {
@@ -247,6 +276,4 @@ export const useSelectionEffects = (
       setOpponentId(selectedPlayer);
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
-
-
 };

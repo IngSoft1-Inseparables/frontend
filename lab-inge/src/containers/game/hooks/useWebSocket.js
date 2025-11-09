@@ -16,6 +16,7 @@ export const useWebSocket = (
   reorderPlayers,
   setSelectionAction,
   setMovedCardsCount,
+  setSelectionMode,
   timer,
   setTimer
 ) => {
@@ -39,6 +40,10 @@ export const useWebSocket = (
         setShowEndDialog(true);
       }
     };
+   const handlePointSuspicionsPlayed = (payload) => {
+  setSelectionMode("select-other-player");
+  setSelectionAction("point");
+};
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =
@@ -88,6 +93,7 @@ export const useWebSocket = (
     wsService.on("connection_status", handleConnectionStatus);
     wsService.on("reconnecting", handleReconnecting);
     wsService.on("connection_failed", handleConnectionFailed);
+    wsService.on("point_suspicions_played", handlePointSuspicionsPlayed);
     wsService.on("game_timer", handleTimer);
 
     return () => {
@@ -98,6 +104,7 @@ export const useWebSocket = (
       wsService.off("connection_status", handleConnectionStatus);
       wsService.off("reconnecting", handleReconnecting);
       wsService.off("connection_failed", handleConnectionFailed);
+      wsService.off("point_suspicions_played", handlePointSuspicionsPlayed);
       wsService.off("game_timer", handleTimer);
 
       wsService.disconnect();

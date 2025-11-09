@@ -15,7 +15,6 @@ import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
 import TradeDialog from "./components/TradeDialog/TradeDialog.jsx";
 
-
 // Importar los custom hooks
 import {
   useGameData,
@@ -101,14 +100,14 @@ function Game() {
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
-
   const { message } = useTurnMessages(
     turnData,
     myPlayerId,
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+   
   );
 
   // WebSocket connection
@@ -125,6 +124,7 @@ function Game() {
     reorderPlayers,
     setSelectionAction,
     setMovedCardsCount,
+    setSelectionMode,
     timer,
     setTimer
   );
@@ -154,8 +154,9 @@ function Game() {
     setSelectionMode,
     setMovedCardsCount,
     handleStealSet,
-    setShowTradeDialog, 
+    setShowTradeDialog,
     setOpponentId,
+    myPlayerId
   );
 
   // Steal secret logic
@@ -209,6 +210,8 @@ function Game() {
 
     const handleHasToReveal = (payload) => {
       if (payload && payload.playerId === parseInt(myPlayerId)) {
+        setSelectedPlayer(null);
+        setSelectionAction(null);
         setSelectionMode("select-my-not-revealed-secret");
       }
     };
@@ -218,7 +221,7 @@ function Game() {
     return () => {
       wsService.off("hasToReveal", handleHasToReveal);
     };
-  }, [wsService, myPlayerId]);
+  }, [wsService, myPlayerId, setSelectionMode]);
 
   // Handle steal secret when data updates
   useEffect(() => {
@@ -309,12 +312,18 @@ function Game() {
             opponentId={opponentId}
             turnOwnerId={turnData?.turn_owner_id}
             onConfirm={(opponentCard, myCard) =>
-              startCardTrade(opponentCard, myCard, httpService, gameId, myPlayerId, fetchGameData)
+              startCardTrade(
+                opponentCard,
+                myCard,
+                httpService,
+                gameId,
+                myPlayerId,
+                fetchGameData
+              )
             }
             onClose={() => setShowTradeDialog(false)}
           />
         )}
-
       </DndContext>
     </div>
   );
