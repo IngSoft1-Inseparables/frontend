@@ -127,7 +127,7 @@ export const useCardActions = (
               case "cards off the table":
                 setSelectionMode("select-other-player");
                 setSelectionAction("cards off the table");
-              break;
+              break; 
               default:
                 break;
             }
@@ -199,7 +199,6 @@ export const useCardActions = (
 
       const previousPlayerData = playerData;
       const previousTurnData = turnData;
-
 
       setPlayerData((prevData) => {
         if (!prevData) return prevData;
