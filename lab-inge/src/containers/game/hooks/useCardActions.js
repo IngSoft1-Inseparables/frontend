@@ -124,6 +124,10 @@ export const useCardActions = (
                 setSelectionMode("select-other-player");
                 setSelectionAction("card trade");
                 break;
+              case "cards off the table":
+                setSelectionMode("select-other-player");
+                setSelectionAction("cards off the table");
+              break; 
               default:
                 break;
             }

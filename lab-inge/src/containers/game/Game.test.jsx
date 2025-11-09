@@ -82,9 +82,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode };
     
     return (
       <div data-testid="game-board">
@@ -1273,6 +1273,8 @@ it("handles player reordering when only 2 players", async () => {
       expect(gameBoardProps.onPlayerSelect).toBeDefined();
       expect(typeof gameBoardProps.onPlayerSelect).toBe('function');
     });
+
+    
   });
 
   describe("Play Event Card", () => {
@@ -1333,6 +1335,47 @@ it("handles player reordering when only 2 players", async () => {
       await waitFor(() => {
         expect(mockHttp.playEvent).toHaveBeenCalledWith(1, 2, 2, "Look into the ashes");
       });
+    });
+
+    it("executes 'Cards off the Table' -> calls removeNotSoFast and refetches", async () => {
+      // Arrange: mock public turn data and private player data containing the event
+      mockHttp.getPublicTurnData.mockResolvedValue(mockTurnDataWithNoneState);
+      const eventCard = { card_id: 999, card_name: "Cards off the Table", type: "Event", image_name: "cards.png" };
+      mockHttp.getPrivatePlayerData.mockResolvedValue({ ...mockPlayerData, playerCards: [eventCard] });
+
+      // Mock playEvent to return the cardName that triggers the selection flow
+      mockHttp.playEvent = vi.fn().mockResolvedValue({ cardName: "Cards off the Table" });
+      // Mock the removal endpoint
+      mockHttp.removeNotSoFast = vi.fn().mockResolvedValue({ success: true });
+
+      // Render
+      renderGame({ gameId: 1, myPlayerId: 2 });
+      await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
+
+      // Instead of simulating the drag/DOM flow, directly set the selection action/mode
+      // and then select a player to trigger the Cards off the Table effect.
+      await act(async () => {
+        // Ensure setters are available on the mocked GameBoard
+        if (gameBoardProps?.setSelectionAction) gameBoardProps.setSelectionAction("cards off the table");
+        if (gameBoardProps?.setSelectionMode) gameBoardProps.setSelectionMode("select-other-player");
+        // Now simulate selecting the first player (pass id)
+        gameBoardProps.onPlayerSelect && gameBoardProps.onPlayerSelect(mockTurnData.players[0].id);
+      });
+
+      // Assert: removeNotSoFast was called once with gameId and the selected player (or their id)
+      await waitFor(() => expect(mockHttp.removeNotSoFast).toHaveBeenCalledTimes(1));
+      const args = mockHttp.removeNotSoFast.mock.calls[0];
+      expect(args[0]).toBe(1);
+      const second = args[1];
+      const expectedId = mockTurnData.players[0].id;
+      if (typeof second === "object" && second !== null) {
+        expect(second.id).toBe(expectedId);
+      } else {
+        expect(second).toBe(expectedId);
+      }
+
+      // And a refetch should have been triggered (getPublicTurnData called at least once)
+      await waitFor(() => expect(mockHttp.getPublicTurnData).toHaveBeenCalled());
     });
 
     it("triggers Card Trade flow: opens TradeDialog and calls exchangeCards on confirm (mocked TradeDialog)", async () => {
