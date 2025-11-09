@@ -33,7 +33,8 @@ export const useSelectionEffects = (
   setSelectedSet,
   setAriadneCardId,
   setShowTradeDialog, 
-  setOpponentId   
+  setOpponentId,   
+  myPlayerId,
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -71,21 +72,21 @@ export const useSelectionEffects = (
     if (
       selectionMode === "select-other-player" &&
       selectedPlayer &&
-      (
-        !selectionAction || 
-        (
-          selectionAction.toLowerCase() !== "card trade" &&
-          selectionAction.toLowerCase() !== "specials"
-        )
-      )
+      (!selectionAction ||
+        (selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials" && 
+          selectionAction.toLowerCase() !== "cards off the table" &&
+          selectionAction.toLowerCase() !== "point"))
     ) {
-      console.log("Jugador seleccionado para forzar revelación:", selectedPlayer);
+      console.log(
+        "Jugador seleccionado para forzar revelación:",
+        selectedPlayer
+      );
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
-
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -228,7 +229,7 @@ export const useSelectionEffects = (
       selectionAction === "another"
     ) {
       console.log(
-        "🎯 Robando set:",
+        "Robando set:",
         selectedSet,
         "del jugador:",
         selectedPlayer
@@ -289,6 +290,36 @@ export const useSelectionEffects = (
       
     }
   }, [selectionMode, selectedSet, selectedPlayer, selectionAction, ariadneCardId, turnData]);
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase() === "point"
+    ) {
+      const votedPlayerId = selectedPlayer;
+
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+      setSelectionAction(null);
+
+      httpService
+        .voteSuspicion(gameId, myPlayerId, votedPlayerId)
+        .then((response) => {
+          console.log("Voto registrado:", response);
+        })
+        .catch((error) => {
+          console.error("Error al votar:", error);
+          if (
+            error.status === 400 &&
+            error.data?.detail?.includes("already voted")
+          ) {
+            console.error("Error al votar:", error);
+          }
+        });
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
   // Card Trade → seleccionar jugador y abrir diálogo
   useEffect(() => {
     if (
@@ -304,5 +335,30 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
 
+  // Cards off the Table → eliminar Not So Fast! del jugador seleccionado
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardsoffthetable"
+    ) {
+      console.log("Ejecutando efecto de Cards off the Table en jugador:", selectedPlayer);
+
+      (async () => {
+        try {
+          await httpService.removeNotSoFast(gameId, selectedPlayer);
+          await fetchGameData();
+          console.log("Not So Fast eliminadas del jugador:", selectedPlayer);
+        } catch (error) {
+          console.error("Error en Cards off the Table:", error);
+        } finally {
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+          setSelectionAction(null);
+        }
+      })();
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
 
 };

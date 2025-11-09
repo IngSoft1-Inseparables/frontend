@@ -15,7 +15,6 @@ import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
 import TradeDialog from "./components/TradeDialog/TradeDialog.jsx";
 
-
 // Importar los custom hooks
 import {
   useGameData,
@@ -48,6 +47,8 @@ function Game() {
     hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
+    timer,
+    setTimer
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -97,7 +98,7 @@ function Game() {
     setSelectedSet,
     handleStealSet,
     handleCardAriadneOliver
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const [ariadneCardId, setAriadneCardId] = useState(null);
@@ -108,7 +109,8 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+   
   );
 
   // WebSocket connection
@@ -124,7 +126,10 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     setSelectionAction,
-    setMovedCardsCount
+    setMovedCardsCount,
+    setSelectionMode,
+    timer,
+    setTimer
   );
 
   // Selection effects
@@ -159,6 +164,7 @@ function Game() {
     selectionAction,
     setShowTradeDialog, 
     setOpponentId,
+    myPlayerId
   );
 
   // Steal secret logic
@@ -191,7 +197,9 @@ function Game() {
       setPlayedActionCard,
       setSelectionMode,
       setSelectionAction,
-      startDiscardTop5Action
+      startDiscardTop5Action,
+      timer,
+      setTimer
     );
 
   const handleReplenishFromDiscard = (card) => {
@@ -211,6 +219,8 @@ function Game() {
 
     const handleHasToReveal = (payload) => {
       if (payload && payload.playerId === parseInt(myPlayerId)) {
+        setSelectedPlayer(null);
+        setSelectionAction(null);
         setSelectionMode("select-my-not-revealed-secret");
       }
     };
@@ -220,7 +230,7 @@ function Game() {
     return () => {
       wsService.off("hasToReveal", handleHasToReveal);
     };
-  }, [wsService, myPlayerId]);
+  }, [wsService, myPlayerId, setSelectionMode]);
 
   // Handle steal secret when data updates
   useEffect(() => {
@@ -248,7 +258,7 @@ function Game() {
     })
   );
 
-    if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
+  if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl">Cargando jugadores...</p>
@@ -285,7 +295,7 @@ function Game() {
           message={message}
           setSelectionAction={setSelectionAction}
           setAriadneCardId={setAriadneCardId}
-          
+          timer={timer}
         />
 
         {showEndDialog && winnerData && (
@@ -312,12 +322,18 @@ function Game() {
             opponentId={opponentId}
             turnOwnerId={turnData?.turn_owner_id}
             onConfirm={(opponentCard, myCard) =>
-              startCardTrade(opponentCard, myCard, httpService, gameId, myPlayerId, fetchGameData)
+              startCardTrade(
+                opponentCard,
+                myCard,
+                httpService,
+                gameId,
+                myPlayerId,
+                fetchGameData
+              )
             }
             onClose={() => setShowTradeDialog(false)}
           />
         )}
-
       </DndContext>
     </div>
   );
