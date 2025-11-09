@@ -48,6 +48,8 @@ function Game() {
     hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
+    timer,
+    setTimer
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -96,7 +98,7 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
 
@@ -122,7 +124,9 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     setSelectionAction,
-    setMovedCardsCount
+    setMovedCardsCount,
+    timer,
+    setTimer
   );
 
   // Selection effects
@@ -184,7 +188,9 @@ function Game() {
       setPlayedActionCard,
       setSelectionMode,
       setSelectionAction,
-      startDiscardTop5Action
+      startDiscardTop5Action,
+      timer,
+      setTimer
     );
 
   const handleReplenishFromDiscard = (card) => {
@@ -240,7 +246,7 @@ function Game() {
     })
   );
 
-    if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
+  if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl">Cargando jugadores...</p>
@@ -276,6 +282,7 @@ function Game() {
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}
+          timer={timer}
         />
 
         {showEndDialog && winnerData && (

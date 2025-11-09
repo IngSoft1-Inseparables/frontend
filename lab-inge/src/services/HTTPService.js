@@ -261,15 +261,15 @@ const createHttpService = () => {
       body: JSON.stringify({ gameId, playerId, cardId }),
     });
   };
- //post games/{gameId}/fivecards
+  //post games/{gameId}/fivecards
   const fiveCardsToRegpile = (gameId) => {
-     return request(`/games/${gameId}/fivecards`, {
+    return request(`/games/${gameId}/fivecards`, {
       method: "PATCH",
     });
   };
 
   const sixCardsToDiscardpile = (gameId) => {
-     return request(`/games/${gameId}/sixcards`, {
+    return request(`/games/${gameId}/sixcards`, {
       method: "PATCH",
     });
   };
@@ -305,14 +305,25 @@ const createHttpService = () => {
     });
   };
 
-    const removeNotSoFast = (gameId, playerId) => {
-      if (!gameId) throw new Error("Game ID is required");
-      if (!playerId) throw new Error("Player ID is required");
+  const playNotSoFast = (gameId, playerId, cardId) => {
+    return request("/players/play/cancel", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId
+      })
+    });
+  };
 
-      return request(`/players/${gameId}/remove_not_so_fast/${playerId}`, {
-        method: "POST",
-      });
-    };
+  const removeNotSoFast = (gameId, playerId) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (!playerId) throw new Error("Player ID is required");
+
+    return request(`/players/${gameId}/remove_not_so_fast/${playerId}`, {
+      method: "POST",
+    });
+  };
   const getOpponentHand = (gameId, currentPlayerId, opponentId) => {
     // currentPlayerId = turn_owner_id
     // opponentId = jugador del cual quiero ver las cartas
@@ -353,6 +364,7 @@ const createHttpService = () => {
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
     stealSet,
+    playNotSoFast,
     removeNotSoFast,
     getOpponentHand,
     exchangeCards,
