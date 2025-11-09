@@ -179,6 +179,7 @@ export const useSelectionEffects = (
           setSelectedPlayer(null);
           setSelectionAction(null);
           setFromPlayer(null);
+          selectedSecret(null);
 
         } catch (error) {
           console.error("Error al asignar secreto:", error);
@@ -228,6 +229,7 @@ export const useSelectionEffects = (
         "del jugador:",
         selectedPlayer
       );
+      
       handleStealSet(selectedPlayer, selectedSet);
 
     }
