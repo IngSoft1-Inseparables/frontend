@@ -209,17 +209,10 @@ function Game() {
     if (!wsService) return;
 
     const handleHasToReveal = (payload) => {
-      if (payload && payload.playerId) {
-        // Buscar el nombre del jugador más votado
-        const votedPlayer = orderedPlayers.find(
-          (p) => p.id === parseInt(payload.playerId)
-        );
-
-        if (payload.playerId === parseInt(myPlayerId)) {
-          setSelectedPlayer(null);
-          setSelectionAction(null);
-          setSelectionMode("select-my-not-revealed-secret");
-        }
+      if (payload && payload.playerId === parseInt(myPlayerId)) {
+        setSelectedPlayer(null);
+        setSelectionAction(null);
+        setSelectionMode("select-my-not-revealed-secret");
       }
     };
 

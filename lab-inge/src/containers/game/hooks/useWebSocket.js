@@ -41,7 +41,6 @@ export const useWebSocket = (
       }
     };
    const handlePointSuspicionsPlayed = (payload) => {
-  console.log("🎯 Point Your Suspicions detectado");
   setSelectionMode("select-other-player");
   setSelectionAction("point");
 };

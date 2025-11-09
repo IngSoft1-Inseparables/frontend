@@ -29,7 +29,7 @@ export const useTurnMessages = (
     // Si es mi turno y estoy en desgracia, mostrar mensaje prioritario
     if (turnData.turn_owner_id === myPlayerId && inDisgrace) {
       setMessage(
-        " Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
+        "⚠️ Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
       );
       return;
     }
@@ -48,7 +48,6 @@ export const useTurnMessages = (
           return;
         }
       }
-
       setMessage(`${currentPlayerName} está jugando su turno.`);
       return;
     }

@@ -223,7 +223,7 @@ export const useSelectionEffects = (
       selectedPlayer
     ) {
       console.log(
-        "🎯 Robando set:",
+        "Robando set:",
         selectedSet,
         "del jugador:",
         selectedPlayer
@@ -239,25 +239,24 @@ export const useSelectionEffects = (
       selectionAction &&
       selectionAction.toLowerCase() === "point"
     ) {
-      console.log("LLEGUE ACAAA");
-        const votedPlayerId = selectedPlayer;  // ← Guardar el ID
+      const votedPlayerId = selectedPlayer;
 
-    setSelectedPlayer(null);
-    setSelectionMode(null);
-    setSelectionAction(null);
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+      setSelectionAction(null);
 
       httpService
         .voteSuspicion(gameId, myPlayerId, votedPlayerId)
         .then((response) => {
-          console.log("✅ Voto registrado:", response);
+          console.log("Voto registrado:", response);
         })
         .catch((error) => {
-          console.error("❌ Error al votar:", error);
+          console.error("Error al votar:", error);
           if (
             error.status === 400 &&
             error.data?.detail?.includes("already voted")
           ) {
-           console.error("❌ Error al votar:", error);
+            console.error("Error al votar:", error);
           }
         });
     }
