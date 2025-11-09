@@ -22,13 +22,17 @@ export const useSecretActions = (
     try {
       console.log("revelando secreto propio:", secretId);
 
-      await httpService.revealSecret({
+      // 🔹 Guardamos la respuesta del backend
+      const response = await httpService.revealSecret({
         gameId,
         playerId: myPlayerId,
         secretId,
       });
 
       await fetchGameData();
+
+      return response;
+      
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {

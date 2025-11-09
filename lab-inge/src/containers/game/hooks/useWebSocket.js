@@ -27,31 +27,23 @@ export const useWebSocket = (
     wsService.connect();
 
     const handleEndGameEvent = (dataPublic) => {
-      const endGame = dataPublic.end_game;
-
-      if (endGame?.game_status === "Finished") {
-        console.log("🏁 Fin de la partida detectado:", endGame);
-
-        const winners = endGame.winners || [];
+      if (dataPublic.end_game?.game_status === "Finished") {
+        console.log("Fin de la partida detectado:", dataPublic.end_game);
+        const winners = dataPublic.end_game.winners;
         const regpileCount = dataPublic?.regpile?.count ?? 0;
-        const players = dataPublic.players || [];
 
-        // Detectar si todos menos el asesino están en desgracia
-        const murderer = players.find((p) => p.role === "MURDERER");
-        const others = players.filter((p) => p.id !== murderer?.id);
-        const allInDisgrace = others.length > 0 && others.every((p) => p.in_disgrace);
-
-        const formattedWinnerData = {
+        // ✅ No borrar type si ya lo setearon antes (por ejemplo desde end_reason)
+        setWinnerData(prev => ({
+          ...prev,
           winners,
           regpileCount,
-          gameStatus: endGame?.game_status || dataPublic?.game_state || null,
-        };
+          type: prev?.type || null,
+        }));
 
-
-        setWinnerData(formattedWinnerData);
         setShowEndDialog(true);
       }
     };
+
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =

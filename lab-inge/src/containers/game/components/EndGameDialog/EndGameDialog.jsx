@@ -20,21 +20,20 @@ export default function EndGameDialog({ onClose, winners }) {
 
   let victoryMessage = "";
 
-  const mainWinner = winners?.winners?.[0];
-  const gameStatus = winners?.gameStatus;
-
-  // Inferimos el mensaje según el estado y quién ganó
-  if (
-    gameStatus === "Finished" &&
-    (mainWinner?.role?.toLowerCase() === "murderer" ||
-      mainWinner?.role?.toLowerCase() === "assassin" ||
-      mainWinner?.name?.toLowerCase().includes("asesino") ||
-      mainWinner?.name?.toLowerCase().includes("assassin"))
-  ) {
+  if (winners.type === "social_disgrace") {
     victoryMessage = "El asesino ha ganado.";
-  } else if (winners?.regpileCount === 0) {
+  } 
+  else if (winners.type === "murder_revealed") {
+    victoryMessage = "Los Detectives descubrieron al Asesino.";
+  } 
+  else if (winners.winners?.some(w => w.role?.toLowerCase() === "asesino")) {
+    // 🧩 fallback por si el WS vino sin type
+    victoryMessage = "El asesino ha ganado.";
+  } 
+  else if (regpileCount === 0) {
     victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";
-  } else {
+  } 
+  else {
     victoryMessage = "Los Detectives descubrieron al Asesino.";
   }
 

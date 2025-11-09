@@ -88,20 +88,20 @@ export const useGameDialogs = (
     };
   }, [wsService, myPlayerId]);
 
-  // Detectar fin de partida por desgracia social
+
+  // detectar fin de partida por desgracia social o asesino revelado
   useEffect(() => {
-    if (!turnData || turnData.game_state !== "Finished") return;
+    if (!turnData) return;
 
-    const players = turnData.players || [];
-    const murderer = players.find((p) => p.role === "MURDERER");
-    const others = players.filter((p) => p.id !== murderer?.id);
+    if (turnData.end_reason === "all_in_disgrace") {
+      console.log("Fin de partida: desgracia social detectada");
+      setWinnerData({ type: "social_disgrace", winners: [] });
+      setShowEndDialog(true);
+    }
 
-    // Si todos los demás jugadores están en desgracia social
-    const allInDisgrace =
-      others.length > 0 && others.every((p) => p.in_disgrace === true);
-
-    if (allInDisgrace) {
-      setWinnerData({ type: "social_disgrace" });
+    if (turnData.end_reason === "murder_revealed") {
+      console.log(" Fin de partida: asesino revelado");
+      setWinnerData({ type: "murder_revealed", winners: [] });
       setShowEndDialog(true);
     }
   }, [turnData]);
