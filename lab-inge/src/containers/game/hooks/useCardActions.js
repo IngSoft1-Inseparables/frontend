@@ -16,8 +16,12 @@ export const useCardActions = (
   setPlayedActionCard,
   setSelectionMode,
   setSelectionAction,
-  startDiscardTop5Action
+  startDiscardTop5Action,
+  timer,
+  setTimer
 ) => {
+
+  const [pendingEffect, setPendingEffect] = useState(null);
 
   // si estoy en desgracia social
 
@@ -42,44 +46,36 @@ export const useCardActions = (
     switch (response.toLowerCase()) {
       case "poirot":
       case "marple":
-        console.log("✅ Activando modo: select-not-revealed-secret");
         setSelectionMode("select-other-not-revealed-secret");
         break;
 
       case "ladybrent":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "tommyberestford":
       case "tuppenceberestford":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "tommytuppence":
-        console.log("✅ Activando modo: select-other-player (no cancelable)");
         setSelectionMode("select-other-player");
         break;
 
       case "satterthwaite":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         break;
 
       case "specialsatterthwaite":
-        console.log("✅ Activando modo: select-other-player");
         setSelectionMode("select-other-player");
         setSelectionAction("specials");
         break;
 
       case "pyne":
-        console.log("✅ Activando modo: select-revealed-secret");
         setSelectionMode("select-revealed-secret");
         break;
 
       default:
-        console.log("⚠️ Set sin efecto:", response.set_type);
         break;
     }
   };
@@ -93,6 +89,59 @@ export const useCardActions = (
     disgraceLockedRef.current = false;
   }, [turnData?.turn_owner_id]);
 
+  useEffect(() => {
+    const executePendingEffect = async () => {
+      if (timer === 0 && pendingEffect) {
+
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingEffect(null);
+          return;
+        }
+
+        const { type, response, droppedCard } = pendingEffect;
+
+        try {
+          if (type === "event") {
+            switch (response.cardName.toLowerCase()) {
+              case "look into the ashes":
+                await fetchGameData();
+                startDiscardTop5Action();
+                break;
+              case "and then there was one more...":
+                setSelectionMode("select-other-revealed-secret");
+                setSelectionAction("one more");
+                break;
+              case "early train to paddington":
+                setSelectionAction("paddington");
+                break;
+              case "delay the murderer's escape!":
+                setSelectionAction("delay");
+                break;
+              case "another victim":
+                setSelectionMode("select-set");
+                break;
+              case "card trade":
+                setSelectionMode("select-other-player");
+                setSelectionAction("card trade");
+                break;
+              default:
+                break;
+            }
+          } else if (type === "set") {
+            handleSwitch(response);
+          }
+        } catch (error) {
+          console.error("Error ejecutando efecto pendiente:", error);
+        } finally {
+          setPendingEffect(null);
+        }
+      }
+    };
+
+    executePendingEffect();
+  }, [timer, pendingEffect, turnData, setSelectionMode, setSelectionAction, fetchGameData, startDiscardTop5Action, handleSwitch]);
+
+
   const handlePlaySetAction = async (myPlayerId, gameId, currentSetCards) => {
     if (!currentSetCards || currentSetCards.length === 0) return;
 
@@ -103,8 +152,15 @@ export const useCardActions = (
 
     try {
       const response = await httpService.playSets(gameId, myPlayerId, cardIds);
+      setTimer(response?.timer);
       console.log("TIPO DE SET:", response);
-      handleSwitch(response.set_type);
+      console.log("✅ Set enviado al backend, iniciando temporizador...");
+
+
+      setPendingEffect({
+        type: "set",
+        response: response.set_type,
+      });
     } catch (error) {
       console.error("Error al cargar los sets:", error);
     }
@@ -112,7 +168,8 @@ export const useCardActions = (
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
-    if (!over || myPlayerId != turnData.turn_owner_id) return;
+
+    if (!over) return;
 
     const cardId = active.data.current?.cardId;
     const cardName = active.data.current?.cardName;
@@ -127,7 +184,7 @@ export const useCardActions = (
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
-      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding")
+      if (turnData.turn_state != "None" && turnData.turn_state != "Discarding" || myPlayerId != turnData.turn_owner_id)
         return;
 
       // Si ya hay un bloqueo de descarte (previo) evitamos otra llamada.
@@ -223,79 +280,75 @@ export const useCardActions = (
 
     }
 
-    // Si se soltó sobre la zona de eventos
+    // Si se soltó sobre la zona de juego
     if (over.id === "play-card-zone") {
       if (inDisgrace) return;
-      if (turnData.turn_state != "None") return;
-
-      if (playedActionCard) {
-        return;
-      }
 
       const droppedCard = playerData?.playerCards?.find(
         (card) => card.card_id === cardId
       );
 
-      if (!droppedCard) {
-        console.error("Card not found in player's hand");
-        return;
-      }
+      if (droppedCard?.type.toLowerCase() === "event") {
+        if (turnData.turn_state != "None" || playedActionCard || myPlayerId != turnData.turn_owner_id) return;
 
-      if (droppedCard.type.toLowerCase() != "event") {
-        console.log("Card played not valid.");
-        return;
-      }
+        const previousPlayerData = playerData;
 
-      const previousPlayerData = playerData;
+        // Actualizar UI: remover carta de la mano y mostrarla como jugada
+        setPlayerData((prevData) => {
+          if (!prevData) return prevData;
 
-      setPlayerData((prevData) => {
-        if (!prevData) return prevData;
+          return {
+            ...prevData,
+            playerCards: prevData.playerCards.filter(
+              (card) => card.card_id !== cardId
+            ),
+          };
+        });
 
-        return {
-          ...prevData,
-          playerCards: prevData.playerCards.filter(
-            (card) => card.card_id !== cardId
-          ),
-        };
-      });
+        setPlayedActionCard(droppedCard);
 
-      setPlayedActionCard(droppedCard);
+        try {
+          const response = await httpService.playEvent(
+            gameId,
+            myPlayerId,
+            cardId,
+            cardName
+          );
+          setTimer(response?.timer);
 
-      try {
-        const response = await httpService.playEvent(
-          gameId,
-          myPlayerId,
-          cardId,
-          cardName
-        );
-        switch (response.cardName.toLowerCase()) {
-          case "look into the ashes":
-            await fetchGameData();
-            startDiscardTop5Action();
-            break;
-          case "and then there was one more...":
-            setSelectionMode("select-other-revealed-secret");
-            setSelectionAction("one more");
-            break;
-          case "early train to paddington":
-            setSelectionAction("paddington");
-            break;
-          case "delay the murderer's escape!":
-            setSelectionAction("delay");
-          case "another victim":
-            setSelectionMode("select-set");
-            break;
-          case "card trade":
-            setSelectionMode("select-other-player");
-            setSelectionAction("card trade");
-            break;
-          default:
-            break;
+          console.log("✅ Carta de evento enviada al backend, iniciando temporizador...");
+
+          setPendingEffect({
+            type: "event",
+            response: response,
+            droppedCard
+          });
+        } catch (error) {
+          console.error("Failed playing event card:", error);
+          setPlayerData(previousPlayerData);
+          setPlayedActionCard(null);
         }
-      } catch (error) {
-        console.error("Failed playing event card:", error);
-        setPlayerData(previousPlayerData);
-        setPlayedActionCard(null);
+
+      } else if (droppedCard?.type?.toLowerCase() === "instant") {
+        if (timer <= 0) {
+          return;
+        }
+
+        if (turnData.turn_state.toLowerCase() !== "playing" &&
+          turnData.turn_state.toLowerCase() !== "discarding") {
+          return;
+        }
+
+        try {
+          const response = await httpService.playNotSoFast(gameId, myPlayerId, cardId);
+          setTimer(response?.timer);
+          console.log("✅ Not So Fast ejecutado exitosamente");
+        } catch (error) {
+          console.error("Error ejecutando Not So Fast:", error);
+        }
+
+      } else {
+        console.log("Card played not valid.");
       }
     }
   };
@@ -311,25 +364,23 @@ export const useCardActions = (
     );
 
     if (!matchingSet || currentSetCards.length !== 1) {
-      console.log("❌ Click en set inválido o no hay carta seleccionada");
       return;
     }
 
     const card = currentSetCards[0];
-    const setType = matchingSet.setType; // Obtener el tipo de set
+    const setType = matchingSet.setType;
     const setId = matchingSet.setId;
-    console.log("✅ Agregando carta al set:", { card, setIndex, setType, setId });
 
     try {
       const response = await httpService.addCardToSet(gameId, myPlayerId, card.card_id, setId);
-      
-      // Actualizar datos del juego desde el backend
+
       await fetchGameData();
-           // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Activar efecto del set
-      handleSwitch(response.set_type);
+
+      setPendingEffect({
+        type: "set",
+        response: response.set_type,
+      });
     } catch (error) {
       console.error("Error al agregar carta al set:", error);
     }
@@ -340,5 +391,6 @@ export const useCardActions = (
     handlePlaySetAction,
     handleDragEnd,
     handleAddCardToSet,
+    pendingEffect,
   };
 };

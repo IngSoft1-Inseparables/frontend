@@ -9,8 +9,7 @@ export const useTurnMessages = (
   orderedPlayers,
   selectionAction,
   setSelectionAction,
-  movedCardsCount,
-  mostVotedPlayer
+  movedCardsCount
 ) => {
   const [message, setMessage] = useState(" ");
 
@@ -138,8 +137,7 @@ export const useTurnMessages = (
     myPlayerId,
     orderedPlayers,
     selectionAction,
-    movedCardsCount,
-    mostVotedPlayer,
+    movedCardsCount
   ]);
 
   return { message, getPlayerNameById };

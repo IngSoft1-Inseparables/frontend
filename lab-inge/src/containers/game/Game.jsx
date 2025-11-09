@@ -47,6 +47,8 @@ function Game() {
     hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
+    timer,
+    setTimer
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -95,8 +97,8 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
-  const [mostVotedPlayer, setMostVotedPlayer] = useState(null);
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
+
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const { message } = useTurnMessages(
     turnData,
@@ -105,13 +107,8 @@ function Game() {
     selectionAction,
     setSelectionAction,
     movedCardsCount,
-    mostVotedPlayer
+   
   );
-  useEffect(() => {
-    if (turnData?.turn_owner_id) {
-      setMostVotedPlayer(null);
-    }
-  }, [turnData?.turn_owner_id]);
 
   // WebSocket connection
   useWebSocket(
@@ -127,7 +124,9 @@ function Game() {
     reorderPlayers,
     setSelectionAction,
     setMovedCardsCount,
-    setSelectionMode
+    setSelectionMode,
+    timer,
+    setTimer
   );
 
   // Selection effects
@@ -176,26 +175,24 @@ function Game() {
     setPrevData
   );
 
-  const {
-    handleCardClick,
-    handlePlaySetAction,
-    handleDragEnd,
-    handleAddCardToSet,
-  } = useCardActions(
-    httpService,
-    gameId,
-    myPlayerId,
-    turnData,
-    playerData,
-    setPlayerData,
-    setTurnData,
-    fetchGameData,
-    playedActionCard,
-    setPlayedActionCard,
-    setSelectionMode,
-    setSelectionAction,
-    startDiscardTop5Action
-  );
+  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
+    useCardActions(
+      httpService,
+      gameId,
+      myPlayerId,
+      turnData,
+      playerData,
+      setPlayerData,
+      setTurnData,
+      fetchGameData,
+      playedActionCard,
+      setPlayedActionCard,
+      setSelectionMode,
+      setSelectionAction,
+      startDiscardTop5Action,
+      timer,
+      setTimer
+    );
 
   const handleReplenishFromDiscard = (card) => {
     return replenishFromDiscard(
@@ -217,11 +214,6 @@ function Game() {
         const votedPlayer = orderedPlayers.find(
           (p) => p.id === parseInt(payload.playerId)
         );
-
-        setMostVotedPlayer({
-          id: payload.playerId,
-          name: votedPlayer?.name || "Jugador",
-        });
 
         if (payload.playerId === parseInt(myPlayerId)) {
           setSelectedPlayer(null);
@@ -300,6 +292,7 @@ function Game() {
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}
+          timer={timer}
         />
 
         {showEndDialog && winnerData && (
