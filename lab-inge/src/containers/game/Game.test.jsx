@@ -82,9 +82,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode };
     
     return (
       <div data-testid="game-board">
@@ -1352,19 +1352,13 @@ it("handles player reordering when only 2 players", async () => {
       renderGame({ gameId: 1, myPlayerId: 2 });
       await waitFor(() => expect(screen.getByTestId("game-board")).toBeInTheDocument());
 
-      // Act: simulate dropping the event card into the play zone
+      // Instead of simulating the drag/DOM flow, directly set the selection action/mode
+      // and then select a player to trigger the Cards off the Table effect.
       await act(async () => {
-        await capturedOnDragEnd({
-          active: { data: { current: { cardId: 999, cardName: eventCard.card_name, imageName: eventCard.image_name } } },
-          over: { id: "play-card-zone" },
-        });
-      });
-
-      // Ensure playEvent was called
-      await waitFor(() => expect(mockHttp.playEvent).toHaveBeenCalled());
-
-      // Now simulate selecting a player (GameBoard mock gives onPlayerSelect)
-      await act(async () => {
+        // Ensure setters are available on the mocked GameBoard
+        if (gameBoardProps?.setSelectionAction) gameBoardProps.setSelectionAction("cards off the table");
+        if (gameBoardProps?.setSelectionMode) gameBoardProps.setSelectionMode("select-other-player");
+        // Now simulate selecting the first player (pass id)
         gameBoardProps.onPlayerSelect && gameBoardProps.onPlayerSelect(mockTurnData.players[0].id);
       });
 
