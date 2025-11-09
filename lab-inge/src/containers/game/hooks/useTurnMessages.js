@@ -44,7 +44,7 @@ export const useTurnMessages = (
       ) {
         // Si el juego está en estado Playing, están votando
         if (turnData.turn_state === "Playing") {
-          setMessage("Point Your Suspicions: Votá a quién sospechás.");
+          setMessage("Point Your Suspicions: Votá de quién sospechás.");
           return;
         }
       }
@@ -64,7 +64,7 @@ export const useTurnMessages = (
           "point your suspicions"
         ) {
           setMessage(
-            "Point Your Suspicions: Todos deben votar a quién sospechan."
+            "Point Your Suspicions: Todos deben votar de quién sospechan."
           );
           break;
         }

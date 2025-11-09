@@ -33,7 +33,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       // Cuando NO es mi turno pero está en Playing, sí muestra mensaje de votación
-      expect(result.current.message).toBe("Point Your Suspicions: Votá a quién sospechás.");
+      expect(result.current.message).toBe("Point Your Suspicions: Votá de quién sospechás.");
     });
 
     it("shows voting message during Playing state when it's my turn", () => {
@@ -55,7 +55,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
 
       // Cuando es mi turno en Playing, muestra mensaje para todos
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Todos deben votar a quién sospechan."
+        "Point Your Suspicions: Todos deben votar de quién sospechan."
       );
     });
 
@@ -161,7 +161,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá a quién sospechás."
+        "Point Your Suspicions: Votá de quién sospechás."
       );
     });
 
@@ -183,7 +183,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá a quién sospechás."
+        "Point Your Suspicions: Votá de quién sospechás."
       );
     });
 
@@ -205,7 +205,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá a quién sospechás."
+        "Point Your Suspicions: Votá de quién sospechás."
       );
     });
   });
@@ -230,7 +230,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
 
       // Point Your Suspicions tiene prioridad sobre mensaje genérico
       expect(result.current.message).not.toBe("Alice está jugando su turno.");
-      expect(result.current.message).toBe("Point Your Suspicions: Votá a quién sospechás.");
+      expect(result.current.message).toBe("Point Your Suspicions: Votá de quién sospechás.");
     });
 
     it("returns to normal message when Point Your Suspicions is cleared", () => {
