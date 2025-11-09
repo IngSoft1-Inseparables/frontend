@@ -108,7 +108,9 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+    timer,
+    selectionMode
   );
 
   // WebSocket connection

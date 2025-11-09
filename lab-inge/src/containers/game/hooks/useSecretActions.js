@@ -24,7 +24,7 @@ export const useSecretActions = (
   useEffect(() => {
     const executePendingSecretEffect = async () => {
       if (timer === 0 && pendingSecretEffect) {
-        if (turnData?.turn_state.toLowerCase() != "playing") {
+        if (turnData?.turn_state?.toLowerCase() != "playing") {
           setPendingEffect(null);
           return;
         }

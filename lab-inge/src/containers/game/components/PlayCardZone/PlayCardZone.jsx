@@ -28,8 +28,16 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
     return (
       <div className="flex flex-col items-center gap-3">
         {timer > 0 && (
-          <div className="text-xs font-medium text-white">
-            ¡Podés jugar Not So Fast!
+          <div className="text-m text-center font-medium text-white">
+            Podés jugar Not So Fast para cancelar {
+              turnData.instant_played ?
+                turnData.instant_played.card_name
+                :
+                (turnData?.event_card_played ?
+                  turnData.event_card_played.card_name
+                  :
+                  turnData.set_played.set_type)
+            }
           </div>
         )}
         <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">
@@ -57,8 +65,16 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
   return (
     <div className="flex flex-col items-center gap-3">
       {timer > 0 && (
-        <div className="text-xs font-medium text-white">
-          ¡Podés jugar Not So Fast!
+        <div className="text-m text-center font-medium text-white">
+          Podés jugar Not So Fast para cancelar {
+            turnData.instant_played ?
+              turnData.instant_played.card_name
+              :
+              (turnData?.event_card_played ?
+                turnData.event_card_played.card_name
+                :
+                turnData.set_played.set_type)
+          }
         </div>
       )}
       <div className="w-12 h-12 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center">

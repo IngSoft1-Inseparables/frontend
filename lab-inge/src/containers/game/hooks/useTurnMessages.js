@@ -9,7 +9,9 @@ export const useTurnMessages = (
   orderedPlayers,
   selectionAction,
   setSelectionAction,
-  movedCardsCount
+  movedCardsCount,
+  timer,
+  selectionMode
 ) => {
   const [message, setMessage] = useState(" ");
 
@@ -34,23 +36,32 @@ export const useTurnMessages = (
       setMessage(
         " Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
       );
-      return; 
-    }
-
-    if (turnData.turn_owner_id !== myPlayerId) {
-      const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
-      setMessage(`${currentPlayerName} está jugando su turno.`);
       return;
     }
+
+    // if (turnData.turn_owner_id !== myPlayerId) {
+    const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+    //   setMessage(`${currentPlayerName} está jugando su turno.`);
+    //   return;
+    // }
 
     switch (turnData.turn_state) {
       case "None":
         setMessage(
-          `¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`
-        );
+          `${turnData.turn_owner_id === myPlayerId ?
+            "¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta."
+            :
+            `${currentPlayerName} está jugando su turno.`}`)
         break;
       case "Playing":
-        setMessage("Seguí las indicaciones para continuar el turno.");
+        setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
+        if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo.");
+        if (selectionMode === "select-other-player") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto.");
+        if (selectionMode === "select-other-not-revealed-secret" && selectionAction === "specials") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto y luego robárselo.");
+        if (selectionMode === "select-revealed-secret") setMessage("Seleccioná un secreto para ocultarlo.");
+        if (selectionMode === "select-other-revealed-secret" && setSelectionAction === "one more") setMessage("Seleccioná un secreto para ocultarlo y luego asignárselo a cualquier jugador.");
+        if (selectionMode === "select-set") setMessage("Seleccioná un set para robarlo y ejecutar su efecto.");
+        if (selectionMode === "select-other-player" && selectionAction === "card trade") setMessage("Seleccioná un jugador para intercambiar una carta.");
         break;
       case "Waiting":
         setMessage("Esperá para continuar tu turno.");
@@ -70,11 +81,9 @@ export const useTurnMessages = (
         ) {
           const paddingtonMessage =
             effectiveMovedCount > 0
-              ? `Se ${
-                  effectiveMovedCount === 1 ? "ha movido" : "han movido"
-                } ${effectiveMovedCount} ${
-                  effectiveMovedCount === 1 ? "carta" : "cartas"
-                } del mazo de robo al mazo de descarte.`
+              ? `Se ${effectiveMovedCount === 1 ? "ha movido" : "han movido"
+              } ${effectiveMovedCount} ${effectiveMovedCount === 1 ? "carta" : "cartas"
+              } del mazo de robo al mazo de descarte.`
               : "Se han movido cartas del mazo de robo al mazo de descarte.";
           const fullMessage = `${paddingtonMessage} Ahora podés reponer o seguir descartando.`;
           setMessage(fullMessage);
@@ -85,19 +94,23 @@ export const useTurnMessages = (
         } else if (selectionAction === "delay") {
           const delayMessage =
             movedCardsCount > 0
-              ? `Se ${
-                  movedCardsCount === 1 ? "ha movido" : "han movido"
-                } ${movedCardsCount} ${
-                  movedCardsCount === 1 ? "carta" : "cartas"
-                } del mazo de descarte al mazo de robo.`
+              ? `Se ${movedCardsCount === 1 ? "ha movido" : "han movido"
+              } ${movedCardsCount} ${movedCardsCount === 1 ? "carta" : "cartas"
+              } del mazo de descarte al mazo de robo.`
               : "Se han movido cartas del mazo de descarte al mazo de robo.";
           setMessage(
             `${delayMessage} Ahora podés reponer o seguir descartando.`
           );
           // Limpiar después de mostrar el mensaje
           setTimeout(() => setSelectionAction(null), 4500);
+        } else if (turnData.instant_played && timer > 0) {
+          setMessage(`Se jugó una ${turnData.instant_played.card_name}`);
         } else {
-          setMessage("Podés reponer o seguir descartando.");
+          setMessage(
+            `${turnData.turn_owner_id === myPlayerId ?
+              "Podés reponer o seguir descartando."
+              :
+              `${currentPlayerName} está jugando su turno.`}`)
         }
         break;
       case "Replenish":
@@ -107,17 +120,23 @@ export const useTurnMessages = (
         setMessage("Siguiente turno...");
         break;
       default:
-        setMessage(" ");
+        setMessage("");
         break;
     }
   }, [
     turnData?.turn_state,
     turnData?.turn_owner_id,
     turnData?.players,
+    turnData?.event_card_played,
+    turnData?.set_played,
+    turnData?.instant_played,
     myPlayerId,
     orderedPlayers,
     selectionAction,
     movedCardsCount,
+    timer,
+    selectionMode,
+    setSelectionAction,
   ]);
 
   return { message, getPlayerNameById };
