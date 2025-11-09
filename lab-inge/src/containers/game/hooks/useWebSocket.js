@@ -17,8 +17,6 @@ export const useWebSocket = (
   setSelectionAction,
   setMovedCardsCount,
   setSelectionMode,
-  setHasVotedInCurrentRound,
-  hasVotedInCurrentRound
 ) => {
   const [showConnectionError, setShowConnectionError] = useState(false);
 
@@ -58,7 +56,6 @@ export const useWebSocket = (
         );
         setOrderedPlayers(reorderedPlayersData);
       }
-      handlePlayedCardEvent(dataPublic);
 
       handleEndGameEvent(dataPublic);
     };

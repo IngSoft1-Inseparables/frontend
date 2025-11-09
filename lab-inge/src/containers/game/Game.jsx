@@ -34,7 +34,7 @@ function Game() {
   const { gameId, myPlayerId } = location.state || {};
   const [httpService] = useState(() => createHttpService());
   const [wsService] = useState(() => createWSService(gameId, myPlayerId));
-  
+
   // Usar los custom hooks
   const {
     turnData,
@@ -96,7 +96,7 @@ function Game() {
     setSelectedSet,
     handleStealSet,
   } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
-
+  const [mostVotedPlayer, setMostVotedPlayer] = useState(null);
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const { message } = useTurnMessages(
     turnData,
@@ -104,10 +104,14 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+    mostVotedPlayer
   );
-
-
+  useEffect(() => {
+    if (turnData?.turn_owner_id) {
+      setMostVotedPlayer(null);
+    }
+  }, [turnData?.turn_owner_id]);
 
   // WebSocket connection
   useWebSocket(
@@ -123,7 +127,7 @@ function Game() {
     reorderPlayers,
     setSelectionAction,
     setMovedCardsCount,
-    setSelectionMode,
+    setSelectionMode
   );
 
   // Selection effects
@@ -153,7 +157,7 @@ function Game() {
     handleStealSet,
     setShowTradeDialog,
     setOpponentId,
-    myPlayerId,
+    myPlayerId
   );
 
   // Steal secret logic
@@ -203,14 +207,27 @@ function Game() {
     );
   };
 
-
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
     if (!wsService) return;
 
     const handleHasToReveal = (payload) => {
-      if (payload && payload.playerId === parseInt(myPlayerId)) {
-        setSelectionMode("select-my-not-revealed-secret");
+      if (payload && payload.playerId) {
+        // Buscar el nombre del jugador más votado
+        const votedPlayer = orderedPlayers.find(
+          (p) => p.id === parseInt(payload.playerId)
+        );
+
+        setMostVotedPlayer({
+          id: payload.playerId,
+          name: votedPlayer?.name || "Jugador",
+        });
+
+        if (payload.playerId === parseInt(myPlayerId)) {
+          setSelectedPlayer(null);
+          setSelectionAction(null);
+          setSelectionMode("select-my-not-revealed-secret");
+        }
       }
     };
 
