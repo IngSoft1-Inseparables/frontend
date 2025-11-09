@@ -233,35 +233,13 @@ export const useCardActions = (
         await httpService.discardCard(myPlayerId, cardId);
 
         if (inDisgrace) {
-          // 3) Marcar que ya descarté en desgracia (estado react)
+          // 3) Marcar que ya descarté en desgracia (estado React)
           setDisgraceDiscarded(true);
 
-          // 4) Reponer hasta 6 o hasta que el turno cambie
-          for (let i = 0; i < 6; i++) {
-            try {
-              await httpService.updateHand(gameId, myPlayerId);
-            } catch (e) {
-              // falla si ya tenés 6 o ya no es tu turno → cortamos
-              break;
-            }
-
-            let refreshed;
-            try {
-              refreshed = await fetchGameData();
-            } catch (e) {
-              // si falla, continuamos; WS puede actualizar
-            }
-
-            const newTurnOwner = refreshed?.turnData?.turn_owner_id;
-            const myHandSize = refreshed?.playerData?.playerCards?.length;
-
-            // Si ya no es mi turno, corto
-            if (newTurnOwner !== parseInt(myPlayerId)) break;
-
-            // Si ya llegué a 6, el próximo updateHand hará end_turn → corto
-            if (typeof myHandSize === "number" && myHandSize >= 6) break;
-          }
+          // 4) No reponer automáticamente — el jugador deberá hacerlo manualmente
+          console.log("♻️ Descarte en desgracia completado. Esperando reposición manual.");
         } else {
+
           // No auto-reponer; que el jugador elija (evento/set/reponer manual)
           try {
             await fetchGameData();
