@@ -43,7 +43,6 @@ export const useSecretActions = (
     executePendingSecretEffect();
   }, [timer, pendingSecretEffect, fetchGameData]);
 
-  // Efecto para manejar el reveal de Ariadne Oliver cuando el timer llegue a 0
   useEffect(() => {
     const executeAriadneReveal = async () => {
       if (timer === 0 && pendingAriadneReveal) {
@@ -69,7 +68,6 @@ export const useSecretActions = (
     try {
       console.log("revelando secreto propio:", secretId);
 
-      // 🔹 Guardamos la respuesta del backend
       const response = await httpService.revealSecret({
         gameId,
         playerId: myPlayerId,
@@ -320,15 +318,13 @@ export const useSecretActions = (
         console.log("⏰ Timer iniciado:", response.timer);
       }
 
-      // Marcar que hay un reveal pendiente para cuando el timer llegue a 0
       setPendingAriadneReveal({ playerId });
 
-      // Actualizar datos del juego desde el backend
       await fetchGameData();
       
     } catch (error) {
       console.error("❌ ERROR al agregar Ariadne Oliver:", error);
-      throw error; // 🎯 Re-lanzar el error para que el .finally() en useSelectionEffects lo maneje
+      throw error;
     }
   };
 
