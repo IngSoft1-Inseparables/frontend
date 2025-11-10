@@ -9,7 +9,8 @@ export const useSecretActions = (
   myPlayerId,
   fetchGameData,
   timer,
-  setTimer
+  setTimer,
+  turnData
 ) => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);

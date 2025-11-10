@@ -98,7 +98,7 @@ function Game() {
     setSelectedSet,
     handleStealSet,
     handleCardAriadneOliver
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer, turnData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const [ariadneCardId, setAriadneCardId] = useState(null);

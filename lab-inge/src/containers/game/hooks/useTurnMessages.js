@@ -36,23 +36,20 @@ export const useTurnMessages = (
       return;
     }
 
-    // if (turnData.turn_owner_id !== myPlayerId) {
     const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
 
-      // Detectar si hay Point Your Suspicions activa
-      if (
-        turnData.event_card_played?.card_name?.toLowerCase() ===
-        "point your suspicions"
-      ) {
-        // Si el juego está en estado Playing, están votando
-        if (turnData.turn_state === "Playing") {
-          setMessage("Point Your Suspicions: Votá de quién sospechás.");
-          return;
-        }
-      }
-    //   setMessage(`${currentPlayerName} está jugando su turno.`);
-    //   return;
+    // // Detectar si hay Point Your Suspicions activa
+    // if (
+    //   turnData.event_card_played?.card_name?.toLowerCase() ===
+    //   "point your suspicions"
+    // ) {
+    //   // Si el juego está en estado Playing, están votando
+    //   if (turnData.turn_state === "Playing") {
+    //     setMessage("Point Your Suspicions: Votá de quién sospechás.");
+    //     return;
+    //   }
     // }
+
 
     switch (turnData.turn_state) {
       case "None":
@@ -63,24 +60,21 @@ export const useTurnMessages = (
             `${currentPlayerName} está jugando su turno.`}`)
         break;
       case "Playing":
-        if (
-          turnData.event_card_played?.card_name?.toLowerCase() ===
-          "point your suspicions"
-        ) {
-          setMessage(
-            "Point Your Suspicions: Todos deben votar de quién sospechan."
-          );
-          break;
-        }
         setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
-        if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo."); 
+        if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo.");
         if (selectionMode === "select-other-player") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto.");
+        if (selectionMode === "select-other-player" && selectionAction === "cards off the table") setMessage("Seleccioná un jugador para forzarlo a descartar todas sus Not So Fast.")
         if (selectionMode === "select-other-player" && selectionAction === "specials") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto y luego robárselo.");
         if (selectionMode === "select-revealed-secret") setMessage("Seleccioná un secreto para ocultarlo.");
         if (selectionMode === "select-other-revealed-secret" && selectionAction === "one more") setMessage("Seleccioná un secreto para ocultarlo y luego asignárselo a cualquier jugador.");
-        if(selectionMode === "select-player" && selectionAction === "one more") setMessage("Selecciona un jugador para asignarle el secreto oculto.");
+        if (selectionMode === "select-player" && selectionAction === "one more") setMessage("Selecciona un jugador para asignarle el secreto oculto.");
         if (selectionMode === "select-set") setMessage("Seleccioná un set para robarlo y ejecutar su efecto.");
         if (selectionMode === "select-other-player" && selectionAction === "card trade") setMessage("Seleccioná un jugador para intercambiar una carta.");
+        if (selectionMode === "select-my-not-revealed-secret") setMessage("Seleccioná un secreto propio para revelarlo.")
+        if (turnData?.event_card_played?.card_name.toLowerCase() === "point your suspicions") {
+          if (selectionMode === "select-other-player") setMessage("Votá al jugador de quien sospechás.");
+          if (selectionMode === "select-my-not-revealed-secret") setMessage("¡Fuiste votado como sospechoso! Seleccioná un secreto propio para revelarlo.")
+        }
         break;
       case "Waiting":
         setMessage("Esperá para continuar tu turno.");
@@ -149,11 +143,10 @@ export const useTurnMessages = (
     turnData?.event_card_played,
     turnData?.set_played,
     turnData?.instant_played,
-    turnData?.event_card_played,
     myPlayerId,
     orderedPlayers,
     selectionAction,
-    movedCardsCount
+    movedCardsCount,
     timer,
     selectionMode,
     setSelectionAction,

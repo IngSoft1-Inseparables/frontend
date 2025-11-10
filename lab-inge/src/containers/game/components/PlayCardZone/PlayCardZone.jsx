@@ -30,11 +30,11 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
         {timer > 0 && (
           <div className="text-m text-center font-medium text-white">
             Podés jugar Not So Fast para cancelar {
-              turnData.instant_played ?
-                turnData.instant_played.card_name
+              turnData?.instant_played ?
+                turnData?.instant_played?.card_name
                 :
                 (turnData?.event_card_played ?
-                  turnData.event_card_played.card_name
+                  turnData?.event_card_played?.card_name
                   :
                   turnData?.set_played?.set_type)
             }
@@ -67,13 +67,13 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
       {timer > 0 && (
         <div className="text-m text-center font-medium text-white">
           Podés jugar Not So Fast para cancelar {
-            turnData.instant_played ?
-              turnData.instant_played.card_name
+            turnData?.instant_played ?
+              turnData?.instant_played?.card_name
               :
               (turnData?.event_card_played ?
-                turnData.event_card_played.card_name
+                turnData?.event_card_played?.card_name
                 :
-                turnData.set_played.set_type)
+                turnData?.set_played?.set_type)
           }
         </div>
       )}
