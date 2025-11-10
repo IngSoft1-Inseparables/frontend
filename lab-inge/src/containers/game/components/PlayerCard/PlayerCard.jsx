@@ -31,6 +31,8 @@ const PlayerCard = ({
     const revealed = secret.revealed;
     const isThisPlayerSecret = player.id === parseInt(myPlayerId);
 
+    if (secret?.secret_type?.toLowerCase() != "normal" && selectionMode === "select-other-revealed-secret") return false;
+
     switch (selectionMode) {
       case "select-revealed-secret":
         return revealed ? !selectedSecret : false;
