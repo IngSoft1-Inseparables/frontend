@@ -9,6 +9,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
   const [orderedPlayers, setOrderedPlayers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [timer, setTimer] = useState(0);
 
   const reorderPlayers = (playersArray, myPlayerId) => {
     const mutableArray = [...playersArray];
@@ -76,5 +77,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
     hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
+    timer,
+    setTimer
   };
 };

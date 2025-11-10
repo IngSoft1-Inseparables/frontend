@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Hook para manejar la lógica de selección basada en el modo de selección actual
@@ -26,7 +26,15 @@ export const useSelectionEffects = (
   setSelectedSecret,
   setSelectionMode,
   setMovedCardsCount,
-  handleStealSet
+  handleStealSet,
+  handleCardAriadneOliver,
+  ariadneCardId,
+  turnData,
+  setSelectedSet,
+  setAriadneCardId,
+  setShowTradeDialog, 
+  setOpponentId,   
+  myPlayerId,
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -59,18 +67,26 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSecret, selectedPlayer]);
 
-  // Forzar revelación de secreto
+  // Forzar revelación de secreto (solo si la acción NO es Card Trade ni Specials)
   useEffect(() => {
-    if (selectionMode === "select-other-player" && selectedPlayer) {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      (!selectionAction ||
+        (selectionAction.toLowerCase() !== "card trade" &&
+          selectionAction.toLowerCase() !== "specials" && 
+          selectionAction.toLowerCase() !== "cards off the table" &&
+          selectionAction.toLowerCase() !== "point"))
+    ) {
       console.log(
-        "jugador seleccionado para forzar revelación:",
+        "Jugador seleccionado para forzar revelación:",
         selectedPlayer
       );
 
       forcePlayerRevealSecret(selectedPlayer);
       setSelectionMode(null);
     }
-  }, [selectionMode, selectedPlayer]);
+  }, [selectionMode, selectedPlayer, selectionAction]);
 
   // Ocultar secreto propio
   useEffect(() => {
@@ -169,6 +185,7 @@ export const useSelectionEffects = (
           setSelectedPlayer(null);
           setSelectionAction(null);
           setFromPlayer(null);
+          selectedSecret(null);
 
         } catch (error) {
           console.error("Error al asignar secreto:", error);
@@ -210,17 +227,141 @@ export const useSelectionEffects = (
     if (
       selectionMode === "select-set" &&
       selectedSet != null &&
-      selectedPlayer
+      selectedPlayer &&
+      selectionAction === "another"
     ) {
       console.log(
-        "🎯 Robando set:",
+        "Robando set:",
         selectedSet,
         "del jugador:",
         selectedPlayer
       );
+      
       handleStealSet(selectedPlayer, selectedSet);
-
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
+
+  // 🎯 Ref para evitar ejecuciones múltiples de Ariadne
+  const ariadneExecutingRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-set" &&
+      selectedSet != null &&
+      selectedPlayer &&
+      selectionAction === "ariadne" &&
+      turnData && 
+      ariadneCardId &&
+      !ariadneExecutingRef.current // 🎯 Prevenir ejecuciones múltiples
+    ) {
+      //Buscar el jugador seleccionado
+      const targetPlayer = turnData.players.find(
+        (p) => p.id === selectedPlayer
+      );
+
+      if (!targetPlayer || !targetPlayer.setPlayed) {
+        console.error("❌ No se encontró el jugador o sus sets");
+        return;
+      }
+
+      // Obtener el set usando el índice
+      const targetSet = targetPlayer.setPlayed[selectedSet];
+
+      if (!targetSet || !targetSet.set_id) {
+        console.error("❌ No se encontró el set o no tiene set_id");
+        return;
+      }
+
+      const setId = targetSet.set_id;
+      console.log("Ejecutando Ariadne con cardId:", ariadneCardId);
+      console.log("Parámetros:", { selectedPlayer, setId, ariadneCardId });
+      
+      // Marcar como ejecutando
+      ariadneExecutingRef.current = true;
+      
+      // Llamar a la función
+      handleCardAriadneOliver(selectedPlayer, setId, ariadneCardId).finally(() => {
+        // Resetear el flag cuando termine (éxito o error)
+        ariadneExecutingRef.current = false;
+        // Limpiar estados
+        setSelectedPlayer(null);
+        setSelectedSet(null);
+        setSelectionMode(null);
+        setSelectionAction(null);
+        setAriadneCardId(null);
+      });
+      
+    }
+  }, [selectionMode, selectedSet, selectedPlayer, selectionAction, ariadneCardId, turnData]);
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase() === "point"
+    ) {
+      const votedPlayerId = selectedPlayer;
+
+      setSelectedPlayer(null);
+      setSelectionMode(null);
+      setSelectionAction(null);
+
+      httpService
+        .voteSuspicion(gameId, myPlayerId, votedPlayerId)
+        .then((response) => {
+          console.log("Voto registrado:", response);
+        })
+        .catch((error) => {
+          console.error("Error al votar:", error);
+          if (
+            error.status === 400 &&
+            error.data?.detail?.includes("already voted")
+          ) {
+            console.error("Error al votar:", error);
+          }
+        });
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
+  // Card Trade → seleccionar jugador y abrir diálogo
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardtrade"
+    ) {
+      console.log("Jugador seleccionado para Card Trade:", selectedPlayer);
+      setSelectionMode(null);
+      setShowTradeDialog(true);
+      setOpponentId(selectedPlayer);
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
+
+  // Cards off the Table → eliminar Not So Fast! del jugador seleccionado
+  useEffect(() => {
+    if (
+      selectionMode === "select-other-player" &&
+      selectedPlayer &&
+      selectionAction &&
+      selectionAction.toLowerCase().replace(/\s+/g, "") === "cardsoffthetable"
+    ) {
+      console.log("Ejecutando efecto de Cards off the Table en jugador:", selectedPlayer);
+
+      (async () => {
+        try {
+          await httpService.removeNotSoFast(gameId, selectedPlayer);
+          await fetchGameData();
+          console.log("Not So Fast eliminadas del jugador:", selectedPlayer);
+        } catch (error) {
+          console.error("Error en Cards off the Table:", error);
+        } finally {
+          setSelectedPlayer(null);
+          setSelectionMode(null);
+          setSelectionAction(null);
+        }
+      })();
+    }
+  }, [selectionMode, selectedPlayer, selectionAction]);
 
 };

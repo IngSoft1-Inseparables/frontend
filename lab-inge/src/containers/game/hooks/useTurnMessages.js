@@ -22,23 +22,32 @@ export const useTurnMessages = (
   useEffect(() => {
     if (!turnData) return;
 
-
     // Detectar si YO estoy en desgracia social
-    const me = turnData.players?.find(
-      (p) => p.id === parseInt(myPlayerId)
-    );
+    const me = turnData.players?.find((p) => p.id === parseInt(myPlayerId));
     const inDisgrace = !!me?.in_disgrace;
 
     // Si es mi turno y estoy en desgracia, mostrar mensaje prioritario
     if (turnData.turn_owner_id === myPlayerId && inDisgrace) {
       setMessage(
-        " Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
+        " Estás en desgracia social: solo podés descartar y reponer una carta."
       );
-      return; 
+      return;
     }
 
     if (turnData.turn_owner_id !== myPlayerId) {
       const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+
+      // Detectar si hay Point Your Suspicions activa
+      if (
+        turnData.event_card_played?.card_name?.toLowerCase() ===
+        "point your suspicions"
+      ) {
+        // Si el juego está en estado Playing, están votando
+        if (turnData.turn_state === "Playing") {
+          setMessage("Point Your Suspicions: Votá de quién sospechás.");
+          return;
+        }
+      }
       setMessage(`${currentPlayerName} está jugando su turno.`);
       return;
     }
@@ -50,6 +59,15 @@ export const useTurnMessages = (
         );
         break;
       case "Playing":
+        if (
+          turnData.event_card_played?.card_name?.toLowerCase() ===
+          "point your suspicions"
+        ) {
+          setMessage(
+            "Point Your Suspicions: Todos deben votar de quién sospechan."
+          );
+          break;
+        }
         setMessage("Seguí las indicaciones para continuar el turno.");
         break;
       case "Waiting":
@@ -114,10 +132,11 @@ export const useTurnMessages = (
     turnData?.turn_state,
     turnData?.turn_owner_id,
     turnData?.players,
+    turnData?.event_card_played,
     myPlayerId,
     orderedPlayers,
     selectionAction,
-    movedCardsCount,
+    movedCardsCount
   ]);
 
   return { message, getPlayerNameById };

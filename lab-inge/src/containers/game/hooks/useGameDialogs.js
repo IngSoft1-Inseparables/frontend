@@ -13,6 +13,8 @@ export const useGameDialogs = (
   const [winnerData, setWinnerData] = useState(null);
   const [showDiscardDialog, setShowDiscardDialog] = useState(false);
   const [playedActionCardState, setPlayedActionCard] = useState(null);
+  const [showTradeDialog, setShowTradeDialog] = useState(false);
+  const [opponentId, setOpponentId] = useState(null);
 
   useEffect(() => {
     if (!turnData) return;
@@ -70,6 +72,30 @@ export const useGameDialogs = (
     }
   };
 
+  const startCardTrade = async (
+    opponentCard,
+    myCard,
+    httpService,
+    gameId,
+    myPlayerId,
+    fetchGameData
+  ) => {
+    try {
+      await httpService.exchangeCards({
+        game_id: gameId,
+        player1_id: myPlayerId,
+        player2_id: opponentId,
+        card1_id: myCard.card_id,
+        card2_id: opponentCard.card_id,
+      });
+      await fetchGameData();
+      setShowTradeDialog(false);
+      setOpponentId(null);
+    } catch (err) {
+      console.error("Error al intercambiar cartas:", err);
+    }
+  };
+
   // Configurar listener para forzar revelación
   useEffect(() => {
     if (!wsService) return;
@@ -118,5 +144,10 @@ export const useGameDialogs = (
     setPlayedActionCard,
     startDiscardTop5Action,
     handleReplenishFromDiscard,
+    showTradeDialog,
+    setShowTradeDialog,
+    opponentId,
+    setOpponentId,
+    startCardTrade,
   };
 };

@@ -8,7 +8,7 @@ import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
 import { createHttpService } from "../../../../services/HTTPService";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -57,7 +57,11 @@ function GameBoard({
   selectionMode,
   playedActionCard,
   message,
-  setSelectionAction
+  setSelectionMode,
+  onAddCardToSet,
+  setSelectionAction,
+  setAriadneCardId,
+  timer
 }) {
   const playerCount = turnData.players_amount;
 
@@ -76,11 +80,34 @@ function GameBoard({
   const [modalPlayerId, setModalPlayerId] = useState(null);
   const openSetModal = (playerId) => setModalPlayerId(playerId);
   const closeSetModal = () => setModalPlayerId(null);
+  const [matchingSets, setMatchingSets] = useState([]);
+  const [addToSet, setAddToSet] = useState(false);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
-    return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    return (
+      console.log("info publica:", turnData),
+      console.log("info privada:", playerData),
+      console.log("orden de los jugadores:", orderedPlayers)
     );
   }
+  const handleCardSelected = useCallback(
+    (tempMatches) => {
+      console.log("🔍 Matches recibidos:", tempMatches);
+      if (!tempMatches || tempMatches.length === 0) {
+        setMatchingSets([]);
+        
+        return;
+      }
+
+      setMatchingSets(tempMatches);
+
+      if (tempMatches[0]?.isAriadne) {
+      console.log("✅ Ariadne Oliver detectada - guardando ID");
+      setAriadneCardId(tempMatches[0].card.card_id);
+    } 
+    },
+    [setAriadneCardId]
+  );
 
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
@@ -90,20 +117,42 @@ function GameBoard({
   const handlePlaySetClick = () => {
     const player = turnData.players.find((p) => p.id === myPlayerId);
     const setPlayed = player?.setPlayed || [];
+    if (
+      currentSetCards.length === 1 &&
+      currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
+    ) {
+      console.log("🎯 Jugando Ariadne Oliver");
+
+      // Activar selectionMode
+      setSelectionMode("select-set");
+      setSelectionAction("ariadne");
+
+      return; // 🎯 No bajar set, solo activar selección
+    }
     console.log("Cartas del set jugado:", setPlayed);
     if (setCards) {
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
   };
 
-
+  const handleSetClick = (setIndex) => {
+    if (onAddCardToSet) {
+      onAddCardToSet(setIndex, matchingSets, currentSetCards);
+      // Limpiar selección
+      setMatchingSets([]);
+      setAddToSet(false);
+    }
+  };
 
   const handleReplenishFromDraft = async (carta) => {
     try {
       console.log("→ Robando carta del mazo de draft...");
 
-      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
-
+      const res = await httpService.replenishFromDraft(
+        turnData.gameId,
+        myPlayerId,
+        carta
+      );
 
       // Actualizar el draft con las nuevas cartas
       setTurnData((prev) => ({
@@ -186,11 +235,10 @@ function GameBoard({
                   }
                   onCardClick={handleReplenishFromDraft}
                 />
-
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
-                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} timer={timer} />
               </div>
 
               {/* Grupo derecho: mazo de descarte */}
@@ -210,6 +258,10 @@ function GameBoard({
                   turnData.players.find((p) => p.id === myPlayerId)
                     ?.setPlayed || []
                 }
+                matchingSets={matchingSets}
+                onSetClick={handleSetClick}
+                availableToPlay={availableToPlay}
+                turnState={currentTurnState}
               />
             </div>
           </div>
@@ -249,23 +301,28 @@ function GameBoard({
           openSetModal={openSetModal}
         />
         <div
-          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
-            }`}
+          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
+            playerCount < 6 ? "z-20" : ""
+          }`}
         >
           <HandCard
             playerCards={playerData?.playerCards || []}
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            onCardStateChange={handleCardSelected}
+            setsPlayed={
+              turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []
+            }
+            setSelectionMode={setSelectionMode}
             inDisgrace={
-              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))
+                ?.in_disgrace
             }
           />
 
           <div>
-            <p className="text-white text-center">
-              {message}
-            </p>
+            <p className="text-white text-center">{message}</p>
           </div>
         </div>
         <div className=" flex justify-rigth mr-12 mb-6">
@@ -274,10 +331,14 @@ function GameBoard({
               onClick={handlePlaySetClick}
               className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
             >
-              BAJAR SET DE{" "}
-              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1]?.card_name.toUpperCase()
-                : currentSetCards[0]?.card_name.toUpperCase()}
+              {currentSetCards.length === 1 &&
+              currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
+                ? "JUGAR ARIADNE OLIVER"
+                : `BAJAR SET DE ${
+                    currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                      ? currentSetCards[1]?.card_name.toUpperCase()
+                      : currentSetCards[0]?.card_name.toUpperCase()
+                  }`}
             </button>
           )}
         </div>

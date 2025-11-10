@@ -13,6 +13,7 @@ import { restrictToWindowEdges } from "@dnd-kit/modifiers";
 import GameBoard from "./components/GameBoard/GameBoard.jsx";
 import EndGameDialog from "./components/EndGameDialog/EndGameDialog.jsx";
 import DiscardTop5Dialog from "./components/DiscardTop5Dialog/DiscardTop5Dialog.jsx";
+import TradeDialog from "./components/TradeDialog/TradeDialog.jsx";
 
 // Importar los custom hooks
 import {
@@ -46,6 +47,8 @@ function Game() {
     hasLoadedOnce,
     fetchGameData,
     reorderPlayers,
+    timer,
+    setTimer
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -59,6 +62,11 @@ function Game() {
     setPlayedActionCard,
     startDiscardTop5Action,
     handleReplenishFromDiscard: replenishFromDiscard,
+    showTradeDialog,
+    setShowTradeDialog,
+    opponentId,
+    setOpponentId,
+    startCardTrade,
   } = useGameDialogs(turnData, myPlayerId, null, wsService);
 
   const {
@@ -89,9 +97,11 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData);
+    handleCardAriadneOliver
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
+  const [ariadneCardId, setAriadneCardId] = useState(null);
 
   const { message } = useTurnMessages(
     turnData,
@@ -99,7 +109,8 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+   
   );
 
   // WebSocket connection
@@ -115,7 +126,10 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     setSelectionAction,
-    setMovedCardsCount
+    setMovedCardsCount,
+    setSelectionMode,
+    timer,
+    setTimer
   );
 
   // Selection effects
@@ -142,7 +156,15 @@ function Game() {
     setSelectedSecret,
     setSelectionMode,
     setMovedCardsCount,
-    handleStealSet
+    handleStealSet,
+    handleCardAriadneOliver,
+    ariadneCardId,
+    turnData,
+    setSelectedSet,
+    selectionAction,
+    setShowTradeDialog, 
+    setOpponentId,
+    myPlayerId
   );
 
   // Steal secret logic
@@ -161,7 +183,7 @@ function Game() {
     setPrevData
   );
 
-  const { handleCardClick, handlePlaySetAction, handleDragEnd } =
+  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
     useCardActions(
       httpService,
       gameId,
@@ -175,7 +197,9 @@ function Game() {
       setPlayedActionCard,
       setSelectionMode,
       setSelectionAction,
-      startDiscardTop5Action
+      startDiscardTop5Action,
+      timer,
+      setTimer
     );
 
   const handleReplenishFromDiscard = (card) => {
@@ -188,12 +212,15 @@ function Game() {
     );
   };
 
+
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
     if (!wsService) return;
 
     const handleHasToReveal = (payload) => {
       if (payload && payload.playerId === parseInt(myPlayerId)) {
+        setSelectedPlayer(null);
+        setSelectionAction(null);
         setSelectionMode("select-my-not-revealed-secret");
       }
     };
@@ -203,7 +230,7 @@ function Game() {
     return () => {
       wsService.off("hasToReveal", handleHasToReveal);
     };
-  }, [wsService, myPlayerId]);
+  }, [wsService, myPlayerId, setSelectionMode]);
 
   // Handle steal secret when data updates
   useEffect(() => {
@@ -231,7 +258,7 @@ function Game() {
     })
   );
 
-    if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
+  if (!hasLoadedOnce && (isLoading || orderedPlayers.length === 0)) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-gray-900">
         <p className="text-white text-xl">Cargando jugadores...</p>
@@ -261,10 +288,14 @@ function Game() {
           onSetSelect={handleSetSelection}
           selectedSet={selectedSet}
           selectionMode={selectionMode}
+          setSelectionMode={setSelectionMode}
           setCards={handlePlaySetAction}
+          onAddCardToSet={handleAddCardToSet}
           playedActionCard={playedActionCard}
           message={message}
           setSelectionAction={setSelectionAction}
+          setAriadneCardId={setAriadneCardId}
+          timer={timer}
         />
 
         {showEndDialog && winnerData && (
@@ -280,6 +311,27 @@ function Game() {
             open={showDiscardDialog}
             onClose={() => setShowDiscardDialog(false)}
             onSelect={handleReplenishFromDiscard}
+          />
+        )}
+
+        {showTradeDialog && (
+          <TradeDialog
+            open={showTradeDialog}
+            gameId={gameId}
+            myPlayerId={myPlayerId}
+            opponentId={opponentId}
+            turnOwnerId={turnData?.turn_owner_id}
+            onConfirm={(opponentCard, myCard) =>
+              startCardTrade(
+                opponentCard,
+                myCard,
+                httpService,
+                gameId,
+                myPlayerId,
+                fetchGameData
+              )
+            }
+            onClose={() => setShowTradeDialog(false)}
           />
         )}
       </DndContext>

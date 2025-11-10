@@ -24,6 +24,7 @@ describe("useSelectionEffects hook", () => {
       const selectionMode = "select-set";
       const selectedSet = 2;
       const selectedPlayer = 5;
+      const selectionAction = "another"; // 🎯 Agregado para robar sets
 
       renderHook(() =>
         useSelectionEffects(
@@ -31,7 +32,7 @@ describe("useSelectionEffects hook", () => {
           null, // selectedSecret
           selectedPlayer,
           selectedSet,
-          null, // selectionAction
+          selectionAction, // 🎯 Cambiado de null a "another"
           null, // fromPlayer
           vi.fn(), // revealMySecret
           vi.fn(), // revealOtherPlayerSecret
@@ -49,7 +50,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(), // setSelectedSecret
           mockSetSelectionMode,
           vi.fn(), // setMovedCardsCount
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(), // handleCardAriadneOliver
+          null, // ariadneCardId
+          null, // turnData
+          mockSetSelectedSet,
+          vi.fn(), // setAriadneCardId
+          vi.fn(), // setShowTradeDialog
+          vi.fn()  // setOpponentId
         )
       );
 
@@ -69,7 +77,7 @@ describe("useSelectionEffects hook", () => {
           null,
           selectedPlayer,
           selectedSet,
-          null,
+          "another",
           null,
           vi.fn(),
           vi.fn(),
@@ -87,7 +95,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(),
           mockSetSelectionMode,
           vi.fn(),
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(), // handleCardAriadneOliver
+          null, // ariadneCardId
+          null, // turnData
+          mockSetSelectedSet,
+          vi.fn(), // setAriadneCardId
+          vi.fn(), // setShowTradeDialog
+          vi.fn()  // setOpponentId
         )
       );
 
@@ -108,7 +123,7 @@ describe("useSelectionEffects hook", () => {
           null,
           selectedPlayer,
           selectedSet,
-          null,
+          "another",
           null,
           vi.fn(),
           vi.fn(),
@@ -126,7 +141,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(),
           mockSetSelectionMode,
           vi.fn(),
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          vi.fn(),
+          vi.fn()
         )
       );
 
@@ -146,7 +168,7 @@ describe("useSelectionEffects hook", () => {
           null,
           selectedPlayer,
           selectedSet,
-          null,
+          "another",
           null,
           vi.fn(),
           vi.fn(),
@@ -164,7 +186,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(),
           mockSetSelectionMode,
           vi.fn(),
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          vi.fn(),
+          vi.fn()
         )
       );
 
@@ -184,7 +213,7 @@ describe("useSelectionEffects hook", () => {
           null,
           selectedPlayer,
           selectedSet,
-          null,
+          "another",
           null,
           vi.fn(),
           vi.fn(),
@@ -202,7 +231,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(),
           mockSetSelectionMode,
           vi.fn(),
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          vi.fn(),
+          vi.fn()
         )
       );
 
@@ -213,13 +249,13 @@ describe("useSelectionEffects hook", () => {
 
     it("maneja correctamente cuando se actualiza de otro modo a 'select-set'", async () => {
       const { rerender } = renderHook(
-        ({ mode, set, player }) =>
+        ({ mode, set, player, action }) =>
           useSelectionEffects(
             mode,
             null,
             player,
             set,
-            null,
+            action,
             null,
             vi.fn(),
             vi.fn(),
@@ -237,13 +273,21 @@ describe("useSelectionEffects hook", () => {
             vi.fn(),
             mockSetSelectionMode,
             vi.fn(),
-            mockHandleStealSet
+            mockHandleStealSet,
+            vi.fn(),
+            null,
+            null,
+            mockSetSelectedSet,
+            vi.fn(),
+            vi.fn(),
+            vi.fn()
           ),
         {
           initialProps: {
             mode: "select-player",
             set: 2,
             player: 5,
+            action: "another"
           },
         }
       );
@@ -257,6 +301,7 @@ describe("useSelectionEffects hook", () => {
         mode: "select-set",
         set: 2,
         player: 5,
+        action: "another"
       });
 
       // Ahora sí debe llamar a handleStealSet
@@ -267,13 +312,13 @@ describe("useSelectionEffects hook", () => {
 
     it("llama a handleStealSet cada vez que cambian las dependencias relevantes", async () => {
       const { rerender } = renderHook(
-        ({ mode, set, player }) =>
+        ({ mode, set, player, action }) =>
           useSelectionEffects(
             mode,
             null,
             player,
             set,
-            null,
+            action,
             null,
             vi.fn(),
             vi.fn(),
@@ -291,13 +336,21 @@ describe("useSelectionEffects hook", () => {
             vi.fn(),
             mockSetSelectionMode,
             vi.fn(),
-            mockHandleStealSet
+            mockHandleStealSet,
+            vi.fn(),
+            null,
+            null,
+            mockSetSelectedSet,
+            vi.fn(),
+            vi.fn(),
+            vi.fn()
           ),
         {
           initialProps: {
             mode: "select-set",
             set: 0,
             player: 3,
+            action: "another"
           },
         }
       );
@@ -311,6 +364,7 @@ describe("useSelectionEffects hook", () => {
         mode: "select-set",
         set: 1,
         player: 7,
+        action: "another"
       });
 
       await waitFor(() => {
@@ -349,7 +403,14 @@ describe("useSelectionEffects hook", () => {
           vi.fn(),
           mockSetSelectionMode,
           vi.fn(),
-          mockHandleStealSet
+          mockHandleStealSet,
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          vi.fn(),
+          vi.fn()
         )
       );
 
@@ -359,6 +420,328 @@ describe("useSelectionEffects hook", () => {
       });
       
       expect(mockHandleStealSet).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Ariadne Oliver functionality", () => {
+    let mockHandleCardAriadneOliver;
+    let mockSetAriadneCardId;
+
+    beforeEach(() => {
+      mockHandleCardAriadneOliver = vi.fn().mockResolvedValue(undefined);
+      mockSetAriadneCardId = vi.fn();
+    });
+
+    it("llama a handleCardAriadneOliver cuando selectionMode es 'select-set', selectionAction es 'ariadne' y todos los parámetros están presentes", async () => {
+      const selectionMode = "select-set";
+      const selectedSet = 1;
+      const selectedPlayer = 5;
+      const selectionAction = "ariadne";
+      const ariadneCardId = 42;
+
+      const mockTurnData = {
+        players: [
+          {
+            id: 5,
+            setPlayed: [
+              { set_id: 101, set_type: "Poirot" },
+              { set_id: 102, set_type: "Marple" }
+            ]
+          }
+        ]
+      };
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          selectedSet,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(), // handleStealSet
+          mockHandleCardAriadneOliver,
+          ariadneCardId,
+          mockTurnData,
+          mockSetSelectedSet,
+          mockSetAriadneCardId,
+          vi.fn(),
+          vi.fn()
+        )
+      );
+
+      await waitFor(() => {
+        expect(mockHandleCardAriadneOliver).toHaveBeenCalledWith(selectedPlayer, 102, ariadneCardId);
+      });
+    });
+
+    it("no llama a handleCardAriadneOliver si ariadneCardId es null", async () => {
+      const selectionMode = "select-set";
+      const selectedSet = 0;
+      const selectedPlayer = 5;
+      const selectionAction = "ariadne";
+
+      const mockTurnData = {
+        players: [
+          {
+            id: 5,
+            setPlayed: [{ set_id: 101, set_type: "Poirot" }]
+          }
+        ]
+      };
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          selectedSet,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          mockHandleCardAriadneOliver,
+          null, // ariadneCardId is null
+          mockTurnData,
+          mockSetSelectedSet,
+          mockSetAriadneCardId,
+          vi.fn(),
+          vi.fn()
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockHandleCardAriadneOliver).not.toHaveBeenCalled();
+    });
+
+    it("no llama a handleCardAriadneOliver si selectionAction no es 'ariadne'", async () => {
+      const selectionMode = "select-set";
+      const selectedSet = 0;
+      const selectedPlayer = 5;
+      const selectionAction = "another"; // different action
+      const ariadneCardId = 42;
+
+      const mockTurnData = {
+        players: [
+          {
+            id: 5,
+            setPlayed: [{ set_id: 101, set_type: "Poirot" }]
+          }
+        ]
+      };
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          selectedSet,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          mockHandleCardAriadneOliver,
+          ariadneCardId,
+          mockTurnData,
+          mockSetSelectedSet,
+          mockSetAriadneCardId,
+          vi.fn(),
+          vi.fn()
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockHandleCardAriadneOliver).not.toHaveBeenCalled();
+    });
+
+    it("no ejecuta múltiples veces con el mismo ariadneCardId (previene ejecuciones duplicadas)", async () => {
+      const selectionMode = "select-set";
+      const selectedSet = 0;
+      const selectedPlayer = 5;
+      const selectionAction = "ariadne";
+      const ariadneCardId = 42;
+
+      const mockTurnData = {
+        players: [
+          {
+            id: 5,
+            setPlayed: [{ set_id: 101, set_type: "Poirot" }]
+          }
+        ]
+      };
+
+      const { rerender } = renderHook(
+        (props) =>
+          useSelectionEffects(
+            props.selectionMode,
+            null,
+            props.selectedPlayer,
+            props.selectedSet,
+            props.selectionAction,
+            null,
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            {},
+            1,
+            vi.fn(),
+            mockSetSelectedPlayer,
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            mockSetSelectionMode,
+            vi.fn(),
+            vi.fn(),
+            mockHandleCardAriadneOliver,
+            props.ariadneCardId,
+            props.turnData,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
+            vi.fn(),
+            vi.fn()
+          ),
+        {
+          initialProps: {
+            selectionMode,
+            selectedSet,
+            selectedPlayer,
+            selectionAction,
+            ariadneCardId,
+            turnData: mockTurnData
+          }
+        }
+      );
+
+      await waitFor(() => {
+        expect(mockHandleCardAriadneOliver).toHaveBeenCalledTimes(1);
+      });
+
+      // Re-render con los mismos props (simula actualización de estado)
+      rerender({
+        selectionMode,
+        selectedSet,
+        selectedPlayer,
+        selectionAction,
+        ariadneCardId,
+        turnData: mockTurnData
+      });
+
+      // Esperar y verificar que NO se llame nuevamente
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      expect(mockHandleCardAriadneOliver).toHaveBeenCalledTimes(1);
+    });
+
+    it("maneja correctamente cuando el jugador seleccionado no tiene sets", async () => {
+      const selectionMode = "select-set";
+      const selectedSet = 0;
+      const selectedPlayer = 5;
+      const selectionAction = "ariadne";
+      const ariadneCardId = 42;
+
+      const mockTurnData = {
+        players: [
+          {
+            id: 5,
+            setPlayed: [] // No sets
+          }
+        ]
+      };
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          selectedSet,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          mockHandleCardAriadneOliver,
+          ariadneCardId,
+          mockTurnData,
+          mockSetSelectedSet,
+          mockSetAriadneCardId,
+          vi.fn(),
+          vi.fn()
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      
+      // El mensaje de error es "❌ No se encontró el set o no tiene set_id" porque el array está vacío
+      // y se intenta acceder al índice 0
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      expect(mockHandleCardAriadneOliver).not.toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
     });
   });
 });

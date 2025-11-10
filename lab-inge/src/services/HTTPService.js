@@ -230,7 +230,6 @@ const createHttpService = () => {
     });
   };
 
-
   const replenishFromDraft = (gameId, playerId, carta) => {
     if (!gameId) {
       throw new Error("Game ID is required");
@@ -262,15 +261,15 @@ const createHttpService = () => {
       body: JSON.stringify({ gameId, playerId, cardId }),
     });
   };
- //post games/{gameId}/fivecards
+  //post games/{gameId}/fivecards
   const fiveCardsToRegpile = (gameId) => {
-     return request(`/games/${gameId}/fivecards`, {
+    return request(`/games/${gameId}/fivecards`, {
       method: "PATCH",
     });
   };
 
   const sixCardsToDiscardpile = (gameId) => {
-     return request(`/games/${gameId}/sixcards`, {
+    return request(`/games/${gameId}/sixcards`, {
       method: "PATCH",
     });
   };
@@ -287,8 +286,66 @@ const createHttpService = () => {
         gameId,
         selectedSet,
         myPlayerId,
-        selectedPlayer
+        selectedPlayer,
+      }),
+    });
+  };
+
+  const addCardToSet = (gameId, myPlayerId, card_id, set_id) => {
+    if (!set_id) throw new Error("Set Id is required");
+    if (!myPlayerId) throw new Error("My player ID is required");
+    if (!card_id) throw new Error("Card ID is required");
+
+    return request(`/sets/${set_id}/AddToSet`, {
+      method: "POST",
+      body: JSON.stringify({
+        playerId: myPlayerId,
+        cardId: card_id,
+      }),
+    });
+  };
+
+  const playNotSoFast = (gameId, playerId, cardId) => {
+    return request("/players/play/cancel", {
+      method: "PATCH",
+      body: JSON.stringify({
+        gameId,
+        playerId,
+        cardId
       })
+    });
+  };
+
+  const removeNotSoFast = (gameId, playerId) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (!playerId) throw new Error("Player ID is required");
+
+    return request(`/players/${gameId}/remove_not_so_fast/${playerId}`, {
+      method: "POST",
+    });
+  };
+  const getOpponentHand = (gameId, currentPlayerId, opponentId) => {
+    // currentPlayerId = turn_owner_id
+    // opponentId = jugador del cual quiero ver las cartas
+    return request(`/players/${gameId}/hand/${opponentId}/${currentPlayerId}`);
+  };
+
+
+  const exchangeCards = ({ game_id, player1_id, player2_id, card1_id, card2_id }) => {
+    return request("/players/exchangeCards", {
+      method: "PATCH",
+      body: JSON.stringify({ game_id, player1_id, player2_id, card1_id, card2_id }),
+    });
+  };
+
+  const voteSuspicion = (gameId, voterId, suspectId) => {
+    if (!gameId) throw new Error("Game ID is required");
+    if (!voterId) throw new Error("Voter ID is required");
+    if (!suspectId) throw new Error("Suspect ID is required");
+
+    return request(`/games/${gameId}/vote_suspicion`, {
+      method: "POST",
+      body: JSON.stringify({ voterId, suspectId }),
     });
   };
 
@@ -312,9 +369,16 @@ const createHttpService = () => {
     replenishFromDraft,
     getDiscardTop5,
     replenishFromDiscard,
+    stealSet,
+    addCardToSet,
     fiveCardsToRegpile,
     sixCardsToDiscardpile,
-    stealSet
+    stealSet,
+    playNotSoFast,
+    removeNotSoFast,
+    getOpponentHand,
+    exchangeCards,
+    voteSuspicion,
   };
 };
 
