@@ -19,7 +19,7 @@ export default function EndGameDialog({ onClose, winners }) {
   const regpileCount = winners.regpileCount ?? 0;
 
   let victoryMessage = "";
-
+  console.log("winners data in dialog:", winners);
   if (winners.type === "social_disgrace") {
     victoryMessage = "El asesino ha ganado.";
   } 

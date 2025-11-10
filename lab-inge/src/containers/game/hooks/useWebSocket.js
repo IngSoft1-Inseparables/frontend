@@ -35,7 +35,6 @@ export const useWebSocket = (
         const winners = dataPublic.end_game.winners;
         const regpileCount = dataPublic?.regpile?.count ?? 0;
 
-        // ✅ No borrar type si ya lo setearon antes (por ejemplo desde end_reason)
         setWinnerData(prev => ({
           ...prev,
           winners,

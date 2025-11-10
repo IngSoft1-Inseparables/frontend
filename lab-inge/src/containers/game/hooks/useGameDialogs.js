@@ -118,7 +118,7 @@ export const useGameDialogs = (
   // detectar fin de partida por desgracia social o asesino revelado
   useEffect(() => {
     if (!turnData) return;
-
+    console.log("turnData changed:", turnData);
     if (turnData.end_reason === "all_in_disgrace") {
       console.log("Fin de partida: desgracia social detectada");
       setWinnerData({ type: "social_disgrace", winners: [] });
