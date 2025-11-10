@@ -109,7 +109,7 @@ const PlayerCard = ({
                 : "text-sm truncate"
               }
               ${
-                isMurdererOrAccomplice || isPartner ? "text-red-400" : "text-white"
+                ["Murderer", "Accomplice"].includes(player.role) || isPartner ? "text-red-400" : "text-white"
               }
             `}
           >
