@@ -239,6 +239,17 @@ export const useSelectionEffects = (
   const ariadneExecutingRef = useRef(false);
 
   useEffect(() => {
+    // Si no es mi turno y esta la interfaz de ariadne activa, la desactivo
+    if(selectionMode === "select-set" &&
+      selectedSet === null &&
+      turnData?.turn_owner_id != myPlayerId &&
+      selectionAction === "ariadne"
+    ){
+      setSelectionMode(null);
+      setSelectionAction(null);
+      return;
+    }
+
     if (
       selectionMode === "select-set" &&
       selectedSet != null &&
