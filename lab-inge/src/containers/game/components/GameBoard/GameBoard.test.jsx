@@ -18,8 +18,10 @@ vi.mock("../../../../services/HTTPService", () => {
 vi.mock("../HandCard/HandCard.jsx", () => {
   const React = require("react");
   return {
-    default: ({ playerCards = [], onSetStateChange }) => (
-      React.createElement(
+    default: ({ playerCards = [], onSetStateChange }) => {
+      // Usa la primera carta de playerCards si existe, si no usa "Batman" por defecto
+      const cardName = playerCards.length > 0 ? playerCards[0].card_name : "Batman";
+      return React.createElement(
         "div",
         { "data-testid": "handcard" },
         React.createElement("div", null, playerCards.map((c) => c.card_name).join(",")),
@@ -27,12 +29,12 @@ vi.mock("../HandCard/HandCard.jsx", () => {
           "button",
           {
             "data-testid": "trigger-set",
-            onClick: () => onSetStateChange(true, [{ card_name: "Batman" }]),
+            onClick: () => onSetStateChange(true, [{ card_name: cardName }]),
           },
           "trigger-set"
         )
-      )
-    ),
+      );
+    },
   };
 });
 
@@ -1243,6 +1245,97 @@ describe("handleReplenishFromDraft", () => {
 
       consoleErrorSpy.mockRestore();
     });
+  });
+});
+
+describe("Ariadne Oliver behaviour (unit)", () => {
+  const basePlayers = [
+    { id: 2, name: "Yo", setPlayed: [] },
+    { id: 3, name: "Jugador3", setPlayed: [{ card_id: 10, card_name: "Set1" }] },
+    { id: 4, name: "Jugador4", setPlayed: [] },
+  ];
+
+  const defaultProps = {
+    orderedPlayers: basePlayers,
+    playerData: { id: 2, name: "Yo", playerCards: [{ card_id: 1, card_name: "Adriane Oliver" }] },
+    turnData: {
+      players_amount: 3,
+      turn_owner_id: 2,
+      turn_state: "None",
+      players: basePlayers,
+      regpile: { count: 2 },
+      draft: { count: 0 },
+      discardpile: [],
+      gameId: "game-1",
+    },
+    myPlayerId: 2,
+    setSelectionMode: vi.fn(),
+    setSelectionAction: vi.fn(),
+    message: "",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("activa el modo de selección para Ariadne Oliver cuando otros jugadores tienen sets", async () => {
+    const mockSetSelectionMode = vi.fn();
+    const mockSetSelectionAction = vi.fn();
+
+    render(
+      <GameBoard
+        {...defaultProps}
+        setSelectionMode={mockSetSelectionMode}
+        setSelectionAction={mockSetSelectionAction}
+      />
+    );
+
+    // Simulamos que HandCard avisa que hay un set listo con Adriane Oliver
+    const trigger = screen.getByTestId("trigger-set");
+    fireEvent.click(trigger);
+
+    // Esperamos que el botón de jugar set aparezca (label depende del nombre detectado)
+    await waitFor(() => expect(screen.getByText(/JUGAR ARIADNE OLIVER|BAJAR SET DE/i)).toBeInTheDocument());
+
+    const playBtn = screen.getByText(/JUGAR ARIADNE OLIVER|BAJAR SET DE/i);
+    fireEvent.click(playBtn);
+
+    // Verificar que llamó a los mocks correctos
+    expect(mockSetSelectionMode).toHaveBeenCalledWith("select-set");
+    expect(mockSetSelectionAction).toHaveBeenCalledWith("ariadne");
+  });
+
+  it("no activa el modo de selección si ningún otro jugador tiene sets", async () => {
+    const mockSetSelectionMode = vi.fn();
+    const mockSetSelectionAction = vi.fn();
+
+    // clonamos turnData pero con players sin sets
+    const noSetsPlayers = [
+      { id: 2, name: "Yo", setPlayed: [] },
+      { id: 3, name: "Jugador3", setPlayed: [] },
+      { id: 4, name: "Jugador4", setPlayed: [] },
+    ];
+
+    render(
+      <GameBoard
+        {...defaultProps}
+        turnData={{ ...defaultProps.turnData, players: noSetsPlayers }}
+        orderedPlayers={noSetsPlayers}
+        setSelectionMode={mockSetSelectionMode}
+        setSelectionAction={mockSetSelectionAction}
+      />
+    );
+
+    const trigger = screen.getByTestId("trigger-set");
+    fireEvent.click(trigger);
+
+    await waitFor(() => expect(screen.getByText(/JUGAR ARIADNE OLIVER|BAJAR SET DE/i)).toBeInTheDocument());
+
+    const playBtn = screen.getByText(/JUGAR ARIADNE OLIVER|BAJAR SET DE/i);
+    fireEvent.click(playBtn);
+
+    expect(mockSetSelectionMode).not.toHaveBeenCalled();
+    expect(mockSetSelectionAction).not.toHaveBeenCalled();
   });
 });
 

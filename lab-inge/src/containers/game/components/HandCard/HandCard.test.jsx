@@ -1,7 +1,92 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import HandCard from "./HandCard";
+import { render, screen, fireEvent } from '@testing-library/react'
+import { DndContext } from '@dnd-kit/core'
+import HandCard from './HandCard.jsx'
+import '@testing-library/jest-dom'
+import { describe, it, test, expect, vi, beforeEach } from 'vitest'
 
+describe('HandCard Component', () => {
+  describe('Render Tests', () => {
+    const sampleCards = [
+      { card_id: 1, card_name: 'Hercule Poirot', type: 'Detective', image_name: 'detective_poirot.png', image_back_name: 'card_back.png' }
+    ]
+
+    test('renderiza una carta si playerCards tiene datos', () => {
+      render(
+        <DndContext>
+          <HandCard playerCards={sampleCards} availableToPlay={true} turnState="None" />
+        </DndContext>
+      )
+      expect(screen.getByAltText(/Poirot/i)).toBeInTheDocument()
+    })
+
+    test('no renderiza cartas si playerCards está vacío', () => {
+      render(
+        <DndContext>
+          <HandCard playerCards={[]} availableToPlay={true} turnState="None" />
+        </DndContext>
+      )
+      expect(screen.queryAllByRole('button')).toHaveLength(0)
+    })
+  })
+
+  describe('Basic Tests', () => {
+    const sampleCards = [
+      { card_id: 1, card_name: 'Hercule Poirot', type: 'Detective', image_name: 'detective_poirot.png', image_back_name: 'card_back.png' }
+    ]
+
+    test('renderiza la carta correctamente', () => {
+      render(
+        <DndContext>
+          <HandCard playerCards={sampleCards} availableToPlay={true} turnState="None" setsPlayed={[]} />
+        </DndContext>
+      )
+      expect(screen.getByRole('button', { name: /Poirot/i })).toBeInTheDocument()
+    })
+
+    test('puede seleccionar y deseleccionar la carta', () => {
+      render(
+        <DndContext>
+          <HandCard playerCards={sampleCards} availableToPlay={true} turnState="None" setsPlayed={[]} />
+        </DndContext>
+      )
+      const cardBtn = screen.getByRole('button', { name: /Poirot/i })
+      fireEvent.click(cardBtn)
+      expect(cardBtn).toHaveClass('face-card-selected')
+      fireEvent.click(cardBtn)
+      expect(cardBtn).not.toHaveClass('face-card-selected')
+    })
+  })
+
+  describe('Selection Tests', () => {
+    const sampleCards = [
+      { card_id: 1, card_name: 'Hercule Poirot', type: 'Detective', image_name: 'detective_poirot.png', image_back_name: 'card_back.png' }
+    ]
+    const mockOnSetStateChange = vi.fn()
+
+    beforeEach(() => {
+      mockOnSetStateChange.mockClear()
+    })
+
+    test('selecciona y deselecciona una carta', () => {
+      render(
+        <DndContext>
+          <HandCard 
+            playerCards={sampleCards} 
+            onSetStateChange={mockOnSetStateChange}
+            availableToPlay={true}
+            turnState="None"
+            setsPlayed={[]}
+          />
+        </DndContext>
+      )
+      const cardImg = screen.getByRole('button', { name: /Poirot/i })
+      fireEvent.click(cardImg)
+      expect(cardImg).toHaveClass('face-card-selected')
+      fireEvent.click(cardImg)
+      expect(cardImg).not.toHaveClass('face-card-selected')
+    })
+  })
+})
 describe("HandCard - Advanced scenarios", () => {
   const mockOnSetStateChange = vi.fn();
   const mockOnCardStateChange = vi.fn();

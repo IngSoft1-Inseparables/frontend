@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import PlayCardZone from "./PlayCardZone";
 import { DndContext } from "@dnd-kit/core";
@@ -416,6 +416,259 @@ describe("PlayCardZone Component", () => {
 
       const cardContainer = container.querySelector(".relative");
       expect(cardContainer).toHaveStyle({ transition: "all 0.2s ease" });
+    });
+  });
+
+  describe("Additional Coverage - Instant and Event Cards", () => {
+    it("muestra instant_played cuando está disponible", () => {
+      const instantCard = {
+        card_id: 99,
+        card_name: "Not So Fast",
+        type: "Instant",
+        image_name: "instant_not_so_fast",
+      };
+
+      const turnDataWithInstant = {
+        ...mockTurnData,
+        instant_played: instantCard,
+      };
+
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={turnDataWithInstant}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByAltText("Not So Fast")).toBeInTheDocument();
+    });
+
+    it("muestra event_card_played cuando no es mi turno", () => {
+      const eventCard = {
+        card_id: 88,
+        card_name: "Event Card",
+        type: "Event",
+        image_name: "event_card",
+      };
+
+      const turnDataWithEvent = {
+        turn_owner_id: 3, // No es mi turno
+        turn_state: "None",
+        event_card_played: eventCard,
+      };
+
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={turnDataWithEvent}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByAltText("Event Card")).toBeInTheDocument();
+    });
+
+    it("muestra timer cuando es mayor a 0", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={mockTurnData}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={5}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByText("5")).toBeInTheDocument();
+    });
+
+    it("muestra guión cuando timer es 0", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={mockTurnData}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByText("-")).toBeInTheDocument();
+    });
+
+    it("prioriza instant_played sobre event_card_played", () => {
+      const turnDataWithBoth = {
+        turn_owner_id: 2,
+        instant_played: {
+          card_id: 1,
+          card_name: "Instant Priority",
+          type: "Instant",
+          image_name: "instant_priority",
+        },
+        event_card_played: {
+          card_id: 2,
+          card_name: "Event Secondary",
+          type: "Event",
+          image_name: "event_secondary",
+        },
+      };
+
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={turnDataWithBoth}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByAltText("Instant Priority")).toBeInTheDocument();
+    });
+
+    it("maneja correctamente cuando playerData es null", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={mockTurnData}
+            myPlayerId={2}
+            playerData={null}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByAltText("Card Zone")).toBeInTheDocument();
+    });
+
+    it("maneja correctamente cuando turnData es null", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={null}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByAltText("Card Zone")).toBeInTheDocument();
+    });
+
+    it("muestra mensaje de cancelar cuando hay set_played", () => {
+      const turnDataWithSet = {
+        turn_owner_id: 2,
+        set_played: {
+          set_type: "Poirot",
+        },
+      };
+
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={turnDataWithSet}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={3}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByText(/Poirot/)).toBeInTheDocument();
+    });
+
+    it("muestra mensaje de cancelar cuando hay set_add", () => {
+      const turnDataWithSetAdd = {
+        turn_owner_id: 2,
+        set_add: {
+          card_name: "Ariadne Oliver",
+        },
+      };
+
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={turnDataWithSetAdd}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={2}
+          />
+        </DndContext>
+      );
+
+      expect(screen.getByText(/Ariadne Oliver/)).toBeInTheDocument();
+    });
+  });
+
+  describe("Mouse event handlers", () => {
+    it("escala la imagen al hacer mouseEnter y vuelve al tamaño original con mouseLeave", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={mockTurnData}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      const image = screen.getByAltText("Card Zone");
+      
+      fireEvent.mouseEnter(image);
+      expect(image.style.transform).toBe("scale(1.1)");
+
+      fireEvent.mouseLeave(image);
+      expect(image.style.transform).toBe("scale(1)");
+    });
+
+    it("escala la imagen varias veces correctamente", () => {
+      render(
+        <DndContext>
+          <PlayCardZone
+            actionCard={null}
+            turnData={mockTurnData}
+            myPlayerId={2}
+            playerData={mockPlayerData}
+            timer={0}
+          />
+        </DndContext>
+      );
+
+      const image = screen.getByAltText("Card Zone");
+
+      fireEvent.mouseEnter(image);
+      expect(image.style.transform).toBe("scale(1.1)");
+      
+      fireEvent.mouseLeave(image);
+      expect(image.style.transform).toBe("scale(1)");
+
+      fireEvent.mouseEnter(image);
+      expect(image.style.transform).toBe("scale(1.1)");
+      
+      fireEvent.mouseLeave(image);
+      expect(image.style.transform).toBe("scale(1)");
     });
   });
 });
