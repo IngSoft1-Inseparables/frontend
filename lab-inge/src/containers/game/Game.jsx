@@ -97,15 +97,8 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-    handleCardAriadneOliver,
-  } = useSecretActions(
-    httpService,
-    gameId,
-    myPlayerId,
-    fetchGameData,
-    timer,
-    setTimer
-  );
+    handleCardAriadneOliver
+  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer, turnData);
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const [ariadneCardId, setAriadneCardId] = useState(null);
@@ -116,7 +109,10 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount
+    movedCardsCount,
+    timer,
+    selectionMode,
+    playerData
   );
 
   // WebSocket connection

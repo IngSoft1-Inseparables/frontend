@@ -28,12 +28,15 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           1, // My player ID
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          "select-other-player" // selectionMode
         )
       );
 
-      // Cuando NO es mi turno pero está en Playing, sí muestra mensaje de votación
-      expect(result.current.message).toBe("Point Your Suspicions: Votá de quién sospechás.");
+      // Cuando NO es mi turno pero está en Playing con selectionMode, muestra mensaje de votación
+      expect(result.current.message).toBe("Votá al jugador de quien sospechás.");
     });
 
     it("shows voting message during Playing state when it's my turn", () => {
@@ -49,14 +52,15 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2, // myPlayerId
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          "select-other-player" // selectionMode
         )
       );
 
-      // Cuando es mi turno en Playing, muestra mensaje para todos
-      expect(result.current.message).toBe(
-        "Point Your Suspicions: Todos deben votar de quién sospechan."
-      );
+      // Cuando es mi turno en Playing con selectionMode, muestra mensaje de votación
+      expect(result.current.message).toBe("Votá al jugador de quien sospechás.");
     });
 
     it("does not show voting message if no Point Your Suspicions card is played", () => {
@@ -75,7 +79,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       // Sin event card, mensaje genérico
-      expect(result.current.message).toBe("Alice está jugando su turno.");
+      expect(result.current.message).toBe("Alice jugó un set bajado.");
     });
   });
 
@@ -91,12 +95,16 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           1, // My player ID (Alice)
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          null, // selectionMode
+          null  // playerData
         )
       );
 
-      // Sin event card, mensaje genérico normal con el nombre correcto
-      expect(result.current.message).toBe("Bob está jugando su turno.");
+      // Cuando NO es mi turno en Waiting, no muestra mensaje
+      expect(result.current.message).toBe(" ");
     });
 
     it("shows generic message when not my turn even with Point Your Suspicions in Waiting", () => {
@@ -112,12 +120,16 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2, // myPlayerId (Bob)
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          null, // selectionMode
+          null  // playerData
         )
       );
 
-      // Cuando NO es mi turno en Waiting, mensaje genérico independiente de Point Your Suspicions
-      expect(result.current.message).toBe("Alice está jugando su turno.");
+      // Cuando NO es mi turno en Waiting, no muestra mensaje
+      expect(result.current.message).toBe(" ");
     });
 
     it("shows waiting message when it's my turn in Waiting state", () => {
@@ -156,12 +168,15 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2,
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0,
+          0,
+          "select-other-player"
         )
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá de quién sospechás."
+        "Votá al jugador de quien sospechás."
       );
     });
 
@@ -178,12 +193,15 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2,
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0,
+          0,
+          "select-other-player"
         )
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá de quién sospechás."
+        "Votá al jugador de quien sospechás."
       );
     });
 
@@ -200,12 +218,15 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2,
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0,
+          0,
+          "select-other-player"
         )
       );
 
       expect(result.current.message).toBe(
-        "Point Your Suspicions: Votá de quién sospechás."
+        "Votá al jugador de quien sospechás."
       );
     });
   });
@@ -224,13 +245,16 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2,
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0,
+          0,
+          "select-other-player"
         )
       );
 
       // Point Your Suspicions tiene prioridad sobre mensaje genérico
-      expect(result.current.message).not.toBe("Alice está jugando su turno.");
-      expect(result.current.message).toBe("Point Your Suspicions: Votá de quién sospechás.");
+      expect(result.current.message).not.toBe("Alice jugó Point Your Suspicions.");
+      expect(result.current.message).toBe("Votá al jugador de quien sospechás.");
     });
 
     it("returns to normal message when Point Your Suspicions is cleared", () => {
@@ -249,7 +273,7 @@ describe("useTurnMessages - Point Your Suspicions", () => {
       );
 
       // Sin Point Your Suspicions, vuelve a mensaje normal
-      expect(result.current.message).toBe("Alice está jugando su turno.");
+      expect(result.current.message).toBe("Alice jugó un set bajado.");
     });
   });
 });

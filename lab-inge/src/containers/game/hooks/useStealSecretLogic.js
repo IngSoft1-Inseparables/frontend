@@ -55,36 +55,37 @@ export const useStealSecretLogic = (
 
     if (secretToSteal) {
       setPrevData(null);
+      if (secretToSteal.secret_type?.toLowerCase() === "normal") {
+        (async () => {
+          try {
+            await httpService.stealSecret({
+              gameId,
+              secretId: secretToSteal.secret_id,
+              fromPlayerId: stolenPlayer,
+              toPlayerId: myPlayerId,
+            });
 
-      (async () => {
-        try {
-          await httpService.stealSecret({
-            gameId,
-            secretId: secretToSteal.secret_id,
-            fromPlayerId: stolenPlayer,
-            toPlayerId: myPlayerId,
-          });
+            await new Promise((resolve) => setTimeout(resolve, 100));
 
-          await new Promise((resolve) => setTimeout(resolve, 100));
+            await httpService.hideSecret({
+              gameId,
+              playerId: myPlayerId,
+              secretId: secretToSteal.secret_id,
+            });
 
-          await httpService.hideSecret({
-            gameId,
-            playerId: myPlayerId,
-            secretId: secretToSteal.secret_id,
-          });
+            await fetchGameData();
 
-          await fetchGameData();
-
-          setSelectedPlayer(null);
-          setSelectionAction(null);
-          setStolenPlayer(null);
-        } catch (error) {
-          console.error("❌ ERROR al robar secreto:", error);
-          console.error("Detalles del error:", error.message);
-          setStolenPlayer(null);
-          setSelectionAction(null);
-        }
-      })();
+            setSelectedPlayer(null);
+            setSelectionAction(null);
+            setStolenPlayer(null);
+          } catch (error) {
+            console.error("❌ ERROR al robar secreto:", error);
+            console.error("Detalles del error:", error.message);
+            setStolenPlayer(null);
+            setSelectionAction(null);
+          }
+        })();
+      }
     }
   }, [turnData, prevData, stolenPlayer, selectionAction, gameId, myPlayerId]);
 };

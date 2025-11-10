@@ -37,7 +37,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
         gameId,
         myPlayerId
       );
-
+      console.log(fetchedPlayerData);
       setPlayerData(fetchedPlayerData);
       setTurnData(fetchedTurnData);
 

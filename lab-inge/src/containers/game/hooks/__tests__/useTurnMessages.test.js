@@ -46,7 +46,7 @@ describe("useTurnMessages Hook", () => {
       );
 
       expect(result.current.message).toBe(
-        "Seguí las indicaciones para continuar el turno."
+        "Player2 jugó un set bajado."
       );
     });
 
@@ -114,7 +114,7 @@ describe("useTurnMessages Hook", () => {
         useTurnMessages(turnData, myPlayerId, orderedPlayers)
       );
 
-      expect(result.current.message).toBe(" ");
+      expect(result.current.message).toBe("");
     });
   });
 
@@ -227,7 +227,7 @@ describe("useTurnMessages Hook", () => {
 
       await waitFor(() => {
         expect(result.current.message).toBe(
-          "Seguí las indicaciones para continuar el turno."
+          "Player2 jugó un set bajado."
         );
       });
     });
