@@ -46,6 +46,12 @@ export const useSecretActions = (
   useEffect(() => {
     const executeAriadneReveal = async () => {
       if (timer === 0 && pendingAriadneReveal) {
+
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingAriadneReveal(null);
+          return;
+        }
+
         try {
           console.log("⏰ Timer llegó a 0, ejecutando forcePlayerReveal para Ariadne Oliver");
           await httpService.forcePlayerReveal({
@@ -77,7 +83,7 @@ export const useSecretActions = (
       await fetchGameData();
 
       return response;
-      
+
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {
@@ -294,34 +300,31 @@ export const useSecretActions = (
       console.error("❌ Parámetros inválidos:", { playerId, setId, cardId });
       return;
     }
-     console.log("🎯 Llamando addCardToSet con:", {
-        gameId,
-        playerId,
-        cardId,
-        setId,
-      });
+    console.log("🎯 Llamando addCardToSet con:", {
+      gameId,
+      playerId,
+      cardId,
+      setId,
+    });
 
     try {
-     
+
       const response = await httpService.addCardToSet(
         gameId,
         myPlayerId,
         cardId,
         setId
       );
+      setTimer(response?.timer);
 
       console.log("✅ Ariadne Oliver agregada exitosamente:", response);
 
       // Actualizar timer para permitir Not So Fast
-      if (response?.timer !== undefined) {
-        setTimer(response.timer);
-        console.log("⏰ Timer iniciado:", response.timer);
-      }
 
       setPendingAriadneReveal({ playerId });
 
       await fetchGameData();
-      
+
     } catch (error) {
       console.error("❌ ERROR al agregar Ariadne Oliver:", error);
       throw error;
