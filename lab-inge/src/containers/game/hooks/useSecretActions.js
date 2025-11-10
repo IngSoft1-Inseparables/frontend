@@ -9,7 +9,8 @@ export const useSecretActions = (
   myPlayerId,
   fetchGameData,
   timer,
-  setTimer
+  setTimer,
+  turnData
 ) => {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedSecret, setSelectedSecret] = useState(null);
@@ -24,7 +25,7 @@ export const useSecretActions = (
   useEffect(() => {
     const executePendingSecretEffect = async () => {
       if (timer === 0 && pendingSecretEffect) {
-        if (turnData?.turn_state.toLowerCase() != "playing") {
+        if (turnData?.turn_state?.toLowerCase() != "playing") {
           setPendingEffect(null);
           return;
         }

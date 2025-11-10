@@ -9,7 +9,10 @@ export const useTurnMessages = (
   orderedPlayers,
   selectionAction,
   setSelectionAction,
-  movedCardsCount
+  movedCardsCount,
+  timer,
+  selectionMode,
+  playerData
 ) => {
   const [message, setMessage] = useState(" ");
 
@@ -34,44 +37,36 @@ export const useTurnMessages = (
       return;
     }
 
-    if (turnData.turn_owner_id !== myPlayerId) {
-      const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
-
-      // Detectar si hay Point Your Suspicions activa
-      if (
-        turnData.event_card_played?.card_name?.toLowerCase() ===
-        "point your suspicions"
-      ) {
-        // Si el juego está en estado Playing, están votando
-        if (turnData.turn_state === "Playing") {
-          setMessage("Point Your Suspicions: Votá de quién sospechás.");
-          return;
-        }
-      }
-      setMessage(`${currentPlayerName} está jugando su turno.`);
-      return;
-    }
+    const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
 
     switch (turnData.turn_state) {
       case "None":
         setMessage(
-          `¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta.`
-        );
+          `${turnData.turn_owner_id === myPlayerId ?
+            "¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta."
+            :
+            `${currentPlayerName} está jugando su turno.`}`)
         break;
       case "Playing":
-        if (
-          turnData.event_card_played?.card_name?.toLowerCase() ===
-          "point your suspicions"
-        ) {
-          setMessage(
-            "Point Your Suspicions: Todos deben votar de quién sospechan."
-          );
-          break;
+        setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
+        if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo.");
+        if (selectionMode === "select-other-player") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto.");
+        if (selectionMode === "select-other-player" && selectionAction === "cards off the table") setMessage("Seleccioná un jugador para forzarlo a descartar todas sus Not So Fast.")
+        if (selectionMode === "select-other-player" && selectionAction === "specials") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto y luego robárselo.");
+        if (selectionMode === "select-revealed-secret") setMessage("Seleccioná un secreto para ocultarlo.");
+        if (selectionMode === "select-other-revealed-secret" && selectionAction === "one more") setMessage("Seleccioná un secreto para ocultarlo y luego asignárselo a cualquier jugador.");
+        if (selectionMode === "select-player" && selectionAction === "one more") setMessage("Selecciona un jugador para asignarle el secreto oculto.");
+        if (selectionMode === "select-set") setMessage("Seleccioná un set para robarlo y ejecutar su efecto.");
+        if (selectionMode === "select-set" && selectionAction === "ariadne") setMessage("Seleccioná un set para agregarle Ariadne Oliver.");
+        if (selectionMode === "select-other-player" && selectionAction === "card trade") setMessage("Seleccioná un jugador para intercambiar una carta.");
+        if (selectionMode === "select-my-not-revealed-secret") setMessage("Seleccioná un secreto propio para revelarlo.")
+        if (turnData?.event_card_played?.card_name.toLowerCase() === "point your suspicions") {
+          if (selectionMode === "select-other-player") setMessage("Votá al jugador de quien sospechás.");
+          if (selectionMode === "select-my-not-revealed-secret") setMessage("¡Fuiste votado como sospechoso! Seleccioná un secreto propio para revelarlo.")
         }
-        setMessage("Seguí las indicaciones para continuar el turno.");
         break;
       case "Waiting":
-        setMessage("Esperá para continuar tu turno.");
+        if (turnData?.turn_owner_id === myPlayerId) setMessage("Esperá para continuar tu turno.");
         break;
       case "Discarding":
         const actionType =
@@ -88,11 +83,9 @@ export const useTurnMessages = (
         ) {
           const paddingtonMessage =
             effectiveMovedCount > 0
-              ? `Se ${
-                  effectiveMovedCount === 1 ? "ha movido" : "han movido"
-                } ${effectiveMovedCount} ${
-                  effectiveMovedCount === 1 ? "carta" : "cartas"
-                } del mazo de robo al mazo de descarte.`
+              ? `Se ${effectiveMovedCount === 1 ? "ha movido" : "han movido"
+              } ${effectiveMovedCount} ${effectiveMovedCount === 1 ? "carta" : "cartas"
+              } del mazo de robo al mazo de descarte.`
               : "Se han movido cartas del mazo de robo al mazo de descarte.";
           const fullMessage = `${paddingtonMessage} Ahora podés reponer o seguir descartando.`;
           setMessage(fullMessage);
@@ -103,19 +96,25 @@ export const useTurnMessages = (
         } else if (selectionAction === "delay") {
           const delayMessage =
             movedCardsCount > 0
-              ? `Se ${
-                  movedCardsCount === 1 ? "ha movido" : "han movido"
-                } ${movedCardsCount} ${
-                  movedCardsCount === 1 ? "carta" : "cartas"
-                } del mazo de descarte al mazo de robo.`
+              ? `Se ${movedCardsCount === 1 ? "ha movido" : "han movido"
+              } ${movedCardsCount} ${movedCardsCount === 1 ? "carta" : "cartas"
+              } del mazo de descarte al mazo de robo.`
               : "Se han movido cartas del mazo de descarte al mazo de robo.";
           setMessage(
             `${delayMessage} Ahora podés reponer o seguir descartando.`
           );
           // Limpiar después de mostrar el mensaje
           setTimeout(() => setSelectionAction(null), 4500);
+        } else if (turnData.instant_played && timer > 0) {
+          setMessage(`Se jugó una ${turnData.instant_played.card_name}`);
+        } else if (turnData?.event_card_played?.card_name.toLowerCase() === "look into the ashes" && playerData?.playerCards.length === 6) {
+          setMessage("Debés descartar al menos una carta.");
         } else {
-          setMessage("Podés reponer o seguir descartando.");
+          setMessage(
+            `${turnData.turn_owner_id === myPlayerId ?
+              "Podés reponer o seguir descartando."
+              :
+              `${currentPlayerName} está jugando su turno.`}`)
         }
         break;
       case "Replenish":
@@ -125,7 +124,7 @@ export const useTurnMessages = (
         setMessage("Siguiente turno...");
         break;
       default:
-        setMessage(" ");
+        setMessage("");
         break;
     }
   }, [
@@ -133,10 +132,15 @@ export const useTurnMessages = (
     turnData?.turn_owner_id,
     turnData?.players,
     turnData?.event_card_played,
+    turnData?.set_played,
+    turnData?.instant_played,
     myPlayerId,
     orderedPlayers,
     selectionAction,
-    movedCardsCount
+    movedCardsCount,
+    timer,
+    selectionMode,
+    setSelectionAction,
   ]);
 
   return { message, getPlayerNameById };
