@@ -250,8 +250,20 @@ describe("useSecretActions hook", () => {
     });
 
     it("llama a addCardToSet con los parámetros correctos", async () => {
+      const mockTimer = 0;
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService, 
+          gameId, 
+          myPlayerId, 
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
@@ -705,6 +717,552 @@ describe("useSecretActions hook", () => {
         gameId,
         playerId: targetPlayerId,
       });
+    });
+  });
+
+  describe("Additional coverage tests", () => {
+    it("revealMySecret limpia selectionMode después de revelar", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const secretId = 123;
+
+      await act(async () => {
+        result.current.setSelectionMode("some-mode");
+      });
+
+      expect(result.current.selectionMode).toBe("some-mode");
+
+      await act(async () => {
+        await result.current.revealMySecret(secretId);
+      });
+
+      expect(mockHttpService.revealSecret).toHaveBeenCalledWith({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+      expect(result.current.selectionMode).toBeNull();
+    });
+
+    it("revealMySecret maneja errores correctamente", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockHttpService.revealSecret.mockRejectedValue(new Error("Network error"));
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.revealMySecret(123);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "error al revelar secreto propio:",
+        expect.any(Error)
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it("revealOtherPlayerSecret establece el modo de selección correcto", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const playerId = 5;
+      const secretId = 123;
+
+      await act(async () => {
+        await result.current.revealOtherPlayerSecret(playerId, secretId);
+      });
+
+      expect(mockHttpService.revealSecret).toHaveBeenCalledWith({
+        gameId,
+        playerId,
+        secretId,
+      });
+      expect(result.current.selectionMode).toBe("select-other-secret");
+    });
+
+    it("revealOtherPlayerSecret maneja errores", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockHttpService.revealSecret.mockRejectedValue(new Error("Error"));
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.revealOtherPlayerSecret(5, 123);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "error al revelar secreto ajeno:",
+        expect.any(Error)
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it("forcePlayerRevealSecret limpia selectedPlayer", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        result.current.setSelectedPlayer(5);
+      });
+
+      expect(result.current.selectedPlayer).toBe(5);
+
+      await act(async () => {
+        await result.current.forcePlayerRevealSecret(5);
+      });
+
+      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalled();
+      expect(result.current.selectedPlayer).toBeNull();
+    });
+
+    it("forcePlayerRevealSecret maneja errores", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockHttpService.forcePlayerReveal.mockRejectedValue(new Error("Error"));
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.forcePlayerRevealSecret(5);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "error al forzar revelacion de secreto:",
+        expect.any(Error)
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it("hideMySecret establece pendingSecretEffect", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const secretId = 123;
+
+      await act(async () => {
+        await result.current.hideMySecret(secretId);
+      });
+
+      expect(mockHttpService.hideSecret).toHaveBeenCalledWith({
+        gameId,
+        playerId: myPlayerId,
+        secretId,
+      });
+      expect(result.current.pendingSecretEffect).toEqual({ action: "hide" });
+    });
+
+    it("hideMySecret maneja errores", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockHttpService.hideSecret.mockRejectedValue(new Error("Error"));
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.hideMySecret(123);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "error al ocultar secreto propio:",
+        expect.any(Error)
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it("hideOtherPlayerSecret funciona correctamente", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const playerId = 5;
+      const secretId = 123;
+
+      await act(async () => {
+        await result.current.hideOtherPlayerSecret(playerId, secretId);
+      });
+
+      expect(mockHttpService.hideSecret).toHaveBeenCalledWith({
+        gameId,
+        playerId,
+        secretId,
+      });
+      expect(result.current.pendingSecretEffect).toEqual({ action: "hide" });
+    });
+
+    it("hideOtherPlayerSecret maneja errores", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      mockHttpService.hideSecret.mockRejectedValue(new Error("Error"));
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.hideOtherPlayerSecret(5, 123);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith(
+        "error al ocultar secreto ajeno:",
+        expect.any(Error)
+      );
+      consoleLogSpy.mockRestore();
+    });
+
+    it("handleStealSecret no hace nada si no hay jugador seleccionado", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSecret();
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "❌ No hay jugador seleccionado para robar secreto"
+      );
+      expect(mockHttpService.forcePlayerReveal).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("handleStealSecret establece stolenPlayer y llama forcePlayerReveal", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        result.current.setSelectedPlayer(5);
+      });
+
+      await act(async () => {
+        await result.current.handleStealSecret();
+      });
+
+      expect(result.current.stolenPlayer).toBe(5);
+      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalled();
+    });
+
+    it("handleStealSecretEvent actualiza selectionMode cuando hay secreto y jugador", async () => {
+      const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSecretEvent(null);
+      });
+
+      expect(consoleLogSpy).toHaveBeenCalledWith("No hay secreto seleccionado");
+      consoleLogSpy.mockRestore();
+    });
+
+    it("handlePlayerSelection actualiza selectedPlayer", () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      act(() => {
+        result.current.handlePlayerSelection(7);
+      });
+
+      expect(result.current.selectedPlayer).toBe(7);
+    });
+
+    it("handleSecretSelection actualiza selectedPlayer y selectedSecret", () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      act(() => {
+        result.current.handleSecretSelection(5, 123);
+      });
+
+      expect(result.current.selectedPlayer).toBe(5);
+      expect(result.current.selectedSecret).toBe(123);
+    });
+
+    it("handleStealSet con diferentes tipos de set - Poirot", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "poirot" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-not-revealed-secret");
+    });
+
+    it("handleStealSet con diferentes tipos de set - Marple", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "marple" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-not-revealed-secret");
+    });
+
+    it("handleStealSet con diferentes tipos de set - LadyBrent", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "ladybrent" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+    });
+
+    it("handleStealSet con diferentes tipos de set - TommyBeresford", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "tommyberestford" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+    });
+
+    it("handleStealSet con diferentes tipos de set - TuppenceBeresford", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "tuppenceberestford" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+    });
+
+    it("handleStealSet con diferentes tipos de set - TommyTuppence", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "tommytuppence" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+    });
+
+    it("handleStealSet con diferentes tipos de set - Satterthwaite", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "satterthwaite" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+    });
+
+    it("handleStealSet con diferentes tipos de set - SpecialSatterthwaite", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "specialsatterthwaite" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-other-player");
+      expect(result.current.selectionAction).toBe("specials");
+    });
+
+    it("handleStealSet con diferentes tipos de set - Pyne", async () => {
+      mockHttpService.stealSet.mockResolvedValue({ set_type: "pyne" });
+
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleStealSet(5, 0);
+      });
+
+      expect(result.current.selectionMode).toBe("select-revealed-secret");
+    });
+
+    it("handleCardAriadneOliver no hace nada con parámetros inválidos", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(null, 123, 456);
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "❌ Parámetros inválidos:",
+        { playerId: null, setId: 123, cardId: 456 }
+      );
+      expect(mockHttpService.addCardToSet).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("useEffect ejecuta pendingSecretEffect cuando timer es 0", async () => {
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            { turn_state: "playing" }
+          ),
+        { initialProps: { timer: 5 } }
+      );
+
+      // Establecer pendingSecretEffect
+      await act(async () => {
+        await result.current.hideMySecret(123);
+      });
+
+      expect(result.current.pendingSecretEffect).toBeTruthy();
+
+      // Cambiar timer a 0
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      await waitFor(() => {
+        expect(result.current.pendingSecretEffect).toBeNull();
+      });
+    });
+
+    it("useEffect no ejecuta pendingSecretEffect si turn_state no es playing", async () => {
+      const { result, rerender } = renderHook(
+        ({ timer, turnData }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            turnData
+          ),
+        { initialProps: { timer: 5, turnData: { turn_state: "replenish" } } }
+      );
+
+      await act(async () => {
+        await result.current.hideMySecret(123);
+      });
+
+      await act(async () => {
+        rerender({ timer: 0, turnData: { turn_state: "replenish" } });
+      });
+
+      await waitFor(() => {
+        expect(result.current.pendingSecretEffect).toBeNull();
+      });
+    });
+
+    it("useEffect ejecuta pendingAriadneReveal cuando timer es 0 y turn_state es playing", async () => {
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            { turn_state: "playing" }
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(5, 101, 42);
+      });
+
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      await waitFor(() => {
+        expect(mockHttpService.forcePlayerReveal).toHaveBeenCalled();
+      });
+    });
+
+    it("useEffect no ejecuta pendingAriadneReveal si turn_state no es playing", async () => {
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      
+      const { result, rerender } = renderHook(
+        ({ timer, turnData }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            turnData
+          ),
+        { initialProps: { timer: 1, turnData: { turn_state: "replenish" } } }
+      );
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(5, 101, 42);
+      });
+
+      const callsBefore = mockHttpService.forcePlayerReveal.mock.calls.length;
+
+      await act(async () => {
+        rerender({ timer: 0, turnData: { turn_state: "replenish" } });
+      });
+
+      await waitFor(() => {
+        expect(result.current.pendingAriadneReveal).toBeNull();
+      });
+
+      // No debería haber llamadas adicionales
+      expect(mockHttpService.forcePlayerReveal.mock.calls.length).toBe(callsBefore);
     });
   });
 });

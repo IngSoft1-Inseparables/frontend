@@ -821,5 +821,134 @@ describe("useTurnMessages Hook", () => {
         );
       });
     });
+
+    describe("Instant Cards and Special Cases", () => {
+      it("should show instant card message when instant_played and timer > 0", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+          instant_played: {
+            card_name: "Not So Fast"
+          }
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            null,
+            mockSetSelectionAction,
+            0,
+            1  // timer > 0
+          )
+        );
+
+        expect(result.current.message).toBe("Se jugó una Not So Fast");
+      });
+
+      it("should show Look Into The Ashes message when event played and 6 cards in hand", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+          event_card_played: {
+            card_name: "Look Into The Ashes"
+          }
+        };
+
+        const playerData = {
+          playerCards: [1, 2, 3, 4, 5, 6]  // 6 cartas
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            null,
+            mockSetSelectionAction,
+            0,
+            0,
+            null,
+            playerData
+          )
+        );
+
+        expect(result.current.message).toBe("Debés descartar al menos una carta.");
+      });
+
+      it("should not show Look Into The Ashes message when event played but less than 6 cards", () => {
+        const turnData = {
+          turn_owner_id: myPlayerId,
+          turn_state: "Discarding",
+          event_card_played: {
+            card_name: "Look Into The Ashes"
+          }
+        };
+
+        const playerData = {
+          playerCards: [1, 2, 3, 4, 5]  // 5 cartas
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers,
+            null,
+            mockSetSelectionAction,
+            0,
+            0,
+            null,
+            playerData
+          )
+        );
+
+        expect(result.current.message).toBe("Podés reponer o seguir descartando.");
+      });
+    });
+
+    describe("Playing State - set_played branch", () => {
+      it("should show set_played.set_type when a set is played", () => {
+        const turnData = {
+          turn_owner_id: 1,
+          turn_state: "Playing",
+          set_played: {
+            set_type: "Dupin"
+          }
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers
+          )
+        );
+
+        expect(result.current.message).toBe("Player1 jugó Dupin.");
+      });
+
+      it("should show set_add information when a card is added to a set", () => {
+        const turnData = {
+          turn_owner_id: 1,
+          turn_state: "Playing",
+          set_add: {
+            card_name: "Poirot",
+            set_type: "Detective"
+          }
+        };
+
+        const { result } = renderHook(() =>
+          useTurnMessages(
+            turnData,
+            myPlayerId,
+            orderedPlayers
+          )
+        );
+
+        expect(result.current.message).toBe("Player1 jugó Poirot en el set Detective.");
+      });
+    });
   });
 });

@@ -347,7 +347,177 @@ describe("GameList", () => {
     expect(screen.getByText("Disponible 2")).toBeInTheDocument();
     expect(screen.queryByText("No disponible")).not.toBeInTheDocument();
   });
+
+  it("actualiza la lista de partidas cuando recibe game_list_update del WebSocket", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    // Obtener el callback de game_list_update
+    const gameListUpdateCall = mockOn.mock.calls.find(
+      (call) => call[0] === "game_list_update"
+    );
+    expect(gameListUpdateCall).toBeDefined();
+    const handleGameList = gameListUpdateCall[1];
+
+    // Simular actualización desde WebSocket con nuevas partidas
+    const newGames = {
+      games: [
+        {
+          id: 4,
+          game_name: "Nueva Partida WebSocket",
+          players_amount: 1,
+          max_players: 5,
+          min_players: 2,
+          creator_name: "WSUser",
+          available: true,
+          in_progress: false,
+        },
+      ],
+    };
+
+    handleGameList(newGames);
+
+    // Esperar a que se actualice la lista
+    await waitFor(() => {
+      expect(screen.getByText("Nueva Partida WebSocket")).toBeInTheDocument();
+    });
+  });
+
+  it("filtra partidas in_progress cuando recibe game_list_update", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    const gameListUpdateCall = mockOn.mock.calls.find(
+      (call) => call[0] === "game_list_update"
+    );
+    const handleGameList = gameListUpdateCall[1];
+
+    // Simular actualización con partidas en progreso
+    const gamesWithInProgress = {
+      games: [
+        {
+          id: 5,
+          game_name: "Partida Disponible",
+          players_amount: 2,
+          max_players: 4,
+          min_players: 2,
+          creator_name: "User1",
+          available: true,
+          in_progress: false,
+        },
+        {
+          id: 6,
+          game_name: "Partida En Curso",
+          players_amount: 3,
+          max_players: 4,
+          min_players: 2,
+          creator_name: "User2",
+          available: false,
+          in_progress: true,
+        },
+      ],
+    };
+
+    handleGameList(gamesWithInProgress);
+
+    await waitFor(() => {
+      expect(screen.getByText("Partida Disponible")).toBeInTheDocument();
+      expect(screen.queryByText("Partida En Curso")).not.toBeInTheDocument();
+    });
+  });
+
+  it("maneja payloads de WebSocket en formato string JSON", async () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Cargando partidas/i)).not.toBeInTheDocument();
+    });
+
+    const gameListUpdateCall = mockOn.mock.calls.find(
+      (call) => call[0] === "game_list_update"
+    );
+    const handleGameList = gameListUpdateCall[1];
+
+    // Simular payload como string JSON
+    const jsonPayload = JSON.stringify({
+      games: [
+        {
+          id: 7,
+          game_name: "Partida JSON String",
+          players_amount: 2,
+          max_players: 6,
+          min_players: 2,
+          creator_name: "JSONUser",
+          available: true,
+          in_progress: false,
+        },
+      ],
+    });
+
+    handleGameList(jsonPayload);
+
+    await waitFor(() => {
+      expect(screen.getByText("Partida JSON String")).toBeInTheDocument();
+    });
+  });
+
+  it("registra el listener connection_status del WebSocket", () => {
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    // Verificar que se registró el listener connection_status
+    expect(mockOn).toHaveBeenCalledWith("connection_status", expect.any(Function));
+  });
+
+  it("invoca el callback connection_status cuando cambia el estado de conexión", () => {
+    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+    render(
+      <BrowserRouter>
+        <GameList />
+      </BrowserRouter>
+    );
+
+    // Obtener el callback de connection_status
+    const connectionStatusCall = mockOn.mock.calls.find(
+      (call) => call[0] === "connection_status"
+    );
+    expect(connectionStatusCall).toBeDefined();
+    const connectionStatusCallback = connectionStatusCall[1];
+
+    // Invocar el callback
+    connectionStatusCallback({ connected: true });
+
+    expect(consoleLogSpy).toHaveBeenCalledWith(
+      "🔗 Estado de conexión WebSocket:",
+      { connected: true }
+    );
+
+    consoleLogSpy.mockRestore();
+  });
 });
+
 
 
 
