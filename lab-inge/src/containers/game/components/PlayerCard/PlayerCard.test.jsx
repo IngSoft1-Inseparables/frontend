@@ -273,12 +273,21 @@ describe("PlayerCard component", () => {
 
     it("only allows selecting other player's revealed secrets in select-other-revealed-secret mode", () => {
       const mockOnSecretSelect = vi.fn();
+      const playerWithNormalSecrets = {
+        ...mockPlayer,
+        id: 1,
+        playerSecrets: [
+          { secret_id: 1, revealed: false, secret_type: "normal", image_front_name: "secret1_front", image_back_name: "secret1_back" },
+          { secret_id: 2, revealed: true, secret_type: "normal", image_front_name: "secret2_front", image_back_name: "secret2_back" },
+          { secret_id: 3, revealed: false, secret_type: "normal", image_front_name: "secret3_front", image_back_name: "secret3_back" },
+        ],
+      };
       const props = {
         ...defaultProps,
         onSecretSelect: mockOnSecretSelect,
         selectionMode: "select-other-revealed-secret",
         myPlayerId: "2", // Yo soy el jugador 2
-        player: { ...mockPlayer, id: 1 }, // Este es el jugador 1 (otro jugador)
+        player: playerWithNormalSecrets, // Este es el jugador 1 (otro jugador)
         selectedPlayer: 1,
       };
 
@@ -311,6 +320,92 @@ describe("PlayerCard component", () => {
       fireEvent.click(myRevealedSecret);
       
       expect(mockOnSecretSelect).not.toHaveBeenCalled();
+    });
+
+    it("does not allow selecting non-normal secrets in select-other-revealed-secret mode", () => {
+      const mockOnSecretSelect = vi.fn();
+      const playerWithSpecialSecret = {
+        ...mockPlayer,
+        id: 1,
+        playerSecrets: [
+          { 
+            secret_id: 1, 
+            revealed: true, 
+            secret_type: "special", 
+            image_front_name: "secret1_front", 
+            image_back_name: "secret1_back" 
+          },
+          { 
+            secret_id: 2, 
+            revealed: true, 
+            secret_type: "normal", 
+            image_front_name: "secret2_front", 
+            image_back_name: "secret2_back" 
+          },
+        ],
+      };
+
+      const props = {
+        ...defaultProps,
+        onSecretSelect: mockOnSecretSelect,
+        selectionMode: "select-other-revealed-secret",
+        myPlayerId: "2", // Yo soy el jugador 2
+        player: playerWithSpecialSecret, // Jugador 1 (otro jugador)
+        selectedPlayer: 1,
+      };
+
+      const { container } = render(<PlayerCard {...props} />);
+      
+      const secrets = container.querySelectorAll('div[class*="aspect-[734"]');
+      const specialSecret = secrets[0]; // Primer secreto con secret_type "special"
+      
+      fireEvent.click(specialSecret);
+      
+      // No debería permitir seleccionar un secreto con secret_type != "normal"
+      expect(mockOnSecretSelect).not.toHaveBeenCalled();
+    });
+
+    it("allows selecting normal secrets in select-other-revealed-secret mode", () => {
+      const mockOnSecretSelect = vi.fn();
+      const playerWithNormalSecret = {
+        ...mockPlayer,
+        id: 1,
+        playerSecrets: [
+          { 
+            secret_id: 1, 
+            revealed: true, 
+            secret_type: "special", 
+            image_front_name: "secret1_front", 
+            image_back_name: "secret1_back" 
+          },
+          { 
+            secret_id: 2, 
+            revealed: true, 
+            secret_type: "normal", 
+            image_front_name: "secret2_front", 
+            image_back_name: "secret2_back" 
+          },
+        ],
+      };
+
+      const props = {
+        ...defaultProps,
+        onSecretSelect: mockOnSecretSelect,
+        selectionMode: "select-other-revealed-secret",
+        myPlayerId: "2", // Yo soy el jugador 2
+        player: playerWithNormalSecret, // Jugador 1 (otro jugador)
+        selectedPlayer: 1,
+      };
+
+      const { container } = render(<PlayerCard {...props} />);
+      
+      const secrets = container.querySelectorAll('div[class*="aspect-[734"]');
+      const normalSecret = secrets[1]; // Segundo secreto con secret_type "normal"
+      
+      fireEvent.click(normalSecret);
+      
+      // Debería permitir seleccionar un secreto con secret_type "normal"
+      expect(mockOnSecretSelect).toHaveBeenCalledWith(1, 2);
     });
 
     it("only allows selecting my revealed secrets in select-my-revealed-secret mode", () => {
