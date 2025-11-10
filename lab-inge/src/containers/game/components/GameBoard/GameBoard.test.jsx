@@ -120,6 +120,7 @@ describe("GameBoard component", () => {
   const mockTurnData = {
     players_amount: 4,
     turn_owner_id: 2,
+    turn_state: "Replenish",
   };
 
   const mockPlayers = [
@@ -378,6 +379,7 @@ describe("GameBoard component", () => {
     const turnDataWithDeck = {
       players_amount: 4,
       turn_owner_id: 2, // debe ser número para coincidir con myPlayerId
+      turn_state: "Replenish",
       players: mockPlayers,
       regpile: regpileMock,
       draft: { count: 0 },
@@ -413,10 +415,10 @@ describe("GameBoard component", () => {
   
   // Test 21
   it("renders RegularDeck with non-clickable BackCard when not available", () => {
-    const regpileMock = [
-      { id: 1, back: "/carta1.png", alt: "Carta1" },
-      { id: 2, back: "/carta2.png", alt: "Carta2" },
-    ];
+    const regpileMock = {
+      count: 2,
+      image_back_name: "01-card_back",
+    };
 
     const turnDataWithDeck = {
       players_amount: 4,
@@ -468,7 +470,7 @@ describe("GameBoard component", () => {
       players_amount: 4,
       turn_owner_id: "2",
       players: mockPlayers,
-      regpile: [], // deck vacío
+      regpile: { count: 0, image_back_name: "01-card_back" }, // deck vacío
       draft: { count: 0 },
       discardpile: [],
     };
@@ -488,10 +490,10 @@ describe("GameBoard component", () => {
   
   // Test 23
   it("does not allow BackCard click when it's not the player's turn", () => {
-    const regpileMock = [
-      { id: 1, back: "/carta1.png", alt: "Carta1" },
-      { id: 2, back: "/carta2.png", alt: "Carta2" },
-    ];
+    const regpileMock = {
+      count: 2,
+      image_back_name: "01-card_back",
+    };
 
     const turnDataNotMyTurn = {
       players_amount: 4,
@@ -575,9 +577,9 @@ describe("GameBoard component", () => {
   it("renders DraftDeck correctly and allows click when available", () => {
   const draftMock = {
     count: 3,
-    card_1_image: "01-card1",
-    card_2_image: "02-card2",
-    card_3_image: "03-card3",
+    card_1: { card_id: 1, image_name: "01-card1" },
+    card_2: { card_id: 2, image_name: "02-card2" },
+    card_3: { card_id: 3, image_name: "03-card3" },
   };
 
   const turnDataWithDraft = {
@@ -585,7 +587,7 @@ describe("GameBoard component", () => {
     turn_owner_id: 2, // mi turno
     players: mockPlayers,
     draft: draftMock,
-    regpile: { count: 0 },
+    regpile: { count: 0, image_back_name: "01-card_back" },
   };
 
   const playerDataFewCards = {
@@ -1062,6 +1064,8 @@ describe("handleReplenishFromDraft", () => {
       turnData: {
         gameId: 1,
         turn_owner_id: 2,
+        turn_state: "Replenish",
+        players_amount: 2,
         players: [{ id: 1, name: "P1" }, { id: 2, name: "P2" }], // ✅ agregado
         draft: {
           count: 3,
@@ -1069,6 +1073,8 @@ describe("handleReplenishFromDraft", () => {
           card_2: { card_id: 2, image_name: "old2" },
           card_3: { card_id: 3, image_name: "old3" },
         },
+        regpile: { count: 10, image_back_name: "01-card_back" },
+        discardpile: [],
       },
       setTurnData,
       myPlayerId: 2,
@@ -1093,8 +1099,17 @@ describe("handleReplenishFromDraft", () => {
       turnData: {
         gameId: 1,
         turn_owner_id: 2,
+        turn_state: "Replenish",
+        players_amount: 1,
         players: [{ id: 2, name: "Yo" }], // ✅ agregado
-        draft: { count: 3, card_1: { card_id: 1, image_name: "old1" } },
+        draft: { 
+          count: 3, 
+          card_1: { card_id: 1, image_name: "old1" },
+          card_2: { card_id: 2, image_name: "old2" },
+          card_3: { card_id: 3, image_name: "old3" },
+        },
+        regpile: { count: 10, image_back_name: "01-card_back" },
+        discardpile: [],
       },
       myPlayerId: 2,
     };

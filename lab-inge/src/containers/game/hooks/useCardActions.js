@@ -119,11 +119,16 @@ export const useCardActions = (
                 break;
               case "another victim":
                 setSelectionMode("select-set");
+                setSelectionAction("another");
                 break;
               case "card trade":
                 setSelectionMode("select-other-player");
                 setSelectionAction("card trade");
                 break;
+              case "cards off the table":
+                setSelectionMode("select-other-player");
+                setSelectionAction("cards off the table");
+              break; 
               default:
                 break;
             }
@@ -177,10 +182,19 @@ export const useCardActions = (
 
     //En desgracia no se pueden jugar cartas de evento
 
+    // En desgracia, solo se puede jugar la carta "Not So Fast"
     if (inDisgrace && (over.id === "play-card-zone" || over.id === "set-play-area")) {
-      console.log("No se puede jugar cartas mientras estás en desgracia social.");
-      return;
+      const droppedCard = playerData?.playerCards?.find(c => c.card_id === active.data.current?.cardId);
+      const isNotSoFast =
+        droppedCard?.type?.toLowerCase() === "instant" ||
+        droppedCard?.card_name?.toLowerCase() === "not so fast";
+
+      if (!isNotSoFast) {
+        console.log(" Solo podés jugar 'Not So Fast' mientras estás en desgracia social.");
+        return;
+      }
     }
+
 
     // Si se soltó sobre el mazo de descarte
     if (over.id === "discard-deck") {
@@ -229,35 +243,13 @@ export const useCardActions = (
         await httpService.discardCard(myPlayerId, cardId);
 
         if (inDisgrace) {
-          // 3) Marcar que ya descarté en desgracia (estado react)
+          // 3) Marcar que ya descarté en desgracia (estado React)
           setDisgraceDiscarded(true);
 
-          // 4) Reponer hasta 6 o hasta que el turno cambie
-          for (let i = 0; i < 6; i++) {
-            try {
-              await httpService.updateHand(gameId, myPlayerId);
-            } catch (e) {
-              // falla si ya tenés 6 o ya no es tu turno → cortamos
-              break;
-            }
-
-            let refreshed;
-            try {
-              refreshed = await fetchGameData();
-            } catch (e) {
-              // si falla, continuamos; WS puede actualizar
-            }
-
-            const newTurnOwner = refreshed?.turnData?.turn_owner_id;
-            const myHandSize = refreshed?.playerData?.playerCards?.length;
-
-            // Si ya no es mi turno, corto
-            if (newTurnOwner !== parseInt(myPlayerId)) break;
-
-            // Si ya llegué a 6, el próximo updateHand hará end_turn → corto
-            if (typeof myHandSize === "number" && myHandSize >= 6) break;
-          }
+          // 4) No reponer automáticamente — el jugador deberá hacerlo manualmente
+          console.log("♻️ Descarte en desgracia completado. Esperando reposición manual.");
         } else {
+
           // No auto-reponer; que el jugador elija (evento/set/reponer manual)
           try {
             await fetchGameData();
@@ -282,7 +274,7 @@ export const useCardActions = (
 
     // Si se soltó sobre la zona de juego
     if (over.id === "play-card-zone") {
-      if (inDisgrace) return;
+      /*if (inDisgrace) return;*/
 
       const droppedCard = playerData?.playerCards?.find(
         (card) => card.card_id === cardId

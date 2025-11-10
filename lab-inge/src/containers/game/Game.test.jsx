@@ -81,9 +81,9 @@ import { __mockWS as mockWS } from "../../services/WSService";
 let gameBoardProps = null;
 
 vi.mock("./components/GameBoard/GameBoard", () => ({
-  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction }) => {
+  default: ({ orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode }) => {
     // Capturar los props cada vez que se renderiza
-    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction };
+    gameBoardProps = { orderedPlayers, playerData, turnData, myPlayerId, onCardClick, onPlayerSelect, selectedPlayer, selectionMode, playedActionCard, setCards, onSecretSelect, selectedSecret, setSelectionAction, setSelectionMode };
     
     return (
       <div data-testid="game-board">

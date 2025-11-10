@@ -24,23 +24,32 @@ export const useTurnMessages = (
   useEffect(() => {
     if (!turnData) return;
 
-
     // Detectar si YO estoy en desgracia social
-    const me = turnData.players?.find(
-      (p) => p.id === parseInt(myPlayerId)
-    );
+    const me = turnData.players?.find((p) => p.id === parseInt(myPlayerId));
     const inDisgrace = !!me?.in_disgrace;
 
     // Si es mi turno y estoy en desgracia, mostrar mensaje prioritario
     if (turnData.turn_owner_id === myPlayerId && inDisgrace) {
       setMessage(
-        " Estás en desgracia social: solo podés descartar una carta y reponer hasta tener 6."
+        " Estás en desgracia social: solo podés descartar y reponer una carta."
       );
       return;
     }
 
     // if (turnData.turn_owner_id !== myPlayerId) {
     const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
+
+      // Detectar si hay Point Your Suspicions activa
+      if (
+        turnData.event_card_played?.card_name?.toLowerCase() ===
+        "point your suspicions"
+      ) {
+        // Si el juego está en estado Playing, están votando
+        if (turnData.turn_state === "Playing") {
+          setMessage("Point Your Suspicions: Votá de quién sospechás.");
+          return;
+        }
+      }
     //   setMessage(`${currentPlayerName} está jugando su turno.`);
     //   return;
     // }
@@ -54,6 +63,15 @@ export const useTurnMessages = (
             `${currentPlayerName} está jugando su turno.`}`)
         break;
       case "Playing":
+        if (
+          turnData.event_card_played?.card_name?.toLowerCase() ===
+          "point your suspicions"
+        ) {
+          setMessage(
+            "Point Your Suspicions: Todos deben votar de quién sospechan."
+          );
+          break;
+        }
         setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
         if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo."); 
         if (selectionMode === "select-other-player") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto.");
@@ -131,10 +149,11 @@ export const useTurnMessages = (
     turnData?.event_card_played,
     turnData?.set_played,
     turnData?.instant_played,
+    turnData?.event_card_played,
     myPlayerId,
     orderedPlayers,
     selectionAction,
-    movedCardsCount,
+    movedCardsCount
     timer,
     selectionMode,
     setSelectionAction,

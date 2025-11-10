@@ -12,6 +12,11 @@ describe("useWebSocket", () => {
   let mockSetShowEndDialog;
   let mockFetchGameData;
   let mockReorderPlayers;
+  let mockSetSelectionAction;
+  let mockSetMovedCardsCount;
+  let mockSetSelectionMode;
+  let mockTimer;
+  let mockSetTimer;
 
   beforeEach(() => {
     mockWsService = createMockWSService();
@@ -22,26 +27,41 @@ describe("useWebSocket", () => {
     mockSetShowEndDialog = vi.fn();
     mockFetchGameData = vi.fn();
     mockReorderPlayers = vi.fn((players) => players);
+    mockSetSelectionAction = vi.fn();
+    mockSetMovedCardsCount = vi.fn();
+    mockSetSelectionMode = vi.fn();
+    mockTimer = { minutes: 5, seconds: 0 };
+    mockSetTimer = vi.fn();
     
     console.log = vi.fn();
     console.error = vi.fn();
   });
 
-  it("connects to WebSocket on mount", () => {
-    renderHook(() =>
+  // Helper function to render useWebSocket with all required parameters
+  const renderUseWebSocket = (gameId = 1, myPlayerId = 2) => {
+    return renderHook(() =>
       useWebSocket(
         mockWsService,
-        1,
-        2,
+        gameId,
+        myPlayerId,
         mockSetTurnData,
         mockSetPlayerData,
         mockSetOrderedPlayers,
         mockSetWinnerData,
         mockSetShowEndDialog,
         mockFetchGameData,
-        mockReorderPlayers
+        mockReorderPlayers,
+        mockSetSelectionAction,
+        mockSetMovedCardsCount,
+        mockSetSelectionMode,
+        mockTimer,
+        mockSetTimer
       )
     );
+  };
+
+  it("connects to WebSocket on mount", () => {
+    renderUseWebSocket();
 
     expect(mockWsService.connect).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith("Inicializando conexión WebSocket...");
@@ -65,7 +85,7 @@ describe("useWebSocket", () => {
 
     unmount();
 
-    expect(mockWsService.off).toHaveBeenCalledTimes(6); // 6 eventos registrados (incluyendo game_timer)
+    expect(mockWsService.off).toHaveBeenCalledTimes(7); // 7 eventos registrados (incluyendo game_timer y point_suspicions_played)
     expect(mockWsService.disconnect).toHaveBeenCalledTimes(1);
     expect(console.log).toHaveBeenCalledWith("Limpiando conexión WebSocket...");
   });
@@ -91,6 +111,8 @@ describe("useWebSocket", () => {
     expect(mockWsService.on).toHaveBeenCalledWith("connection_status", expect.any(Function));
     expect(mockWsService.on).toHaveBeenCalledWith("reconnecting", expect.any(Function));
     expect(mockWsService.on).toHaveBeenCalledWith("connection_failed", expect.any(Function));
+    expect(mockWsService.on).toHaveBeenCalledWith("point_suspicions_played", expect.any(Function));
+    expect(mockWsService.on).toHaveBeenCalledWith("game_timer", expect.any(Function));
   });
 
   it("does not connect if gameId or myPlayerId is missing", () => {
@@ -689,6 +711,37 @@ describe("useWebSocket", () => {
           });
         });
       }
+    });
+  });
+
+  describe("Point Your Suspicions WebSocket event", () => {
+    it("registers point_suspicions_played event handler", () => {
+      renderUseWebSocket();
+
+      expect(mockWsService.on).toHaveBeenCalledWith("point_suspicions_played", expect.any(Function));
+    });
+
+    it("handles point_suspicions_played event and activates voting mode", async () => {
+      renderUseWebSocket();
+
+      const handler = mockWsService.on.mock.calls.find(
+        (call) => call[0] === "point_suspicions_played"
+      )[1];
+
+      handler({ card_id: 123 });
+
+      await waitFor(() => {
+        expect(mockSetSelectionMode).toHaveBeenCalledWith("select-other-player");
+        expect(mockSetSelectionAction).toHaveBeenCalledWith("point");
+      });
+    });
+
+    it("unregisters point_suspicions_played handler on unmount", () => {
+      const { unmount } = renderUseWebSocket();
+
+      unmount();
+
+      expect(mockWsService.off).toHaveBeenCalledWith("point_suspicions_played", expect.any(Function));
     });
   });
 });

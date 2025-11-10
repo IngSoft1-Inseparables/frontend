@@ -187,7 +187,9 @@ export const useSecretActions = (
     }
 
     try {
-      console.log(`🎯 Robando set ${setIndex} del jugador ${fromPlayerId} hacia jugador ${myPlayerId}`);
+      console.log(
+        `🎯 Robando set ${setIndex} del jugador ${fromPlayerId} hacia jugador ${myPlayerId}`
+      );
 
       const response = await httpService.stealSet(
         gameId,
@@ -222,7 +224,9 @@ export const useSecretActions = (
             break;
 
           case "tommytuppence":
-            console.log("✅ Activando modo: select-other-player (no cancelable)");
+            console.log(
+              "✅ Activando modo: select-other-player (no cancelable)"
+            );
             setSelectionMode("select-other-player");
             break;
 
@@ -259,7 +263,44 @@ export const useSecretActions = (
       setSelectionMode(null);
     }
   };
+  const handleCardAriadneOliver = async (playerId, setId, cardId) => {
+    if (!playerId || !setId || !cardId) {
+      console.error("❌ Parámetros inválidos:", { playerId, setId, cardId });
+      return;
+    }
+     console.log("🎯 Llamando addCardToSet con:", {
+        gameId,
+        playerId,
+        cardId,
+        setId,
+      });
 
+    try {
+     
+      const response = await httpService.addCardToSet(
+        gameId,
+        myPlayerId,
+        cardId,
+        setId
+      );
+
+      // Actualizar datos del juego desde el backend
+      await fetchGameData();
+      // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await httpService.forcePlayerReveal({
+        gameId,
+        playerId, // Dueño del set (atacado)
+      });
+
+      await fetchGameData();
+
+      console.log("✅ Ariadne Oliver agregada exitosamente:", response);
+    } catch (error) {
+      console.error("❌ ERROR al agregar Ariadne Oliver:", error);
+      throw error; // 🎯 Re-lanzar el error para que el .finally() en useSelectionEffects lo maneje
+    }
+  };
 
   return {
     selectedPlayer,
@@ -289,6 +330,7 @@ export const useSecretActions = (
     selectedSet,
     setSelectedSet,
     handleStealSet,
+    handleCardAriadneOliver,
     pendingSecretEffect, // Exportar para feedback visual
   };
 };
