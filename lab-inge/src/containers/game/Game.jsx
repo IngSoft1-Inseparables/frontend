@@ -48,7 +48,7 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     timer,
-    setTimer
+    setTimer,
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -164,7 +164,7 @@ function Game() {
     turnData,
     setSelectedSet,
     selectionAction,
-    setShowTradeDialog, 
+    setShowTradeDialog,
     setOpponentId,
     myPlayerId
   );
@@ -185,24 +185,28 @@ function Game() {
     setPrevData
   );
 
-  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
-    useCardActions(
-      httpService,
-      gameId,
-      myPlayerId,
-      turnData,
-      playerData,
-      setPlayerData,
-      setTurnData,
-      fetchGameData,
-      playedActionCard,
-      setPlayedActionCard,
-      setSelectionMode,
-      setSelectionAction,
-      startDiscardTop5Action,
-      timer,
-      setTimer
-    );
+  const {
+    handleCardClick,
+    handlePlaySetAction,
+    handleDragEnd,
+    handleAddCardToSet,
+  } = useCardActions(
+    httpService,
+    gameId,
+    myPlayerId,
+    turnData,
+    playerData,
+    setPlayerData,
+    setTurnData,
+    fetchGameData,
+    playedActionCard,
+    setPlayedActionCard,
+    setSelectionMode,
+    setSelectionAction,
+    startDiscardTop5Action,
+    timer,
+    setTimer
+  );
 
   const handleReplenishFromDiscard = (card) => {
     return replenishFromDiscard(
@@ -213,7 +217,6 @@ function Game() {
       fetchGameData
     );
   };
-
 
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
@@ -333,7 +336,10 @@ function Game() {
                 fetchGameData
               )
             }
-            onClose={() => setShowTradeDialog(false)}
+            onClose={() => {
+              setShowTradeDialog(false);
+              setSelectedPlayer(null);
+            }}
           />
         )}
       </DndContext>

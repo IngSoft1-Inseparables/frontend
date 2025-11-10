@@ -17,6 +17,7 @@ function HandCard({
   const [maxAllowed, setMaxAllowed] = useState(0);
   const handRef = useRef(null);
   const [matchingSets, setMatchingSets] = useState([]);
+  const [renderKey, setRenderKey] = useState(0);
 
   useEffect(() => {
     if (inDisgrace) {
@@ -158,7 +159,6 @@ function HandCard({
     }
 
     // C. Caso: Añadir carta del mismo tipo (Detective o Beresford)
-
     const isSameName = targetName === cardName;
     const isBeresfordGroup =
       targetName && isBeresford(targetName) && isBeresford(cardName);
@@ -180,8 +180,8 @@ function HandCard({
     }
   }, [isSetPlayable, selectedCards, onSetStateChange]);
   useEffect(() => {
-    console.log("🔍 useEffect disparado - selectedCards:", selectedCards);
-    console.log("🔍 setsPlayed:", setsPlayed);
+    console.log("useEffect disparado - selectedCards:", selectedCards);
+    console.log("setsPlayed:", setsPlayed);
     // Si hay exactamente 1 carta detective seleccionada => buscar coincidencias
 if (selectedCards.length === 1) {
       // 2. Si hay 1, define la lógica de Ariadne Oliver AQUÍ
@@ -191,7 +191,7 @@ if (selectedCards.length === 1) {
 
       // 3. Ahora SÍ puedes usar tu 'if'
       if (isAriadneOliver) {
-        console.log("✅ Ariadne Oliver detectada - activando select-player");
+        console.log("Ariadne Oliver detectada - activando select-player");
         if (onCardStateChange) {
           onCardStateChange([
             {
@@ -218,7 +218,7 @@ if (selectedCards.length === 1) {
         const setTypeLower = set.set_type.toLowerCase();
 
         console.log(
-          `🔎 Comparando: "${cardNameLower}" vs set "${setTypeLower}"`
+          ` Comparando: "${cardNameLower}" vs set "${setTypeLower}"`
         );
 
         const isMatch =
@@ -246,8 +246,6 @@ if (selectedCards.length === 1) {
         onCardStateChange(tempMatches);
       }
     } else if (selectedCards.length === 0) {
-      // Limpiar cuando no hay cartas seleccionadas (independientemente de si había matches)
-      console.log("⚪ selectedCards vacío - limpiando matches");
       if (matchingSets.length > 0) {
         setMatchingSets([]);
       }
@@ -255,16 +253,15 @@ if (selectedCards.length === 1) {
         onCardStateChange([]);
       }
     } else if (selectedCards.length > 1) {
-      // Si hay más de 1 carta, limpiar matches
-      console.log("❌ Más de 1 carta seleccionada - limpiando matches");
       setMatchingSets([]);
       if (onCardStateChange) {
         onCardStateChange([]);
       }
     }
-  }, [selectedCards, setsPlayed, onCardStateChange, matchingSets.length]);
+  }, [selectedCards, setsPlayed, onCardStateChange]);
 
   useEffect(() => {
+    setRenderKey(prev => prev + 1); 
     const updatedSelected = selectedCards.filter((c) =>
       playerCards.some((pc) => pc.card_id === c.card_id)
     );
@@ -287,7 +284,7 @@ if (selectedCards.length === 1) {
     >
       {playerCards.map((card) => (
         <FaceCard
-          key={card.card_id}
+          key={`${renderKey}-${card.card_id}`}
           cardId={card.card_id}
           imageName={card.image_name}
           cardName={card.card_name}
