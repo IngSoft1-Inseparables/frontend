@@ -32,11 +32,16 @@ export const useWebSocket = (
     const handleEndGameEvent = (dataPublic) => {
       if (dataPublic.end_game?.game_status === "Finished") {
         console.log("Fin de la partida detectado:", dataPublic.end_game);
-
         const winners = dataPublic.end_game.winners;
         const regpileCount = dataPublic?.regpile?.count ?? 0;
 
-        setWinnerData({ winners, regpileCount });
+        setWinnerData(prev => ({
+          ...prev,
+          winners,
+          regpileCount,
+          type: prev?.type || null,
+        }));
+
         setShowEndDialog(true);
       }
     };
@@ -44,6 +49,7 @@ export const useWebSocket = (
   setSelectionMode("select-other-player");
   setSelectionAction("point");
 };
+
 
     const handleGamePublicUpdate = (payload) => {
       const dataPublic =

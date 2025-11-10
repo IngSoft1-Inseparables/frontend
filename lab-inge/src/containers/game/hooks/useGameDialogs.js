@@ -114,6 +114,40 @@ export const useGameDialogs = (
     };
   }, [wsService, myPlayerId]);
 
+
+ // detectar fin de partida por desgracia social o asesino revelado
+  useEffect(() => {
+    if (!turnData) return;
+
+    const reason = turnData.end_game?.end_reason;
+
+    if (!reason) return;
+
+    if (reason === "all_in_disgrace") {
+      console.log("Fin de partida: desgracia social detectada");
+      setWinnerData((prev) => ({
+        ...(prev || {}),
+        type: "social_disgrace",
+        winners: prev?.winners || [],
+        regpileCount: prev?.regpileCount ?? 0,
+      }));
+
+      setShowEndDialog(true);
+    } else if (reason === "murder_revealed") {
+      console.log("Fin de partida: asesino revelado");
+      setWinnerData((prev) => ({
+        ...(prev || {}),
+        type: "murder_revealed",
+        winners: prev?.winners || [],
+        regpileCount: prev?.regpileCount ?? 0,
+      }));
+
+      setShowEndDialog(true);
+    }
+  }, [turnData]);
+
+
+
   return {
     showEndDialog,
     setShowEndDialog,

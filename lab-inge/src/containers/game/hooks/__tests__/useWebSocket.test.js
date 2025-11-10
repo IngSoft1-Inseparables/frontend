@@ -409,7 +409,12 @@ describe("useWebSocket", () => {
     handler(endGameData);
 
     await waitFor(() => {
-      expect(mockSetWinnerData).toHaveBeenCalledWith({
+      // useWebSocket uses a functional updater for setWinnerData; assert the updater produces the expected object
+      expect(mockSetWinnerData).toHaveBeenCalled();
+      const updater = mockSetWinnerData.mock.calls[0][0];
+      expect(typeof updater).toBe("function");
+      const result = updater(undefined);
+      expect(result).toMatchObject({
         winners: ["Player1", "Player2"],
         regpileCount: 10,
       });
@@ -448,7 +453,11 @@ describe("useWebSocket", () => {
     handler(endGameData);
 
     await waitFor(() => {
-      expect(mockSetWinnerData).toHaveBeenCalledWith({
+      expect(mockSetWinnerData).toHaveBeenCalled();
+      const updater = mockSetWinnerData.mock.calls[0][0];
+      expect(typeof updater).toBe("function");
+      const result = updater(undefined);
+      expect(result).toMatchObject({
         winners: ["Player3"],
         regpileCount: 0,
       });

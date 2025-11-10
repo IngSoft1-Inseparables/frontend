@@ -32,6 +32,7 @@ export const useGameData = (httpService, gameId, myPlayerId) => {
       setIsLoading(true);
 
       const fetchedTurnData = await httpService.getPublicTurnData(gameId);
+      console.log("Fetched turn data:", fetchedTurnData);
       const fetchedPlayerData = await httpService.getPrivatePlayerData(
         gameId,
         myPlayerId
