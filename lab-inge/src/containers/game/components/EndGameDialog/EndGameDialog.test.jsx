@@ -93,5 +93,59 @@ describe("EndGameDialog", () => {
     expect(onCloseMock).toHaveBeenCalledTimes(1); // cierra el diálogo
     expect(mockNavigate).toHaveBeenCalledWith("/home"); // navega al home
   });
+
+  it("muestra mensaje correcto cuando type es 'social_disgrace'", () => {
+    const mockSocialDisgrace = {
+      type: "social_disgrace",
+      winners: [{ id: 1, name: "Asesino Ganador" }],
+      regpileCount: 0,
+    };
+
+    render(<EndGameDialog winners={mockSocialDisgrace} onClose={() => {}} />);
+
+    expect(screen.getByText("El asesino ha ganado.")).toBeInTheDocument();
+  });
+
+  it("muestra mensaje correcto cuando type es 'murder_revealed'", () => {
+    const mockMurderRevealed = {
+      type: "murder_revealed",
+      winners: [
+        { id: 2, name: "Detective 1" },
+        { id: 3, name: "Detective 2" },
+      ],
+      regpileCount: 5,
+    };
+
+    render(<EndGameDialog winners={mockMurderRevealed} onClose={() => {}} />);
+
+    expect(screen.getByText("Los Detectives descubrieron al Asesino.")).toBeInTheDocument();
+  });
+
+  it("muestra mensaje correcto cuando un ganador tiene role 'asesino'", () => {
+    const mockAsesinoRole = {
+      winners: [
+        { id: 1, name: "El Asesino", role: "Asesino" },
+        { id: 2, name: "Cómplice", role: "Cómplice" },
+      ],
+      regpileCount: 3,
+    };
+
+    render(<EndGameDialog winners={mockAsesinoRole} onClose={() => {}} />);
+
+    expect(screen.getByText("El asesino ha ganado.")).toBeInTheDocument();
+  });
+
+  it("muestra mensaje correcto cuando un ganador tiene role 'asesino' en minúsculas", () => {
+    const mockAsesinoRoleLower = {
+      winners: [
+        { id: 1, name: "El Asesino", role: "asesino" },
+      ],
+      regpileCount: 2,
+    };
+
+    render(<EndGameDialog winners={mockAsesinoRoleLower} onClose={() => {}} />);
+
+    expect(screen.getByText("El asesino ha ganado.")).toBeInTheDocument();
+  });
 });
 
