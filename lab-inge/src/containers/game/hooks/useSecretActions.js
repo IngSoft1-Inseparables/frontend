@@ -361,6 +361,7 @@ export const useSecretActions = (
     setSelectedSet,
     handleStealSet,
     handleCardAriadneOliver,
-    pendingSecretEffect, // Exportar para feedback visual
+    pendingSecretEffect,
+    pendingAriadneReveal,
   };
 };
