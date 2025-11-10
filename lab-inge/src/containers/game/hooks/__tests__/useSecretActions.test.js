@@ -269,39 +269,77 @@ describe("useSecretActions hook", () => {
       );
     });
 
-    it("llama a forcePlayerReveal después de agregar la carta", async () => {
+    it("establece pendingAriadneReveal con el playerId correcto", async () => {
+      const mockTimer = 5; // Timer inicial > 0 para que no se ejecute el reveal inmediatamente
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService, 
+          gameId, 
+          myPlayerId, 
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
       const setId = 101;
       const cardId = 42;
 
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 5 });
+
       await act(async () => {
         await result.current.handleCardAriadneOliver(playerId, setId, cardId);
       });
 
-      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalledWith({
+      // Verificar que se llamó addCardToSet
+      expect(mockHttpService.addCardToSet).toHaveBeenCalledWith(
         gameId,
-        playerId
-      });
+        myPlayerId,
+        cardId,
+        setId
+      );
+
+      // Verificar que se actualizó el timer
+      expect(mockSetTimer).toHaveBeenCalledWith(5);
+
+      // No debe llamar a forcePlayerReveal inmediatamente
+      expect(mockHttpService.forcePlayerReveal).not.toHaveBeenCalled();
     });
 
-    it("llama a fetchGameData dos veces (antes y después de forceReveal)", async () => {
+    it("llama a fetchGameData después de agregar la carta", async () => {
+      const mockTimer = 5; // Timer inicial > 0 para evitar que se ejecute el useEffect
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
       const setId = 101;
       const cardId = 42;
 
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 5 });
+
       await act(async () => {
         await result.current.handleCardAriadneOliver(playerId, setId, cardId);
       });
 
-      expect(mockFetchGameData).toHaveBeenCalledTimes(2);
+      // Solo debe llamar a fetchGameData una vez (después de agregar)
+      expect(mockFetchGameData).toHaveBeenCalledTimes(1);
     });
 
     it("no ejecuta si playerId es null", async () => {
@@ -388,22 +426,31 @@ describe("useSecretActions hook", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("espera 100ms entre addCardToSet y forcePlayerReveal", async () => {
+    it("actualiza el timer cuando el backend devuelve un timer", async () => {
+      const mockTimer = 0;
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
-      const startTime = Date.now();
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 10 });
 
       await act(async () => {
         await result.current.handleCardAriadneOliver(5, 101, 42);
       });
 
-      const endTime = Date.now();
-      const elapsed = endTime - startTime;
-
-      // Debe haber esperado al menos 100ms
-      expect(elapsed).toBeGreaterThanOrEqual(100);
+      // Verificar que se actualizó el timer con el valor del backend
+      expect(mockSetTimer).toHaveBeenCalledWith(10);
     });
   });
 });

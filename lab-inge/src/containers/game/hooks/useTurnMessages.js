@@ -46,6 +46,7 @@ export const useTurnMessages = (
             "¡Es tu turno! Jugá un set o una carta de evento. Si no querés realizar ninguna acción tenés que descartar al menos una carta."
             :
             `${currentPlayerName} está jugando su turno.`}`)
+        if (selectionMode === "select-set" && selectionAction === "ariadne") setMessage("Seleccioná un set para agregarle Ariadne Oliver.");
         break;
       case "Playing":
         setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
@@ -57,7 +58,6 @@ export const useTurnMessages = (
         if (selectionMode === "select-other-revealed-secret" && selectionAction === "one more") setMessage("Seleccioná un secreto para ocultarlo y luego asignárselo a cualquier jugador.");
         if (selectionMode === "select-player" && selectionAction === "one more") setMessage("Selecciona un jugador para asignarle el secreto oculto.");
         if (selectionMode === "select-set") setMessage("Seleccioná un set para robarlo y ejecutar su efecto.");
-        if (selectionMode === "select-set" && selectionAction === "ariadne") setMessage("Seleccioná un set para agregarle Ariadne Oliver.");
         if (selectionMode === "select-other-player" && selectionAction === "card trade") setMessage("Seleccioná un jugador para intercambiar una carta.");
         if (selectionMode === "select-my-not-revealed-secret") setMessage("Seleccioná un secreto propio para revelarlo.")
         if (turnData?.event_card_played?.card_name.toLowerCase() === "point your suspicions") {

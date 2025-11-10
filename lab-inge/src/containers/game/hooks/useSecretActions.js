@@ -21,6 +21,7 @@ export const useSecretActions = (
   const [fromPlayer, setFromPlayer] = useState(null);
   const [prevData, setPrevData] = useState(null);
   const [pendingSecretEffect, setPendingSecretEffect] = useState(null);
+  const [pendingAriadneReveal, setPendingAriadneReveal] = useState(null);
 
   useEffect(() => {
     const executePendingSecretEffect = async () => {
@@ -41,6 +42,28 @@ export const useSecretActions = (
 
     executePendingSecretEffect();
   }, [timer, pendingSecretEffect, fetchGameData]);
+
+  // Efecto para manejar el reveal de Ariadne Oliver cuando el timer llegue a 0
+  useEffect(() => {
+    const executeAriadneReveal = async () => {
+      if (timer === 0 && pendingAriadneReveal) {
+        try {
+          console.log("⏰ Timer llegó a 0, ejecutando forcePlayerReveal para Ariadne Oliver");
+          await httpService.forcePlayerReveal({
+            gameId,
+            playerId: pendingAriadneReveal.playerId,
+          });
+          await fetchGameData();
+        } catch (error) {
+          console.error("❌ Error al revelar secreto después de Ariadne Oliver:", error);
+        } finally {
+          setPendingAriadneReveal(null);
+        }
+      }
+    };
+
+    executeAriadneReveal();
+  }, [timer, pendingAriadneReveal, gameId, httpService, fetchGameData]);
 
   const revealMySecret = async (secretId) => {
     try {
@@ -289,18 +312,20 @@ export const useSecretActions = (
         setId
       );
 
+      console.log("✅ Ariadne Oliver agregada exitosamente:", response);
+
+      // Actualizar timer para permitir Not So Fast
+      if (response?.timer !== undefined) {
+        setTimer(response.timer);
+        console.log("⏰ Timer iniciado:", response.timer);
+      }
+
+      // Marcar que hay un reveal pendiente para cuando el timer llegue a 0
+      setPendingAriadneReveal({ playerId });
+
       // Actualizar datos del juego desde el backend
       await fetchGameData();
-      // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await httpService.forcePlayerReveal({
-        gameId,
-        playerId, // Dueño del set (atacado)
-      });
-
-      await fetchGameData();
-
-      console.log("✅ Ariadne Oliver agregada exitosamente:", response);
+      
     } catch (error) {
       console.error("❌ ERROR al agregar Ariadne Oliver:", error);
       throw error; // 🎯 Re-lanzar el error para que el .finally() en useSelectionEffects lo maneje
