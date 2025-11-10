@@ -114,26 +114,37 @@ function GameBoard({
     setCurrentSetCards(cards);
   };
 
-  const handlePlaySetClick = () => {
-    const player = turnData.players.find((p) => p.id === myPlayerId);
-    const setPlayed = player?.setPlayed || [];
-    if (
-      currentSetCards.length === 1 &&
-      currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
-    ) {
-      console.log("🎯 Jugando Ariadne Oliver");
-
-      // Activar selectionMode
+const handlePlaySetClick = () => {
+  const player = turnData.players.find((p) => p.id === myPlayerId);
+  const setPlayed = player?.setPlayed || [];
+  
+  const otrosJugadoresTienenSets = turnData.players
+    .filter((p) => p.id !== Number(myPlayerId))
+    .some((p) => Array.isArray(p.setPlayed) && p.setPlayed.length > 0);
+  
+  // Detectar si es Ariadne Oliver
+  const esAriadneOliver = 
+    currentSetCards.length === 1 &&
+    currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver";
+  
+  if (esAriadneOliver) {
+    if (otrosJugadoresTienenSets) {
+      console.log("Jugando Ariadne Oliver - activando selección");
       setSelectionMode("select-set");
       setSelectionAction("ariadne");
-
-      return; // 🎯 No bajar set, solo activar selección
+      return; 
+    } else {
+      console.log(" No se puede jugar Ariadne Oliver - no hay sets disponibles");
+      return; 
     }
-    console.log("Cartas del set jugado:", setPlayed);
-    if (setCards) {
-      setCards(myPlayerId, turnData.gameId, currentSetCards);
-    }
-  };
+  }
+  
+  // Solo llega aquí si NO es Ariadne Oliver
+  console.log("Cartas del set jugado:", setPlayed);
+  if (setCards) {
+    setCards(myPlayerId, turnData.gameId, currentSetCards);
+  }
+};
 
   const handleSetClick = (setIndex) => {
     if (onAddCardToSet) {
@@ -331,7 +342,7 @@ function GameBoard({
               className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
             >
               {currentSetCards.length === 1 &&
-              currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
+              currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver" 
                 ? "JUGAR ARIADNE OLIVER"
                 : `BAJAR SET DE ${
                     currentSetCards[0]?.card_name === "Harley Quin Wildcard"
