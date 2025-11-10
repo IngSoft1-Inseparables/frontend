@@ -423,4 +423,56 @@ describe("PlayerCard component", () => {
       expect(secrets.length).toBeGreaterThanOrEqual(5);
     });
   });
+
+  it("shows name in white for Normal role and no partner", () => {
+    render(
+      <PlayerCard
+        player={{ ...mockPlayer, role: "Normal" }}
+        turnData={mockTurnData}
+        myPlayerId={99}
+        playerData={{ id: 99, partner: null }}
+      />
+    );
+    const name = screen.getByText("Jugador Test");
+    expect(name).toHaveClass("text-white");
+  });
+
+  it("shows name in red for Murderer role", () => {
+    render(
+      <PlayerCard
+        player={{ ...mockPlayer, role: "Murderer" }}
+        turnData={mockTurnData}
+        myPlayerId={99}
+        playerData={{ id: 99, partner: null }}
+      />
+    );
+    const name = screen.getByText("Jugador Test");
+    expect(name).toHaveClass("text-red-400");
+  });
+
+  it("shows name in red for Accomplice role", () => {
+    render(
+      <PlayerCard
+        player={{ ...mockPlayer, role: "Accomplice" }}
+        turnData={mockTurnData}
+        myPlayerId={99}
+        playerData={{ id: 99, partner: null }}
+      />
+    );
+    const name = screen.getByText("Jugador Test");
+    expect(name).toHaveClass("text-red-400");
+  });
+
+  it("shows name in red if player is partner", () => {
+    render(
+      <PlayerCard
+        player={{ ...mockPlayer, role: "Normal", id: 2 }}
+        turnData={mockTurnData}
+        myPlayerId={99}
+        playerData={{ id: 99, partner: { partner_id: 2 } }}
+      />
+    );
+    const name = screen.getByText("Jugador Test");
+    expect(name).toHaveClass("text-red-400");
+  });
 });
