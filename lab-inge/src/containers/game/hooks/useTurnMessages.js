@@ -48,7 +48,7 @@ export const useTurnMessages = (
             `${currentPlayerName} está jugando su turno.`}`)
         break;
       case "Playing":
-        setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : "un set bajado"}.`)
+        setMessage(`${currentPlayerName} jugó ${turnData?.event_card_played ? turnData.event_card_played.card_name : turnData.set_played ? turnData.set_played.set_type : `${turnData?.set_add?.card_name} en el set ${turnData?.set_add?.set_type}`}.`)
         if (selectionMode === "select-other-not-revealed-secret") setMessage("Seleccioná un secreto oculto para revelarlo.");
         if (selectionMode === "select-other-player") setMessage("Seleccioná un jugador para forzarlo a revelar un secreto.");
         if (selectionMode === "select-other-player" && selectionAction === "cards off the table") setMessage("Seleccioná un jugador para forzarlo a descartar todas sus Not So Fast.")
