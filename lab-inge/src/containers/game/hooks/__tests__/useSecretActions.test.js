@@ -250,8 +250,20 @@ describe("useSecretActions hook", () => {
     });
 
     it("llama a addCardToSet con los parámetros correctos", async () => {
+      const mockTimer = 0;
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService, 
+          gameId, 
+          myPlayerId, 
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
