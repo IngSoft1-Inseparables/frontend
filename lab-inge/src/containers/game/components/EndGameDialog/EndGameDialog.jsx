@@ -27,7 +27,7 @@ export default function EndGameDialog({ onClose, winners }) {
     victoryMessage = "Los Detectives descubrieron al Asesino.";
   } 
   else if (winners.winners?.some(w => w.role?.toLowerCase() === "asesino")) {
-    // 🧩 fallback por si el WS vino sin type
+    
     victoryMessage = "El asesino ha ganado.";
   } 
   else if (regpileCount === 0) {
