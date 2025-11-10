@@ -127,7 +127,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         maxPlayers: "",
         minPlayers: "",
       });
-      setSelectedAvatar(null);
+      setSelectedAvatar(null); 
       setErrors({});
       // setIsOpen(false);
     } catch (error) {
@@ -142,7 +142,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         maxPlayers: "",
         minPlayers: "",
       });
-      setSelectedAvatar(null);
+      setSelectedAvatar(null); 
       alert(
         "Ya existe una partida con el mismo nombre."
       );
