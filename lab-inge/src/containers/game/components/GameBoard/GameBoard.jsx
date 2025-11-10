@@ -121,13 +121,13 @@ function GameBoard({
       currentSetCards.length === 1 &&
       currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
     ) {
-      console.log("🎯 Jugando Ariadne Oliver");
+      console.log("Jugando Ariadne Oliver");
 
       // Activar selectionMode
       setSelectionMode("select-set");
       setSelectionAction("ariadne");
 
-      return; // 🎯 No bajar set, solo activar selección
+      return; // No bajar set, solo activar selección
     }
     console.log("Cartas del set jugado:", setPlayed);
     if (setCards) {

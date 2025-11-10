@@ -48,7 +48,7 @@ function Game() {
     fetchGameData,
     reorderPlayers,
     timer,
-    setTimer
+    setTimer,
   } = useGameData(httpService, gameId, myPlayerId);
 
   const {
@@ -97,8 +97,15 @@ function Game() {
     selectedSet,
     setSelectedSet,
     handleStealSet,
-    handleCardAriadneOliver
-  } = useSecretActions(httpService, gameId, myPlayerId, fetchGameData, timer, setTimer);
+    handleCardAriadneOliver,
+  } = useSecretActions(
+    httpService,
+    gameId,
+    myPlayerId,
+    fetchGameData,
+    timer,
+    setTimer
+  );
 
   const [movedCardsCount, setMovedCardsCount] = useState(0);
   const [ariadneCardId, setAriadneCardId] = useState(null);
@@ -109,8 +116,7 @@ function Game() {
     orderedPlayers,
     selectionAction,
     setSelectionAction,
-    movedCardsCount,
-   
+    movedCardsCount
   );
 
   // WebSocket connection
@@ -162,7 +168,7 @@ function Game() {
     turnData,
     setSelectedSet,
     selectionAction,
-    setShowTradeDialog, 
+    setShowTradeDialog,
     setOpponentId,
     myPlayerId
   );
@@ -183,24 +189,28 @@ function Game() {
     setPrevData
   );
 
-  const { handleCardClick, handlePlaySetAction, handleDragEnd, handleAddCardToSet } =
-    useCardActions(
-      httpService,
-      gameId,
-      myPlayerId,
-      turnData,
-      playerData,
-      setPlayerData,
-      setTurnData,
-      fetchGameData,
-      playedActionCard,
-      setPlayedActionCard,
-      setSelectionMode,
-      setSelectionAction,
-      startDiscardTop5Action,
-      timer,
-      setTimer
-    );
+  const {
+    handleCardClick,
+    handlePlaySetAction,
+    handleDragEnd,
+    handleAddCardToSet,
+  } = useCardActions(
+    httpService,
+    gameId,
+    myPlayerId,
+    turnData,
+    playerData,
+    setPlayerData,
+    setTurnData,
+    fetchGameData,
+    playedActionCard,
+    setPlayedActionCard,
+    setSelectionMode,
+    setSelectionAction,
+    startDiscardTop5Action,
+    timer,
+    setTimer
+  );
 
   const handleReplenishFromDiscard = (card) => {
     return replenishFromDiscard(
@@ -211,7 +221,6 @@ function Game() {
       fetchGameData
     );
   };
-
 
   // Configurar listener para forzar revelación desde WebSocket
   useEffect(() => {
@@ -331,7 +340,10 @@ function Game() {
                 fetchGameData
               )
             }
-            onClose={() => setShowTradeDialog(false)}
+            onClose={() => {
+              setShowTradeDialog(false);
+              setSelectedPlayer(null);
+            }}
           />
         )}
       </DndContext>

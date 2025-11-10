@@ -744,4 +744,349 @@ describe("useSelectionEffects hook", () => {
       consoleErrorSpy.mockRestore();
     });
   });
+
+  describe("Card Trade functionality", () => {
+    let mockSetShowTradeDialog;
+    let mockSetOpponentId;
+    let mockSetSelectionAction;
+
+    beforeEach(() => {
+      mockSetShowTradeDialog = vi.fn();
+      mockSetOpponentId = vi.fn();
+      mockSetSelectionAction = vi.fn();
+    });
+
+    it("abre el diálogo de Card Trade cuando se selecciona un jugador con selectionAction 'Card Trade'", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = 3;
+      const selectionAction = "Card Trade";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await waitFor(() => {
+        expect(mockSetShowTradeDialog).toHaveBeenCalledWith(true);
+        expect(mockSetOpponentId).toHaveBeenCalledWith(3);
+      });
+    });
+
+    it("limpia selectedPlayer después de abrir el diálogo de Card Trade", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = 3;
+      const selectionAction = "Card Trade";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await waitFor(() => {
+        expect(mockSetSelectedPlayer).toHaveBeenCalledWith(null);
+      });
+    });
+
+    it("limpia selectionMode y selectionAction al abrir el diálogo de Card Trade", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = 3;
+      const selectionAction = "Card Trade";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await waitFor(() => {
+        expect(mockSetSelectionMode).toHaveBeenCalledWith(null);
+        expect(mockSetSelectionAction).toHaveBeenCalledWith(null);
+      });
+    });
+
+    it("maneja variaciones de selectionAction con espacios: 'cardtrade', 'Card Trade'", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = 3;
+
+      // Probar con "cardtrade" (sin espacios)
+      const { rerender } = renderHook(
+        ({ action }) =>
+          useSelectionEffects(
+            selectionMode,
+            null,
+            selectedPlayer,
+            null,
+            action,
+            null,
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            {},
+            1,
+            vi.fn(),
+            mockSetSelectedPlayer,
+            mockSetSelectionAction,
+            vi.fn(),
+            vi.fn(),
+            mockSetSelectionMode,
+            vi.fn(),
+            vi.fn(),
+            vi.fn(),
+            null,
+            null,
+            mockSetSelectedSet,
+            vi.fn(),
+            mockSetShowTradeDialog,
+            mockSetOpponentId
+          ),
+        {
+          initialProps: { action: "cardtrade" }
+        }
+      );
+
+      await waitFor(() => {
+        expect(mockSetShowTradeDialog).toHaveBeenCalledWith(true);
+      });
+
+      vi.clearAllMocks();
+
+      // Probar con "Card Trade" (con espacios y mayúsculas)
+      rerender({ action: "Card Trade" });
+
+      await waitFor(() => {
+        expect(mockSetShowTradeDialog).toHaveBeenCalledWith(true);
+      });
+    });
+
+    it("no abre el diálogo de Card Trade si selectedPlayer es null", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = null;
+      const selectionAction = "Card Trade";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(mockSetShowTradeDialog).not.toHaveBeenCalled();
+      expect(mockSetOpponentId).not.toHaveBeenCalled();
+    });
+
+    it("no abre el diálogo de Card Trade si selectionMode no es 'select-other-player'", async () => {
+      const selectionMode = "select-my-secret";
+      const selectedPlayer = 3;
+      const selectionAction = "Card Trade";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(mockSetShowTradeDialog).not.toHaveBeenCalled();
+      expect(mockSetOpponentId).not.toHaveBeenCalled();
+    });
+
+    it("no abre el diálogo de Card Trade si selectionAction no coincide con 'cardtrade'", async () => {
+      const selectionMode = "select-other-player";
+      const selectedPlayer = 3;
+      const selectionAction = "Another Action";
+
+      renderHook(() =>
+        useSelectionEffects(
+          selectionMode,
+          null,
+          selectedPlayer,
+          null,
+          selectionAction,
+          null,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          {},
+          1,
+          vi.fn(),
+          mockSetSelectedPlayer,
+          mockSetSelectionAction,
+          vi.fn(),
+          vi.fn(),
+          mockSetSelectionMode,
+          vi.fn(),
+          vi.fn(),
+          vi.fn(),
+          null,
+          null,
+          mockSetSelectedSet,
+          vi.fn(),
+          mockSetShowTradeDialog,
+          mockSetOpponentId
+        )
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(mockSetShowTradeDialog).not.toHaveBeenCalled();
+      expect(mockSetOpponentId).not.toHaveBeenCalled();
+    });
+  });
 });
