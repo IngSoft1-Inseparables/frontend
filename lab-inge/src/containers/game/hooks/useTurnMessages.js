@@ -38,19 +38,6 @@ export const useTurnMessages = (
 
     const currentPlayerName = getPlayerNameById(turnData.turn_owner_id);
 
-    // // Detectar si hay Point Your Suspicions activa
-    // if (
-    //   turnData.event_card_played?.card_name?.toLowerCase() ===
-    //   "point your suspicions"
-    // ) {
-    //   // Si el juego está en estado Playing, están votando
-    //   if (turnData.turn_state === "Playing") {
-    //     setMessage("Point Your Suspicions: Votá de quién sospechás.");
-    //     return;
-    //   }
-    // }
-
-
     switch (turnData.turn_state) {
       case "None":
         setMessage(
