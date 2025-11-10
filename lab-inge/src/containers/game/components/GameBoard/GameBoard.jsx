@@ -60,6 +60,7 @@ function GameBoard({
   setSelectionMode,
   onAddCardToSet,
   setSelectionAction,
+  setAriadneCardId,
   timer
 }) {
   const playerCount = turnData.players_amount;
@@ -89,11 +90,24 @@ function GameBoard({
       console.log("orden de los jugadores:", orderedPlayers)
     );
   }
-  const handleCardSelected = useCallback((tempMatches) => {
-    console.log("🔍 Matches recibidos:", tempMatches);
-    setMatchingSets(tempMatches);
-    
-  }, [setSelectionMode]);
+  const handleCardSelected = useCallback(
+    (tempMatches) => {
+      console.log("🔍 Matches recibidos:", tempMatches);
+      if (!tempMatches || tempMatches.length === 0) {
+        setMatchingSets([]);
+        
+        return;
+      }
+
+      setMatchingSets(tempMatches);
+
+      if (tempMatches[0]?.isAriadne) {
+      console.log("✅ Ariadne Oliver detectada - guardando ID");
+      setAriadneCardId(tempMatches[0].card.card_id);
+    } 
+    },
+    [setAriadneCardId]
+  );
 
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
@@ -103,12 +117,24 @@ function GameBoard({
   const handlePlaySetClick = () => {
     const player = turnData.players.find((p) => p.id === myPlayerId);
     const setPlayed = player?.setPlayed || [];
+    if (
+      currentSetCards.length === 1 &&
+      currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
+    ) {
+      console.log("🎯 Jugando Ariadne Oliver");
+
+      // Activar selectionMode
+      setSelectionMode("select-set");
+      setSelectionAction("ariadne");
+
+      return; // 🎯 No bajar set, solo activar selección
+    }
     console.log("Cartas del set jugado:", setPlayed);
     if (setCards) {
       setCards(myPlayerId, turnData.gameId, currentSetCards);
     }
   };
-  
+
   const handleSetClick = (setIndex) => {
     if (onAddCardToSet) {
       onAddCardToSet(setIndex, matchingSets, currentSetCards);
@@ -236,7 +262,6 @@ function GameBoard({
                 onSetClick={handleSetClick}
                 availableToPlay={availableToPlay}
                 turnState={currentTurnState}
-              
               />
             </div>
           </div>
@@ -289,9 +314,10 @@ function GameBoard({
             setsPlayed={
               turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []
             }
-              setSelectionMode={setSelectionMode}
+            setSelectionMode={setSelectionMode}
             inDisgrace={
-              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))?.in_disgrace
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))
+                ?.in_disgrace
             }
           />
 
@@ -305,13 +331,16 @@ function GameBoard({
               onClick={handlePlaySetClick}
               className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
             >
-              BAJAR SET DE{" "}
-              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1]?.card_name.toUpperCase()
-                : currentSetCards[0]?.card_name.toUpperCase()}
+              {currentSetCards.length === 1 &&
+              currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver"
+                ? "JUGAR ARIADNE OLIVER"
+                : `BAJAR SET DE ${
+                    currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                      ? currentSetCards[1]?.card_name.toUpperCase()
+                      : currentSetCards[0]?.card_name.toUpperCase()
+                  }`}
             </button>
           )}
-         
         </div>
       </div>
 

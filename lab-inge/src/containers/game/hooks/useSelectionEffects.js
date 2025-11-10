@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 /**
  * Hook para manejar la lógica de selección basada en el modo de selección actual
@@ -27,10 +27,14 @@ export const useSelectionEffects = (
   setSelectionMode,
   setMovedCardsCount,
   handleStealSet,
-  setShowTradeDialog,
-  setOpponentId,
+  handleCardAriadneOliver,
+  ariadneCardId,
+  turnData,
+  setSelectedSet,
+  setAriadneCardId,
+  setShowTradeDialog, 
+  setOpponentId,   
   myPlayerId,
-  setHasVotedInCurrentRound
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -223,7 +227,8 @@ export const useSelectionEffects = (
     if (
       selectionMode === "select-set" &&
       selectedSet != null &&
-      selectedPlayer
+      selectedPlayer &&
+      selectionAction === "another"
     ) {
       console.log(
         "Robando set:",
@@ -236,6 +241,58 @@ export const useSelectionEffects = (
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
 
+  // 🎯 Ref para evitar ejecuciones múltiples de Ariadne
+  const ariadneExecutingRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      selectionMode === "select-set" &&
+      selectedSet != null &&
+      selectedPlayer &&
+      selectionAction === "ariadne" &&
+      turnData && 
+      ariadneCardId &&
+      !ariadneExecutingRef.current // 🎯 Prevenir ejecuciones múltiples
+    ) {
+      //Buscar el jugador seleccionado
+      const targetPlayer = turnData.players.find(
+        (p) => p.id === selectedPlayer
+      );
+
+      if (!targetPlayer || !targetPlayer.setPlayed) {
+        console.error("❌ No se encontró el jugador o sus sets");
+        return;
+      }
+
+      // Obtener el set usando el índice
+      const targetSet = targetPlayer.setPlayed[selectedSet];
+
+      if (!targetSet || !targetSet.set_id) {
+        console.error("❌ No se encontró el set o no tiene set_id");
+        return;
+      }
+
+      const setId = targetSet.set_id;
+      console.log("Ejecutando Ariadne con cardId:", ariadneCardId);
+      console.log("Parámetros:", { selectedPlayer, setId, ariadneCardId });
+      
+      // Marcar como ejecutando
+      ariadneExecutingRef.current = true;
+      
+      // Llamar a la función
+      handleCardAriadneOliver(selectedPlayer, setId, ariadneCardId).finally(() => {
+        // Resetear el flag cuando termine (éxito o error)
+        ariadneExecutingRef.current = false;
+        // Limpiar estados
+        setSelectedPlayer(null);
+        setSelectedSet(null);
+        setSelectionMode(null);
+        setSelectionAction(null);
+        setAriadneCardId(null);
+      });
+      
+    }
+  }, [selectionMode, selectedSet, selectedPlayer, selectionAction, ariadneCardId, turnData]);
   useEffect(() => {
     if (
       selectionMode === "select-other-player" &&

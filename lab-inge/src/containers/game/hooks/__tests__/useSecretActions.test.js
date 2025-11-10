@@ -242,4 +242,168 @@ describe("useSecretActions hook", () => {
       expect(result.current.selectedSet).toBeNull();
     });
   });
+
+  describe("handleCardAriadneOliver functionality", () => {
+    beforeEach(() => {
+      mockHttpService.addCardToSet = vi.fn().mockResolvedValue({ success: true });
+    });
+
+    it("llama a addCardToSet con los parámetros correctos", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const playerId = 5;
+      const setId = 101;
+      const cardId = 42;
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, setId, cardId);
+      });
+
+      expect(mockHttpService.addCardToSet).toHaveBeenCalledWith(
+        gameId,
+        myPlayerId,
+        cardId,
+        setId
+      );
+    });
+
+    it("llama a forcePlayerReveal después de agregar la carta", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const playerId = 5;
+      const setId = 101;
+      const cardId = 42;
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, setId, cardId);
+      });
+
+      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalledWith({
+        gameId,
+        playerId
+      });
+    });
+
+    it("llama a fetchGameData dos veces (antes y después de forceReveal)", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const playerId = 5;
+      const setId = 101;
+      const cardId = 42;
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, setId, cardId);
+      });
+
+      expect(mockFetchGameData).toHaveBeenCalledTimes(2);
+    });
+
+    it("no ejecuta si playerId es null", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(null, 101, 42);
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith("❌ Parámetros inválidos:", {
+        playerId: null,
+        setId: 101,
+        cardId: 42
+      });
+      expect(mockHttpService.addCardToSet).not.toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("no ejecuta si setId es null", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(5, null, 42);
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith("❌ Parámetros inválidos:", {
+        playerId: 5,
+        setId: null,
+        cardId: 42
+      });
+      expect(mockHttpService.addCardToSet).not.toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("no ejecuta si cardId es null", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(5, 101, null);
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith("❌ Parámetros inválidos:", {
+        playerId: 5,
+        setId: 101,
+        cardId: null
+      });
+      expect(mockHttpService.addCardToSet).not.toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("lanza error si addCardToSet falla", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const testError = new Error("Backend error");
+      mockHttpService.addCardToSet.mockRejectedValue(testError);
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(async () => {
+        await act(async () => {
+          await result.current.handleCardAriadneOliver(5, 101, 42);
+        });
+      }).rejects.toThrow("Backend error");
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith("❌ ERROR al agregar Ariadne Oliver:", testError);
+      
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("espera 100ms entre addCardToSet y forcePlayerReveal", async () => {
+      const { result } = renderHook(() =>
+        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+      );
+
+      const startTime = Date.now();
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(5, 101, 42);
+      });
+
+      const endTime = Date.now();
+      const elapsed = endTime - startTime;
+
+      // Debe haber esperado al menos 100ms
+      expect(elapsed).toBeGreaterThanOrEqual(100);
+    });
+  });
 });

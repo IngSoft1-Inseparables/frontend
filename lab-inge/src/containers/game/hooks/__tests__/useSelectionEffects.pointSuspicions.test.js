@@ -21,6 +21,9 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
   let mockHandleStealSecret;
   let mockHandleStealSecretEvent;
   let mockHandleStealSet;
+  let mockHandleCardAriadneOliver;
+  let mockSetSelectedSet;
+  let mockSetAriadneCardId;
 
   beforeEach(() => {
     mockHttpService = {
@@ -43,6 +46,9 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
     mockHandleStealSecret = vi.fn();
     mockHandleStealSecretEvent = vi.fn();
     mockHandleStealSet = vi.fn();
+    mockHandleCardAriadneOliver = vi.fn();
+    mockSetSelectedSet = vi.fn();
+    mockSetAriadneCardId = vi.fn();
   });
 
   describe("Voting functionality", () => {
@@ -77,6 +83,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null, // ariadneCardId
+            null, // turnData
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2 // myPlayerId
@@ -139,6 +150,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null,
+            null,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2
@@ -199,6 +215,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null,
+            null,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2
@@ -255,6 +276,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null,
+            null,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2
@@ -306,6 +332,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null,
+            null,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2
@@ -357,6 +388,11 @@ describe("useSelectionEffects - Point Your Suspicions", () => {
             mockSetSelectionMode,
             mockSetMovedCardsCount,
             mockHandleStealSet,
+            mockHandleCardAriadneOliver,
+            null,
+            null,
+            mockSetSelectedSet,
+            mockSetAriadneCardId,
             mockSetShowTradeDialog,
             mockSetOpponentId,
             2
