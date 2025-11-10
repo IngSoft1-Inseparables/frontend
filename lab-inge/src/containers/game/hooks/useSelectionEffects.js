@@ -32,9 +32,9 @@ export const useSelectionEffects = (
   turnData,
   setSelectedSet,
   setAriadneCardId,
-  setShowTradeDialog, 
-  setOpponentId,   
-  myPlayerId,
+  setShowTradeDialog,
+  setOpponentId,
+  myPlayerId
 ) => {
   // Revelar secreto propio
   useEffect(() => {
@@ -74,7 +74,7 @@ export const useSelectionEffects = (
       selectedPlayer &&
       (!selectionAction ||
         (selectionAction.toLowerCase() !== "card trade" &&
-          selectionAction.toLowerCase() !== "specials" && 
+          selectionAction.toLowerCase() !== "specials" &&
           selectionAction.toLowerCase() !== "cards off the table" &&
           selectionAction.toLowerCase() !== "point"))
     ) {
@@ -186,7 +186,6 @@ export const useSelectionEffects = (
           setSelectionAction(null);
           setFromPlayer(null);
           selectedSecret(null);
-
         } catch (error) {
           console.error("Error al asignar secreto:", error);
           setFromPlayer(null);
@@ -230,13 +229,8 @@ export const useSelectionEffects = (
       selectedPlayer &&
       selectionAction === "another"
     ) {
-      console.log(
-        "Robando set:",
-        selectedSet,
-        "del jugador:",
-        selectedPlayer
-      );
-      
+      console.log("Robando set:", selectedSet, "del jugador:", selectedPlayer);
+
       handleStealSet(selectedPlayer, selectedSet);
     }
   }, [selectionMode, selectedSet, selectedPlayer]);
@@ -250,7 +244,7 @@ export const useSelectionEffects = (
       selectedSet != null &&
       selectedPlayer &&
       selectionAction === "ariadne" &&
-      turnData && 
+      turnData &&
       ariadneCardId &&
       !ariadneExecutingRef.current // 🎯 Prevenir ejecuciones múltiples
     ) {
@@ -275,24 +269,32 @@ export const useSelectionEffects = (
       const setId = targetSet.set_id;
       console.log("Ejecutando Ariadne con cardId:", ariadneCardId);
       console.log("Parámetros:", { selectedPlayer, setId, ariadneCardId });
-      
+
       // Marcar como ejecutando
       ariadneExecutingRef.current = true;
-      
+
       // Llamar a la función
-      handleCardAriadneOliver(selectedPlayer, setId, ariadneCardId).finally(() => {
-        // Resetear el flag cuando termine (éxito o error)
-        ariadneExecutingRef.current = false;
-        // Limpiar estados
-        setSelectedPlayer(null);
-        setSelectedSet(null);
-        setSelectionMode(null);
-        setSelectionAction(null);
-        setAriadneCardId(null);
-      });
-      
+      handleCardAriadneOliver(selectedPlayer, setId, ariadneCardId).finally(
+        () => {
+          // Resetear el flag cuando termine (éxito o error)
+          ariadneExecutingRef.current = false;
+          // Limpiar estados
+          setSelectedPlayer(null);
+          setSelectedSet(null);
+          setSelectionMode(null);
+          setSelectionAction(null);
+          setAriadneCardId(null);
+        }
+      );
     }
-  }, [selectionMode, selectedSet, selectedPlayer, selectionAction, ariadneCardId, turnData]);
+  }, [
+    selectionMode,
+    selectedSet,
+    selectedPlayer,
+    selectionAction,
+    ariadneCardId,
+    turnData,
+  ]);
   useEffect(() => {
     if (
       selectionMode === "select-other-player" &&
@@ -331,10 +333,11 @@ export const useSelectionEffects = (
       selectionAction &&
       selectionAction.toLowerCase().replace(/\s+/g, "") === "cardtrade"
     ) {
-      console.log("Jugador seleccionado para Card Trade:", selectedPlayer);
       setSelectionMode(null);
+      setSelectionAction(null);
       setShowTradeDialog(true);
       setOpponentId(selectedPlayer);
+      setSelectedPlayer(null);
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
 
@@ -346,7 +349,10 @@ export const useSelectionEffects = (
       selectionAction &&
       selectionAction.toLowerCase().replace(/\s+/g, "") === "cardsoffthetable"
     ) {
-      console.log("Ejecutando efecto de Cards off the Table en jugador:", selectedPlayer);
+      console.log(
+        "Ejecutando efecto de Cards off the Table en jugador:",
+        selectedPlayer
+      );
 
       (async () => {
         try {
@@ -363,5 +369,4 @@ export const useSelectionEffects = (
       })();
     }
   }, [selectionMode, selectedPlayer, selectionAction]);
-
 };

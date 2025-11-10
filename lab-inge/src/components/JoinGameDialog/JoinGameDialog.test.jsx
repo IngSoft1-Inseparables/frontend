@@ -171,7 +171,7 @@ test('envía el avatar correcto al backend al unirse', async () => {
 test('el botón se deshabilita durante el submit (isSubmitting)', async () => {
   // Mock que simula una petición lenta
   joinGameMock.mockImplementation(() => new Promise((resolve) => {
-    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 100)
+    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 20)
   }))
 
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
@@ -201,7 +201,7 @@ test('el botón se deshabilita durante el submit (isSubmitting)', async () => {
 test('previene doble click en el botón Unirse', async () => {
   // Mock que simula una petición lenta
   joinGameMock.mockImplementation(() => new Promise((resolve) => {
-    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 100)
+    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 20)
   }))
 
   render(<JoinGameDialog onClose={() => {}} partidaId={123} />)

@@ -266,10 +266,10 @@ describe("useGameData Hook", () => {
 
       // Mock a delayed response to capture isLoading state during fetch
       mockHttpService.getPublicTurnData.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockTurnData), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve(mockTurnData), 50))
       );
       mockHttpService.getPrivatePlayerData.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockPlayerData), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve(mockPlayerData), 50))
       );
 
       // Trigger refetch

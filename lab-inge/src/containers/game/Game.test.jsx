@@ -896,7 +896,7 @@ it("handles player reordering when only 2 players", async () => {
       renderGame({ gameId: 1, myPlayerId: 2 });
 
       // Esperar un poco para que se ejecute el efecto
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Verificar que el handler fue capturado
       expect(capturedOnDragEnd).toBeDefined();
@@ -2135,7 +2135,7 @@ it("handles player reordering when only 2 players", async () => {
       });
 
       // Dar tiempo para que se ejecute el useEffect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       // Verificar que forcePlayerReveal no se llamó aún (necesita selectionAction)
       // Este test verifica el flujo básico

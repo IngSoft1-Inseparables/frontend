@@ -95,16 +95,16 @@ function GameBoard({
       console.log("🔍 Matches recibidos:", tempMatches);
       if (!tempMatches || tempMatches.length === 0) {
         setMatchingSets([]);
-        
+
         return;
       }
 
       setMatchingSets(tempMatches);
 
       if (tempMatches[0]?.isAriadne) {
-      console.log("✅ Ariadne Oliver detectada - guardando ID");
-      setAriadneCardId(tempMatches[0].card.card_id);
-    } 
+        console.log("✅ Ariadne Oliver detectada - guardando ID");
+        setAriadneCardId(tempMatches[0].card.card_id);
+      }
     },
     [setAriadneCardId]
   );
@@ -201,6 +201,7 @@ const handlePlaySetClick = () => {
             selectedSecret={selectedSecret}
             selectionMode={selectionMode}
             openSetModal={openSetModal}
+            playerData={playerData}
           />
         ))}
       </div>
@@ -221,6 +222,8 @@ const handlePlaySetClick = () => {
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
               openSetModal={openSetModal}
+              playerData={playerData}
+
             />
           ))}
         </div>
@@ -291,6 +294,8 @@ const handlePlaySetClick = () => {
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
               openSetModal={openSetModal}
+              playerData={playerData}
+
             />
           ))}
         </div>
@@ -309,11 +314,12 @@ const handlePlaySetClick = () => {
           selectedSecret={selectedSecret}
           selectionMode={selectionMode}
           openSetModal={openSetModal}
+          playerData={playerData}
+
         />
         <div
-          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${
-            playerCount < 6 ? "z-20" : ""
-          }`}
+          className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
+            }`}
         >
           <HandCard
             playerCards={playerData?.playerCards || []}
@@ -344,11 +350,10 @@ const handlePlaySetClick = () => {
               {currentSetCards.length === 1 &&
               currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver" 
                 ? "JUGAR ARIADNE OLIVER"
-                : `BAJAR SET DE ${
-                    currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                      ? currentSetCards[1]?.card_name.toUpperCase()
-                      : currentSetCards[0]?.card_name.toUpperCase()
-                  }`}
+                : `BAJAR SET DE ${currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                  ? currentSetCards[1]?.card_name.toUpperCase()
+                  : currentSetCards[0]?.card_name.toUpperCase()
+                }`}
             </button>
           )}
         </div>
