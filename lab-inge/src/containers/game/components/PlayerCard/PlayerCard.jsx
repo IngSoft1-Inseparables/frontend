@@ -8,6 +8,7 @@ const PlayerCard = ({
   selectedSecret,
   selectionMode,
   openSetModal,
+  playerData
 }) => {
   if (!player || !turnData) return null;
 
@@ -22,6 +23,9 @@ const PlayerCard = ({
       onSecretSelect(player.id, secretId);
     }
   };
+
+  const isMurdererOrAccomplice = player?.role;
+  const isPartner = playerData?.partner?.partner_id === player.id;
 
   const isSecretSelectable = (secret) => {
     const revealed = secret.revealed;
@@ -99,11 +103,15 @@ const PlayerCard = ({
             style={{ backgroundImage: `url(/${player.avatar})` }}
           ></div>
           <p
-            className={
-              player.id === turnData.turn_owner_id
-                ? "text-white text-sm font-bold truncate"
-                : "text-white text-sm truncate"
-            }
+            className={`
+              ${player.id === turnData.turn_owner_id
+                ? "text-sm font-bold truncate"
+                : "text-sm truncate"
+              }
+              ${
+                isMurdererOrAccomplice || isPartner ? "text-red-400" : "text-white"
+              }
+            `}
           >
             {player.name}
           </p>
