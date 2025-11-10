@@ -70,7 +70,7 @@ function GameBoard({
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
-    turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
+    turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6 && (turnData.turn_state === "Replenish" || turnData.turn_state === "Discarding");
   const availableToPlay = turnData.turn_owner_id === myPlayerId;
   const currentTurnState = turnData?.turn_state || "None";
   const [playedSets, setPlayedSets] = useState([]);
@@ -230,8 +230,7 @@ function GameBoard({
                 <DraftDeck
                   draft={turnData?.draft}
                   isAvailable={
-                    turnData?.turn_owner_id === myPlayerId &&
-                    playerData?.playerCards?.length < 6
+                    isRegpileAvailable
                   }
                   onCardClick={handleReplenishFromDraft}
                 />
