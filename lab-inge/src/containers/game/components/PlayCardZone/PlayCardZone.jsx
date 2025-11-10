@@ -36,7 +36,7 @@ export default function PlayCardZone({ actionCard, turnData, myPlayerId, playerD
                 (turnData?.event_card_played ?
                   turnData?.event_card_played?.card_name
                   :
-                  turnData?.set_played?.set_type)
+                  (turnData?.set_played ? turnData?.set_played?.set_type : turnData?.set_add?.card_name))
             }
           </div>
         )}
