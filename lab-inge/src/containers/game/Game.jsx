@@ -112,7 +112,7 @@ function Game() {
     movedCardsCount,
     timer,
     selectionMode,
-   
+    playerData
   );
 
   // WebSocket connection

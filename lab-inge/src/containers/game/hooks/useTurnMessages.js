@@ -11,7 +11,8 @@ export const useTurnMessages = (
   setSelectionAction,
   movedCardsCount,
   timer,
-  selectionMode
+  selectionMode,
+  playerData
 ) => {
   const [message, setMessage] = useState(" ");
 
@@ -56,6 +57,7 @@ export const useTurnMessages = (
         if (selectionMode === "select-other-revealed-secret" && selectionAction === "one more") setMessage("Seleccioná un secreto para ocultarlo y luego asignárselo a cualquier jugador.");
         if (selectionMode === "select-player" && selectionAction === "one more") setMessage("Selecciona un jugador para asignarle el secreto oculto.");
         if (selectionMode === "select-set") setMessage("Seleccioná un set para robarlo y ejecutar su efecto.");
+        if (selectionMode === "select-set" && selectionAction === "ariadne") setMessage("Seleccioná un set para agregarle Ariadne Oliver.");
         if (selectionMode === "select-other-player" && selectionAction === "card trade") setMessage("Seleccioná un jugador para intercambiar una carta.");
         if (selectionMode === "select-my-not-revealed-secret") setMessage("Seleccioná un secreto propio para revelarlo.")
         if (turnData?.event_card_played?.card_name.toLowerCase() === "point your suspicions") {
@@ -64,7 +66,7 @@ export const useTurnMessages = (
         }
         break;
       case "Waiting":
-        setMessage("Esperá para continuar tu turno.");
+        if (turnData?.turn_owner_id === myPlayerId) setMessage("Esperá para continuar tu turno.");
         break;
       case "Discarding":
         const actionType =
@@ -105,6 +107,8 @@ export const useTurnMessages = (
           setTimeout(() => setSelectionAction(null), 4500);
         } else if (turnData.instant_played && timer > 0) {
           setMessage(`Se jugó una ${turnData.instant_played.card_name}`);
+        } else if (turnData?.event_card_played?.card_name.toLowerCase() === "look into the ashes" && playerData?.playerCards.length === 6) {
+          setMessage("Debés descartar al menos una carta.");
         } else {
           setMessage(
             `${turnData.turn_owner_id === myPlayerId ?
