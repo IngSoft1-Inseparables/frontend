@@ -16,6 +16,7 @@ describe("useSecretActions hook", () => {
       forcePlayerReveal: vi.fn().mockResolvedValue({}),
       stealSecret: vi.fn().mockResolvedValue({}),
       stealSet: vi.fn().mockResolvedValue({}),
+      addCardToSet: vi.fn().mockResolvedValue({}),
     };
   });
 
@@ -269,39 +270,77 @@ describe("useSecretActions hook", () => {
       );
     });
 
-    it("llama a forcePlayerReveal después de agregar la carta", async () => {
+    it("establece pendingAriadneReveal con el playerId correcto", async () => {
+      const mockTimer = 5; // Timer inicial > 0 para que no se ejecute el reveal inmediatamente
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService, 
+          gameId, 
+          myPlayerId, 
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
       const setId = 101;
       const cardId = 42;
 
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 5 });
+
       await act(async () => {
         await result.current.handleCardAriadneOliver(playerId, setId, cardId);
       });
 
-      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalledWith({
+      // Verificar que se llamó addCardToSet
+      expect(mockHttpService.addCardToSet).toHaveBeenCalledWith(
         gameId,
-        playerId
-      });
+        myPlayerId,
+        cardId,
+        setId
+      );
+
+      // Verificar que se actualizó el timer
+      expect(mockSetTimer).toHaveBeenCalledWith(5);
+
+      // No debe llamar a forcePlayerReveal inmediatamente
+      expect(mockHttpService.forcePlayerReveal).not.toHaveBeenCalled();
     });
 
-    it("llama a fetchGameData dos veces (antes y después de forceReveal)", async () => {
+    it("llama a fetchGameData después de agregar la carta", async () => {
+      const mockTimer = 5; // Timer inicial > 0 para evitar que se ejecute el useEffect
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
       const playerId = 5;
       const setId = 101;
       const cardId = 42;
 
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 5 });
+
       await act(async () => {
         await result.current.handleCardAriadneOliver(playerId, setId, cardId);
       });
 
-      expect(mockFetchGameData).toHaveBeenCalledTimes(2);
+      // Solo debe llamar a fetchGameData una vez (después de agregar)
+      expect(mockFetchGameData).toHaveBeenCalledTimes(1);
     });
 
     it("no ejecuta si playerId es null", async () => {
@@ -388,22 +427,284 @@ describe("useSecretActions hook", () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it("espera 100ms entre addCardToSet y forcePlayerReveal", async () => {
+    it("actualiza el timer cuando el backend devuelve un timer", async () => {
+      const mockTimer = 0;
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
       const { result } = renderHook(() =>
-        useSecretActions(mockHttpService, gameId, myPlayerId, mockFetchGameData)
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
       );
 
-      const startTime = Date.now();
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 10 });
 
       await act(async () => {
         await result.current.handleCardAriadneOliver(5, 101, 42);
       });
 
-      const endTime = Date.now();
-      const elapsed = endTime - startTime;
+      // Verificar que se actualizó el timer con el valor del backend
+      expect(mockSetTimer).toHaveBeenCalledWith(10);
+    });
 
-      // Debe haber esperado al menos 100ms
-      expect(elapsed).toBeGreaterThanOrEqual(100);
+    it("establece pendingAriadneReveal que se exporta correctamente", async () => {
+      const mockTimer = 5;
+      const mockSetTimer = vi.fn();
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { result } = renderHook(() =>
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          mockTimer,
+          mockSetTimer,
+          mockTurnData
+        )
+      );
+
+      const playerId = 5;
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 5 });
+
+      // Verificar que pendingAriadneReveal está en null inicialmente
+      expect(result.current.pendingAriadneReveal).toBeNull();
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, 101, 42);
+      });
+
+      // Verificar que pendingAriadneReveal se establece con el playerId
+      expect(result.current.pendingAriadneReveal).toEqual({ playerId: 5 });
+    });
+  });
+
+  describe("useEffect - Timer-based Ariadne Oliver reveal", () => {
+    it("ejecuta forcePlayerReveal cuando el timer llega a 0 y hay pendingAriadneReveal", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      // Iniciar con timer en 1
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            mockTurnData
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      const playerId = 5;
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      mockHttpService.forcePlayerReveal.mockResolvedValue({ success: true });
+
+      // Ejecutar handleCardAriadneOliver para establecer pendingAriadneReveal
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, 101, 42);
+      });
+
+      // Limpiar el mock de fetchGameData para contar solo las llamadas del useEffect
+      mockFetchGameData.mockClear();
+
+      // Cambiar el timer a 0 para disparar el useEffect
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      // Verificar que se llamó a forcePlayerReveal
+      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalledWith({
+        gameId,
+        playerId: 5,
+      });
+
+      // Verificar que se llamó a fetchGameData después del reveal
+      expect(mockFetchGameData).toHaveBeenCalled();
+    });
+
+    it("no ejecuta forcePlayerReveal si el timer no es 0", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { result } = renderHook(() =>
+        useSecretActions(
+          mockHttpService,
+          gameId,
+          myPlayerId,
+          mockFetchGameData,
+          3, // Timer en 3, no en 0
+          vi.fn(),
+          mockTurnData
+        )
+      );
+
+      const playerId = 5;
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 3 });
+
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, 101, 42);
+      });
+
+      // No debe llamar a forcePlayerReveal porque el timer no es 0
+      expect(mockHttpService.forcePlayerReveal).not.toHaveBeenCalled();
+    });
+
+    it("no ejecuta forcePlayerReveal si no hay pendingAriadneReveal", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            mockTurnData
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      // Cambiar el timer a 0 sin haber llamado a handleCardAriadneOliver
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      // No debe llamar a forcePlayerReveal porque no hay pendingAriadneReveal
+      expect(mockHttpService.forcePlayerReveal).not.toHaveBeenCalled();
+    });
+
+    it("limpia pendingAriadneReveal después de ejecutar el reveal", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            mockTurnData
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      const playerId = 5;
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      mockHttpService.forcePlayerReveal.mockResolvedValue({ success: true });
+
+      // Establecer pendingAriadneReveal
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, 101, 42);
+      });
+
+      // Verificar que pendingAriadneReveal está establecido
+      expect(result.current.pendingAriadneReveal).toEqual({ playerId: 5 });
+
+      // Cambiar el timer a 0 para ejecutar el reveal
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      // Verificar que pendingAriadneReveal se limpió
+      expect(result.current.pendingAriadneReveal).toBeNull();
+    });
+
+    it("maneja errores al ejecutar forcePlayerReveal", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            mockTurnData
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      const playerId = 5;
+      const testError = new Error("Reveal failed");
+      
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      mockHttpService.forcePlayerReveal.mockRejectedValue(testError);
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Establecer pendingAriadneReveal
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(playerId, 101, 42);
+      });
+
+      // Cambiar el timer a 0 para disparar el error
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      // Verificar que se manejó el error
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        "❌ Error al revelar secreto después de Ariadne Oliver:",
+        testError
+      );
+
+      // Verificar que pendingAriadneReveal se limpió a pesar del error
+      expect(result.current.pendingAriadneReveal).toBeNull();
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it("ejecuta forcePlayerReveal con el playerId correcto del pendingAriadneReveal", async () => {
+      const mockTurnData = { turn_state: "Playing" };
+      
+      const { result, rerender } = renderHook(
+        ({ timer }) =>
+          useSecretActions(
+            mockHttpService,
+            gameId,
+            myPlayerId,
+            mockFetchGameData,
+            timer,
+            vi.fn(),
+            mockTurnData
+          ),
+        { initialProps: { timer: 1 } }
+      );
+
+      const targetPlayerId = 99; // ID específico para verificar
+      mockHttpService.addCardToSet.mockResolvedValue({ timer: 1 });
+      mockHttpService.forcePlayerReveal.mockResolvedValue({ success: true });
+
+      // Establecer pendingAriadneReveal con playerId específico
+      await act(async () => {
+        await result.current.handleCardAriadneOliver(targetPlayerId, 101, 42);
+      });
+
+      // Cambiar el timer a 0
+      await act(async () => {
+        rerender({ timer: 0 });
+      });
+
+      // Verificar que forcePlayerReveal se llamó con el playerId correcto
+      expect(mockHttpService.forcePlayerReveal).toHaveBeenCalledWith({
+        gameId,
+        playerId: targetPlayerId,
+      });
     });
   });
 });

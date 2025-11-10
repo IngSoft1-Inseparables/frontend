@@ -21,6 +21,7 @@ export const useSecretActions = (
   const [fromPlayer, setFromPlayer] = useState(null);
   const [prevData, setPrevData] = useState(null);
   const [pendingSecretEffect, setPendingSecretEffect] = useState(null);
+  const [pendingAriadneReveal, setPendingAriadneReveal] = useState(null);
 
   useEffect(() => {
     const executePendingSecretEffect = async () => {
@@ -42,11 +43,37 @@ export const useSecretActions = (
     executePendingSecretEffect();
   }, [timer, pendingSecretEffect, fetchGameData]);
 
+  useEffect(() => {
+    const executeAriadneReveal = async () => {
+      if (timer === 0 && pendingAriadneReveal) {
+
+        if (turnData?.turn_state.toLowerCase() != "playing") {
+          setPendingAriadneReveal(null);
+          return;
+        }
+
+        try {
+          console.log("⏰ Timer llegó a 0, ejecutando forcePlayerReveal para Ariadne Oliver");
+          await httpService.forcePlayerReveal({
+            gameId,
+            playerId: pendingAriadneReveal.playerId,
+          });
+          await fetchGameData();
+        } catch (error) {
+          console.error("❌ Error al revelar secreto después de Ariadne Oliver:", error);
+        } finally {
+          setPendingAriadneReveal(null);
+        }
+      }
+    };
+
+    executeAriadneReveal();
+  }, [timer, pendingAriadneReveal, gameId, httpService, fetchGameData]);
+
   const revealMySecret = async (secretId) => {
     try {
       console.log("revelando secreto propio:", secretId);
 
-      // 🔹 Guardamos la respuesta del backend
       const response = await httpService.revealSecret({
         gameId,
         playerId: myPlayerId,
@@ -56,7 +83,7 @@ export const useSecretActions = (
       await fetchGameData();
 
       return response;
-      
+
     } catch (err) {
       console.log("error al revelar secreto propio:", err);
     } finally {
@@ -273,37 +300,34 @@ export const useSecretActions = (
       console.error("❌ Parámetros inválidos:", { playerId, setId, cardId });
       return;
     }
-     console.log("🎯 Llamando addCardToSet con:", {
-        gameId,
-        playerId,
-        cardId,
-        setId,
-      });
+    console.log("🎯 Llamando addCardToSet con:", {
+      gameId,
+      playerId,
+      cardId,
+      setId,
+    });
 
     try {
-     
+
       const response = await httpService.addCardToSet(
         gameId,
         myPlayerId,
         cardId,
         setId
       );
-
-      // Actualizar datos del juego desde el backend
-      await fetchGameData();
-      // Pequeño delay para asegurar que el WebSocket haya propagado el cambio de estado
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      await httpService.forcePlayerReveal({
-        gameId,
-        playerId, // Dueño del set (atacado)
-      });
-
-      await fetchGameData();
+      setTimer(response?.timer);
 
       console.log("✅ Ariadne Oliver agregada exitosamente:", response);
+
+      // Actualizar timer para permitir Not So Fast
+
+      setPendingAriadneReveal({ playerId });
+
+      await fetchGameData();
+
     } catch (error) {
       console.error("❌ ERROR al agregar Ariadne Oliver:", error);
-      throw error; // 🎯 Re-lanzar el error para que el .finally() en useSelectionEffects lo maneje
+      throw error;
     }
   };
 
@@ -336,6 +360,7 @@ export const useSecretActions = (
     setSelectedSet,
     handleStealSet,
     handleCardAriadneOliver,
-    pendingSecretEffect, // Exportar para feedback visual
+    pendingSecretEffect,
+    pendingAriadneReveal,
   };
 };
