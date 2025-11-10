@@ -95,12 +95,16 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           1, // My player ID (Alice)
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          null, // selectionMode
+          null  // playerData
         )
       );
 
-      // Sin event card, mensaje de espera
-      expect(result.current.message).toBe("Esperá para continuar tu turno.");
+      // Cuando NO es mi turno en Waiting, no muestra mensaje
+      expect(result.current.message).toBe(" ");
     });
 
     it("shows generic message when not my turn even with Point Your Suspicions in Waiting", () => {
@@ -116,12 +120,16 @@ describe("useTurnMessages - Point Your Suspicions", () => {
           2, // myPlayerId (Bob)
           mockOrderedPlayers,
           null,
-          mockSetSelectionAction
+          mockSetSelectionAction,
+          0, // movedCardsCount
+          0, // timer
+          null, // selectionMode
+          null  // playerData
         )
       );
 
-      // Cuando NO es mi turno en Waiting, mensaje de espera
-      expect(result.current.message).toBe("Esperá para continuar tu turno.");
+      // Cuando NO es mi turno en Waiting, no muestra mensaje
+      expect(result.current.message).toBe(" ");
     });
 
     it("shows waiting message when it's my turn in Waiting state", () => {
