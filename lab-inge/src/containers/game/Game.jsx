@@ -307,6 +307,7 @@ function Game() {
           <EndGameDialog
             winners={winnerData}
             onClose={() => setShowEndDialog(false)}
+            turnData={turnData}
           />
         )}
 
