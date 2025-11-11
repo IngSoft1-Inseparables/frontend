@@ -39,8 +39,7 @@ export default function GameModalController({isOpen, onClose}) {
       });
     } catch (error) {
       console.error(error);
-      const attemptedName = formDataGame?.nameGame?.toString().trim() || "este nombre";
-      alert(`El nombre '${attemptedName}' ya está en uso. Ingresa un nombre distinto.`);
+      alert("Ha ocurrido un error al crear la partida. Por favor, intente de nuevo.");
     }
   };
 
