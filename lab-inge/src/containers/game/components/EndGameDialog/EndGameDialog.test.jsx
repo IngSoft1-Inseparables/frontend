@@ -22,6 +22,10 @@ describe("EndGameDialog", () => {
     regpileCount: 0,
   };
 
+  const mockTurnDataWith5Players = {
+    players: [{}, {}, {}, {}, {}] // 5 players
+  };
+
   const mockDetectivesGanan = {
     winners: [
       { id: 3, name: "Jugador Normal 1" },
@@ -35,11 +39,11 @@ describe("EndGameDialog", () => {
   });
 
   it("renderiza correctamente cuando gana el asesino", () => {
-    render(<EndGameDialog winners={mockAsesinoGana} onClose={() => {}} />);
+    render(<EndGameDialog winners={mockAsesinoGana} onClose={() => {}} turnData={mockTurnDataWith5Players} />);
 
     expect(screen.getByText("PARTIDA FINALIZADA")).toBeInTheDocument();
     expect(
-      screen.getByText("El Asesino (y el Cómplice, si existe) ha ganado la partida.")
+      screen.getByText("El Asesino y Cómplice han ganado la partida.")
     ).toBeInTheDocument();
 
     const winners = screen.getAllByRole("listitem");

@@ -1093,7 +1093,7 @@ it("handles player reordering when only 2 players", async () => {
     const dialogElement = dialog.closest(".dialog");
     const withinDialog = within(dialogElement);
 
-    expect(withinDialog.getByText("El Asesino (y el Cómplice, si existe) ha ganado la partida.")).toBeInTheDocument();
+    expect(withinDialog.getByText("El Asesino ha ganado la partida.")).toBeInTheDocument();
     expect(withinDialog.getByText("Jugador1")).toBeInTheDocument();
   });
 

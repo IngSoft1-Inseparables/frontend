@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import './EndGameDialog.css'
 
-export default function EndGameDialog({ onClose, winners }) {
+export default function EndGameDialog({ onClose, winners, turnData }) {
 
   const navigate = useNavigate()
 
@@ -31,7 +31,7 @@ export default function EndGameDialog({ onClose, winners }) {
     victoryMessage = "El asesino ha ganado.";
   } 
   else if (regpileCount === 0) {
-    victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";
+    victoryMessage = turnData?.players?.length < 5 ? "El Asesino ha ganado la partida." : "El Asesino y Cómplice han ganado la partida.";
   } 
   else {
     victoryMessage = "Los Detectives descubrieron al Asesino.";
