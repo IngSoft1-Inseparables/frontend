@@ -1,4 +1,4 @@
-# Agatha Christie: Dead on the Cards – Frontend & Backend
+# Agatha Christie: Dead on the Cards – Frontend
 
 Proyecto creado con [Vite](https://vitejs.dev/) y Node.js.
 
