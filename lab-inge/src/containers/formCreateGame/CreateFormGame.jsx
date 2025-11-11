@@ -127,11 +127,12 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         maxPlayers: "",
         minPlayers: "",
       });
+      setSelectedAvatar(null); 
       setErrors({});
       // setIsOpen(false);
     } catch (error) {
       console.error("Error submitting form:", error);
-       setPlayerData({
+      setPlayerData({
         name: "",
         birthday: "",
         avatar: null,
@@ -141,9 +142,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         maxPlayers: "",
         minPlayers: "",
       });
-      alert(
-        "Ya existe una partida con el mismo nombre."
-      );
+      setSelectedAvatar(null);
     } finally {
       setIsSubmitting(false);
     }

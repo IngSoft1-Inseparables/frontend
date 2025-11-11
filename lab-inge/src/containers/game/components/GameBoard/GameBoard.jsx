@@ -8,7 +8,7 @@ import PlayCardZone from "../PlayCardZone/PlayCardZone.jsx";
 import PlayerSetsModal from "../PlayerSetModal/PlayerSetModal.jsx";
 import { createHttpService } from "../../../../services/HTTPService";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // Configuración de posiciones de jugadores según la cantidad
 const PLAYER_POSITIONS = {
@@ -52,9 +52,16 @@ function GameBoard({
   selectedPlayer,
   onSecretSelect,
   selectedSecret,
+  onSetSelect,
+  selectedSet,
   selectionMode,
   playedActionCard,
-  message
+  message,
+  setSelectionMode,
+  onAddCardToSet,
+  setSelectionAction,
+  setAriadneCardId,
+  timer
 }) {
   const playerCount = turnData.players_amount;
 
@@ -63,7 +70,7 @@ function GameBoard({
   const positions = PLAYER_POSITIONS[playerCount] || PLAYER_POSITIONS[2];
 
   const isRegpileAvailable =
-    turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6;
+    turnData.turn_owner_id === myPlayerId && playerData.playerCards.length < 6 && (turnData.turn_state === "Replenish" || turnData.turn_state === "Discarding");
   const availableToPlay = turnData.turn_owner_id === myPlayerId;
   const currentTurnState = turnData?.turn_state || "None";
   const [playedSets, setPlayedSets] = useState([]);
@@ -73,34 +80,90 @@ function GameBoard({
   const [modalPlayerId, setModalPlayerId] = useState(null);
   const openSetModal = (playerId) => setModalPlayerId(playerId);
   const closeSetModal = () => setModalPlayerId(null);
+  const [matchingSets, setMatchingSets] = useState([]);
+  const [addToSet, setAddToSet] = useState(false);
 
   if (!turnData || !playerData || orderedPlayers.length === 0) {
-    return (console.log("info publica:", turnData), console.log("info privada:", playerData), console.log("orden de los jugadores:", orderedPlayers)
+    return (
+      console.log("info publica:", turnData),
+      console.log("info privada:", playerData),
+      console.log("orden de los jugadores:", orderedPlayers)
     );
   }
+  const handleCardSelected = useCallback(
+    (tempMatches) => {
+      console.log("🔍 Matches recibidos:", tempMatches);
+      if (!tempMatches || tempMatches.length === 0) {
+        setMatchingSets([]);
+
+        return;
+      }
+
+      setMatchingSets(tempMatches);
+
+      if (tempMatches[0]?.isAriadne) {
+        console.log("✅ Ariadne Oliver detectada - guardando ID");
+        setAriadneCardId(tempMatches[0].card.card_id);
+      }
+    },
+    [setAriadneCardId]
+  );
 
   const handleSetStateChange = (isPlayable, cards) => {
     setIsSetReady(isPlayable);
     setCurrentSetCards(cards);
   };
 
-  const handlePlaySetClick = () => {
-    const player = turnData.players.find((p) => p.id === myPlayerId);
-    const setPlayed = player?.setPlayed || [];
-    console.log("Cartas del set jugado:", setPlayed);
-    if (setCards) {
-      setCards(myPlayerId, turnData.gameId, currentSetCards);
+const handlePlaySetClick = () => {
+  const player = turnData.players.find((p) => p.id === myPlayerId);
+  const setPlayed = player?.setPlayed || [];
+  
+  const otrosJugadoresTienenSets = turnData.players
+    .filter((p) => p.id !== Number(myPlayerId))
+    .some((p) => Array.isArray(p.setPlayed) && p.setPlayed.length > 0);
+  
+  // Detectar si es Ariadne Oliver
+  const esAriadneOliver = 
+    currentSetCards.length === 1 &&
+    currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver";
+  
+  if (esAriadneOliver) {
+    if (otrosJugadoresTienenSets) {
+      console.log("Jugando Ariadne Oliver - activando selección");
+      setSelectionMode("select-set");
+      setSelectionAction("ariadne");
+      return; 
+    } else {
+      console.log(" No se puede jugar Ariadne Oliver - no hay sets disponibles");
+      return; 
+    }
+  }
+  
+  // Solo llega aquí si NO es Ariadne Oliver
+  console.log("Cartas del set jugado:", setPlayed);
+  if (setCards) {
+    setCards(myPlayerId, turnData.gameId, currentSetCards);
+  }
+};
+
+  const handleSetClick = (setIndex) => {
+    if (onAddCardToSet) {
+      onAddCardToSet(setIndex, matchingSets, currentSetCards);
+      // Limpiar selección
+      setMatchingSets([]);
+      setAddToSet(false);
     }
   };
-
-
 
   const handleReplenishFromDraft = async (carta) => {
     try {
       console.log("→ Robando carta del mazo de draft...");
 
-      const res = await httpService.replenishFromDraft(turnData.gameId, myPlayerId, carta);
-
+      const res = await httpService.replenishFromDraft(
+        turnData.gameId,
+        myPlayerId,
+        carta
+      );
 
       // Actualizar el draft con las nuevas cartas
       setTurnData((prev) => ({
@@ -138,6 +201,7 @@ function GameBoard({
             selectedSecret={selectedSecret}
             selectionMode={selectionMode}
             openSetModal={openSetModal}
+            playerData={playerData}
           />
         ))}
       </div>
@@ -158,6 +222,8 @@ function GameBoard({
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
               openSetModal={openSetModal}
+              playerData={playerData}
+
             />
           ))}
         </div>
@@ -178,16 +244,14 @@ function GameBoard({
                 <DraftDeck
                   draft={turnData?.draft}
                   isAvailable={
-                    turnData?.turn_owner_id === myPlayerId &&
-                    playerData?.playerCards?.length < 6
+                    isRegpileAvailable
                   }
                   onCardClick={handleReplenishFromDraft}
                 />
-
               </div>
 
               <div className="flex justify-center items-end gap-2 mb-10">
-                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} />
+                <PlayCardZone actionCard={playedActionCard} turnData={turnData} myPlayerId={myPlayerId} playerData={playerData} timer={timer} />
               </div>
 
               {/* Grupo derecho: mazo de descarte */}
@@ -196,6 +260,7 @@ function GameBoard({
                   discardpile={turnData?.discardpile}
                   turnData={turnData}
                   myPlayerId={myPlayerId}
+                  setSelectionAction={setSelectionAction}
                 />
               </div>
             </div>
@@ -206,6 +271,10 @@ function GameBoard({
                   turnData.players.find((p) => p.id === myPlayerId)
                     ?.setPlayed || []
                 }
+                matchingSets={matchingSets}
+                onSetClick={handleSetClick}
+                availableToPlay={availableToPlay}
+                turnState={currentTurnState}
               />
             </div>
           </div>
@@ -225,6 +294,8 @@ function GameBoard({
               selectedSecret={selectedSecret}
               selectionMode={selectionMode}
               openSetModal={openSetModal}
+              playerData={playerData}
+
             />
           ))}
         </div>
@@ -243,6 +314,8 @@ function GameBoard({
           selectedSecret={selectedSecret}
           selectionMode={selectionMode}
           openSetModal={openSetModal}
+          playerData={playerData}
+
         />
         <div
           className={`absolute bottom-6 left-1/2 transform -translate-x-1/2 ${playerCount < 6 ? "z-20" : ""
@@ -253,12 +326,19 @@ function GameBoard({
             availableToPlay={availableToPlay}
             turnState={currentTurnState}
             onSetStateChange={handleSetStateChange}
+            onCardStateChange={handleCardSelected}
+            setsPlayed={
+              turnData.players.find((p) => p.id === myPlayerId)?.setPlayed || []
+            }
+            setSelectionMode={setSelectionMode}
+            inDisgrace={
+              turnData?.players?.find((p) => p.id === parseInt(myPlayerId))
+                ?.in_disgrace
+            }
           />
 
           <div>
-            <p className="text-white text-center">
-              {message}
-            </p>
+            <p className="text-white text-center">{message}</p>
           </div>
         </div>
         <div className=" flex justify-rigth mr-12 mb-6">
@@ -267,10 +347,13 @@ function GameBoard({
               onClick={handlePlaySetClick}
               className="bg-red-700/80 hover:bg-red-700/50 text-white font-semibold py-1 px-6 rounded-xl shadow-lg text-base transition duration-150"
             >
-              BAJAR SET DE{" "}
-              {currentSetCards[0]?.card_name === "Harley Quin Wildcard"
-                ? currentSetCards[1]?.card_name.toUpperCase()
-                : currentSetCards[0]?.card_name.toUpperCase()}
+              {currentSetCards.length === 1 &&
+              currentSetCards[0]?.card_name?.toLowerCase() === "adriane oliver" 
+                ? "JUGAR ARIADNE OLIVER"
+                : `BAJAR SET DE ${currentSetCards[0]?.card_name === "Harley Quin Wildcard"
+                  ? currentSetCards[1]?.card_name.toUpperCase()
+                  : currentSetCards[0]?.card_name.toUpperCase()
+                }`}
             </button>
           )}
         </div>
@@ -280,6 +363,9 @@ function GameBoard({
         modalPlayerId={modalPlayerId}
         orderedPlayers={orderedPlayers}
         closeSetModal={closeSetModal}
+        onSetSelect={onSetSelect}
+        selectedSet={selectedSet}
+        selectionMode={selectionMode}
       />
     </div>
   );

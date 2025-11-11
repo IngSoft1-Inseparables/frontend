@@ -10,12 +10,23 @@ function PlayerSetsModal({
   modalPlayerId,
   orderedPlayers,
   closeSetModal,
+  onSetSelect,
+  selectedSet,
+  selectionMode,
 }) {
   if (!modalPlayerId) return null;
 
   const targetPlayer = orderedPlayers.find((p) => p.id === modalPlayerId);
   const sets = targetPlayer?.setPlayed || [];
   const setLength = sets.length;
+
+  // Wrapper para cerrar el modal después de seleccionar un set
+  const handleSetSelectAndClose = (playerId, setIndex) => {
+    if (onSetSelect) {
+      onSetSelect(playerId, setIndex);
+    }
+    closeSetModal();
+  };
 
   // --- LÓGICA DE ANCHO DE MODAL DINÁMICO (MOVIMIENTO DE GAMEBOARD) ---
   const BASE_WIDTH = 120; // Ancho base de SetDeck (basado en BackCard.css/SetDeck)
@@ -54,7 +65,13 @@ function PlayerSetsModal({
           {targetPlayer?.name} - Set Jugado
         </h2>
 
-        <SetDeck setPlayed={sets} />
+        <SetDeck 
+          setPlayed={sets}
+          onSetClick={handleSetSelectAndClose}
+          selectedSetIndex={selectedSet}
+          playerId={modalPlayerId}
+          selectionMode={selectionMode}
+        />
       </div>
     </div>
   );

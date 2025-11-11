@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import JoinGameDialog from './JoinGameDialog.jsx'
 import '@testing-library/jest-dom'
@@ -166,4 +166,88 @@ test('envía el avatar correcto al backend al unirse', async () => {
   expect(nombre_usuario).toBe('CandeAvatar')
   expect(fecha_nacimiento).toBe('2000-10-10')
   expect(avatar).toBe('avatar/avatar3.png') 
+})
+
+test('el botón se deshabilita durante el submit (isSubmitting)', async () => {
+  // Mock que simula una petición lenta
+  joinGameMock.mockImplementation(() => new Promise((resolve) => {
+    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 20)
+  }))
+
+  render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
+  const user = userEvent.setup()
+
+  await user.type(screen.getByTestId('input-username'), 'TestUser')
+  await user.type(screen.getByTestId('input-fechaNacimiento'), '2002-02-16')
+  await user.click(screen.getByLabelText('Avatar 2'))
+
+  const submitButton = screen.getByRole('button', { name: 'Unirse' })
+  
+  // Antes del submit, el botón debe estar habilitado
+  expect(submitButton).not.toBeDisabled()
+  
+  // Hacer click en el botón
+  await user.click(submitButton)
+  
+  // Durante el submit, el botón debe estar deshabilitado
+  expect(submitButton).toBeDisabled()
+  
+  // Esperar a que termine la petición y navegue
+  await waitFor(() => {
+    expect(mockNavigate).toHaveBeenCalled()
+  })
+})
+
+test('previene doble click en el botón Unirse', async () => {
+  // Mock que simula una petición lenta
+  joinGameMock.mockImplementation(() => new Promise((resolve) => {
+    setTimeout(() => resolve({ partida_id: 123, jugador_id: 999 }), 20)
+  }))
+
+  render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
+  const user = userEvent.setup()
+
+  await user.type(screen.getByTestId('input-username'), 'TestUser')
+  await user.type(screen.getByTestId('input-fechaNacimiento'), '2002-02-16')
+  await user.click(screen.getByLabelText('Avatar 2'))
+
+  const submitButton = screen.getByRole('button', { name: 'Unirse' })
+  
+  // Hacer doble click rápido
+  await user.click(submitButton)
+  await user.click(submitButton)
+  
+  // Esperar a que termine la petición
+  await waitFor(() => {
+    expect(mockNavigate).toHaveBeenCalled()
+  })
+  
+  // La petición debe haberse llamado solo una vez
+  expect(joinGameMock).toHaveBeenCalledTimes(1)
+})
+
+test('isSubmitting se resetea después de un error', async () => {
+  const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {})
+  
+  // Mock que rechaza la petición
+  joinGameMock.mockRejectedValueOnce(new Error('Network error'))
+
+  render(<JoinGameDialog onClose={() => {}} partidaId={123} />)
+  const user = userEvent.setup()
+
+  await user.type(screen.getByTestId('input-username'), 'TestUser')
+  await user.type(screen.getByTestId('input-fechaNacimiento'), '2002-02-16')
+  await user.click(screen.getByLabelText('Avatar 2'))
+
+  const submitButton = screen.getByRole('button', { name: 'Unirse' })
+  
+  // Hacer click en el botón
+  await user.click(submitButton)
+  
+  // Esperar a que se procese el error y el botón se habilite nuevamente
+  await waitFor(() => {
+    expect(submitButton).not.toBeDisabled()
+  })
+  
+  expect(alertMock).toHaveBeenCalledWith('Error al unirse a la partida')
 })

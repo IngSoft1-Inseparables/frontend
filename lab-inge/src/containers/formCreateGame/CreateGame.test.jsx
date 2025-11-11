@@ -224,3 +224,116 @@ describe("CreateFormGame - validacion formulario completo", () => {
     );
   });
 });
+
+describe("CreateFormGame - limpieza de avatar", () => {
+  const mockSubmit = vi.fn();
+  const mockClose = vi.fn();
+
+  beforeEach(() => {
+    mockSubmit.mockClear();
+  });
+
+  it("limpia la selección del avatar cuando el formulario se envía exitosamente", async () => {
+    mockSubmit.mockResolvedValue();
+
+    render(<CreateFormGame onSubmit={mockSubmit} onClose={mockClose} />);
+
+    // Llenar el formulario completo
+    await userEvent.type(
+      screen.getByLabelText(/Nombre de Usuario/i),
+      "TestUser"
+    );
+    await userEvent.type(
+      screen.getByLabelText(/Fecha de nacimiento/i),
+      "2000-01-01"
+    );
+    await userEvent.type(
+      screen.getByLabelText(/Nombre de la Partida/i),
+      "TestGame"
+    );
+    await userEvent.selectOptions(screen.getByTestId("minPlayers"), "2");
+    await userEvent.selectOptions(screen.getByTestId("maxPlayers"), "4");
+
+    // Seleccionar avatar
+    const avatars = screen.getAllByRole("img");
+    const firstAvatar = avatars[0];
+    await userEvent.click(firstAvatar);
+
+    // Verificar que está seleccionado
+    expect(firstAvatar).toHaveClass("border-orange-500");
+    expect(firstAvatar).toHaveClass("scale-120");
+
+    // Enviar formulario
+    const submitButton = screen.getByRole("button", { name: /Crear Partida/i });
+    await userEvent.click(submitButton);
+
+    // Esperar a que se complete el submit
+    await waitFor(() => {
+      expect(mockSubmit).toHaveBeenCalled();
+    });
+
+    // Verificar que el avatar ya NO está seleccionado
+    await waitFor(() => {
+      expect(firstAvatar).not.toHaveClass("border-orange-500");
+      expect(firstAvatar).not.toHaveClass("scale-120");
+      expect(firstAvatar).toHaveClass("border-gray-400");
+    });
+  });
+
+  it("limpia la selección del avatar cuando hay un error en el envío", async () => {
+   
+    
+    // Mock de window.alert
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
+    render(<CreateFormGame onSubmit={mockSubmit} onClose={mockClose} />);
+
+    // Llenar el formulario completo
+    await userEvent.type(
+      screen.getByLabelText(/Nombre de Usuario/i),
+      "TestUser"
+    );
+    await userEvent.type(
+      screen.getByLabelText(/Fecha de nacimiento/i),
+      "2000-01-01"
+    );
+    await userEvent.type(
+      screen.getByLabelText(/Nombre de la Partida/i),
+      "DuplicateGame"
+    );
+    await userEvent.selectOptions(screen.getByTestId("minPlayers"), "3");
+    await userEvent.selectOptions(screen.getByTestId("maxPlayers"), "5");
+
+    // Seleccionar avatar
+    const avatars = screen.getAllByRole("img");
+    const secondAvatar = avatars[1];
+    await userEvent.click(secondAvatar);
+
+    // Verificar que está seleccionado
+    expect(secondAvatar).toHaveClass("border-orange-500");
+    expect(secondAvatar).toHaveClass("scale-120");
+
+    // Enviar formulario
+    const submitButton = screen.getByRole("button", { name: /Crear Partida/i });
+    await userEvent.click(submitButton);
+
+    // Esperar a que se procese el error
+    await waitFor(() => {
+      expect(mockSubmit).toHaveBeenCalled();
+    });
+
+    // Verificar que el avatar ya NO está seleccionado
+    await waitFor(() => {
+      expect(secondAvatar).not.toHaveClass("border-orange-500");
+      expect(secondAvatar).not.toHaveClass("scale-120");
+      expect(secondAvatar).toHaveClass("border-gray-400");
+    });
+
+    // Verificar que todos los campos se limpiaron
+    expect(screen.getByLabelText(/Nombre de Usuario/i).value).toBe("");
+    expect(screen.getByLabelText(/Fecha de nacimiento/i).value).toBe("");
+    expect(screen.getByLabelText(/Nombre de la Partida/i).value).toBe("");
+
+    alertMock.mockRestore();
+  });
+});

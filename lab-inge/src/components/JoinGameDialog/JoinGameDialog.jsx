@@ -17,6 +17,7 @@ const AVATARS = [
 
 export default function JoinGameDialog({ onClose, partidaId }) {
   const [form, setForm] = useState({ nombreUsuario: '', fechaNacimiento: '', idAvatar: null })
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarError, setAvatarError] = useState(false)
   const avatarsRef = useRef(null)
   const navigate = useNavigate()
@@ -77,6 +78,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
     console.log("Avatar seleccionado:", selectedAvatar)
 
     try {
+      setIsSubmitting(true);
       const httpService = createHttpService()
       console.log("Payload enviado al backend:", payload);
       const data = await httpService.joinGame(
@@ -105,6 +107,8 @@ export default function JoinGameDialog({ onClose, partidaId }) {
       } else {
         alert('Error al unirse a la partida')
       }
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -185,7 +189,7 @@ export default function JoinGameDialog({ onClose, partidaId }) {
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="submit"
-              disabled={!isFormValid} 
+              disabled={!isFormValid || isSubmitting} 
               className={`my-button ${
                 !isFormValid ? 'opacity-50 cursor-not-allowed' : ''
               }`}

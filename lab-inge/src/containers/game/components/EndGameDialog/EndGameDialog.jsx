@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import './EndGameDialog.css'
 
-export default function EndGameDialog({ onClose, winners }) {
+export default function EndGameDialog({ onClose, winners, turnData }) {
 
   const navigate = useNavigate()
 
@@ -19,11 +19,25 @@ export default function EndGameDialog({ onClose, winners }) {
   const regpileCount = winners.regpileCount ?? 0;
 
   let victoryMessage = "";
-  if(regpileCount === 0) {
-    victoryMessage = "El Asesino (y el Cómplice, si existe) ha ganado la partida.";  
-  } else {
+  console.log("winners data in dialog:", winners);
+  if (winners.type === "social_disgrace") {
+    victoryMessage = "El asesino ha ganado.";
+  } 
+  else if (winners.type === "murder_revealed") {
+    victoryMessage = "Los Detectives descubrieron al Asesino.";
+  } 
+  else if (winners.winners?.some(w => w.role?.toLowerCase() === "asesino")) {
+    
+    victoryMessage = "El asesino ha ganado.";
+  } 
+  else if (regpileCount === 0) {
+    victoryMessage = turnData?.players?.length < 5 ? "El Asesino ha ganado la partida." : "El Asesino y Cómplice han ganado la partida.";
+  } 
+  else {
     victoryMessage = "Los Detectives descubrieron al Asesino.";
   }
+
+
 
   return (
     <div className="dialog-backdrop">

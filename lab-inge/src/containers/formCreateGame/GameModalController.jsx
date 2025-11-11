@@ -39,7 +39,7 @@ export default function GameModalController({isOpen, onClose}) {
       });
     } catch (error) {
       console.error(error);
-      alert("There was an error creating the game");
+      alert("Ha ocurrido un error al crear la partida. Por favor, intente de nuevo.");
     }
   };
 
