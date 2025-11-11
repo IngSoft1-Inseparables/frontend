@@ -142,10 +142,7 @@ export default function CreateFormGame({ onSubmit, onClose }) {
         maxPlayers: "",
         minPlayers: "",
       });
-      setSelectedAvatar(null); 
-      alert(
-        "Ya existe una partida con el mismo nombre."
-      );
+      setSelectedAvatar(null);
     } finally {
       setIsSubmitting(false);
     }

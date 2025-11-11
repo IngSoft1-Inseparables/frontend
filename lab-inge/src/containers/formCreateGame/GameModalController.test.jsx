@@ -129,7 +129,7 @@ describe("GameModalController", () => {
     await waitFor(() => {
       expect(mockCreateGame).toHaveBeenCalled();
         expect(alertMock).toHaveBeenCalledWith(
-          "El nombre 'Partida Duplicada' ya está en uso. Ingresa un nombre distinto."
+          "Ha ocurrido un error al crear la partida. Por favor, intente de nuevo."
         );
     });
 
