@@ -185,7 +185,7 @@ const handlePlaySetClick = () => {
   return (
     <div
       className="h-screen w-screen grid grid-rows-[20%_60%_20%] bg-cover p-2"
-      style={{ backgroundImage: "url(/src/assets/game/game_bg.png)" }}
+      style={{ backgroundImage: "url(/game_bg.png)" }}
     >
       {/* Bloque superior - Jugadores de arriba */}
       <div className="flex justify-evenly items-center px-4">
